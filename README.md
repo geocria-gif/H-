@@ -1,29 +1,38 @@
-# HExtra PM App v16
+# SISPM - Sistema de Escalas do CPR-CN
 
-Sistema de gestão operacional para ocorrências em eventos da Polícia Militar da Bahia / CPR-CN.
+Sistema web single-page para gestão de escalas de hora extra (HE), vale-transporte (VD) e serviço ordinário (SO) do CPR-CN (Comando de Policiamento Rodoviário - Canto da Lagoa).
 
 ## Funcionalidades
 
-- **Dashboard operacional** com indicadores editáveis
-- **Matriz de indicadores por data** com edição in-cell
-- **Tabela dinâmica** (PivotTable) com exportação para Excel
-- **Cards institucionais** para Instagram (feed, story, reels)
-- **Exportação PDF** com card e relatório operacional
-- **Importação de planilhas XLSX**
-- **Banco de dados SQLite** embutido (sql.js via WebAssembly)
-
-## Como usar
-
-1. Acesse pelo **GitHub Pages**: https://geocria-gif.github.io/H-
-2. Ou abra o arquivo `HExtra_PM_App_v16_FINAL.html` diretamente no navegador
-3. Importe uma planilha XLSX com os dados de ocorrências ou edite manualmente na matriz
-4. Navegue pelas abas para visualizar dashboards, cards e exportar relatórios
+- **Dashboard** com indicadores e gráfico de ocorrências
+- **Nova Ocorrência** com cadastro de ocorrências no mapa
+- **Escala HE / VD** — geração de escala geral mensal com busca por matrícula/nome
+- **Escalas Salvas** — snapshots da escala para cálculos do relatório
+- **Relatório de Horas** — relatório mensal de HE/VD por militar
+- **Tabela de Valores** — configuração de valores por posto/graduação
+- **Usuários** — gerenciamento de operadores (admin apenas)
+- **Backup / Restore** — exportar/importar o banco de dados SQLite
 
 ## Tecnologias
 
-- HTML/CSS/JS puro (single-file)
-- Chart.js (visualizações)
-- jsPDF + autoTable (exportação PDF)
-- html2canvas (captura de cards)
-- sql.js (SQLite via WebAssembly)
-- SheetJS (XLSX import/export)
+- SQLite via WASM (sql.js)
+- JavaScript puro — sem frameworks
+- Leaflet.js para mapas
+- XLSX export com SheetJS
+
+## Deploy
+
+O app roda 100% no navegador. Para publicar no GitHub Pages:
+
+```bash
+git checkout -b gh-pages
+git push origin gh-pages
+```
+
+Ou configure o repositório em **Settings > Pages** para usar a branch `main` com pasta `/` (root).
+
+## Uso
+
+1. Abra o `index.html` (localmente ou via GitHub Pages)
+2. Login: matrícula `30481332`, senha `30481332`
+3. O banco de dados começa vazio — use **Backup > Salvar** para baixar e **Carregar** para restaurar
