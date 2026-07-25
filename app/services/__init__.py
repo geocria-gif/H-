@@ -1,6 +1,7 @@
 from typing import List, Optional, Dict, Any
 from datetime import datetime, date, timedelta
 from decimal import Decimal
+from sqlalchemy import and_
 from app import db
 from app.models import (
     Usuario, EfetivoPM, Cargo, OPM, Evento, OpmEvento, Escala,

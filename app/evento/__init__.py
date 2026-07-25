@@ -35,8 +35,8 @@ def novo():
         opm_ids = request.form.getlist('opms')
         evento = evento_service.criar_com_opms({
             'evento_desc': form.evento_desc.data,
-            'evento_dta_inicio': form.evento_dta_inicio.data.isoformat() if form.evento_dta_inicio.data else None,
-            'evento_dta_fim': form.evento_dta_fim.data.isoformat() if form.evento_dta_fim.data else None,
+            'evento_dta_inicio': form.evento_dta_inicio.data,
+            'evento_dta_fim': form.evento_dta_fim.data,
             'campo1': form.campo1.data,
             'tipo_pagamento': form.tipo_pagamento.data
         }, opm_ids)
@@ -62,8 +62,8 @@ def editar(id):
         opm_ids = request.form.getlist('opms')
         
         evento.evento_desc = form.evento_desc.data
-        evento.evento_dta_inicio = form.evento_dta_inicio.data.isoformat() if form.evento_dta_inicio.data else None
-        evento.evento_dta_fim = form.evento_dta_fim.data.isoformat() if form.evento_dta_fim.data else None
+        evento.evento_dta_inicio = form.evento_dta_inicio.data
+        evento.evento_dta_fim = form.evento_dta_fim.data
         evento.campo1 = form.campo1.data
         evento.tipo_pagamento = form.tipo_pagamento.data
         

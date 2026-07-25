@@ -64,16 +64,24 @@
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-bordered table-sm mb-0">
-                    <thead class="table-dark">
-                        <tr>
+                    <thead>
+                        <tr class="table-dark">
+                            <th class="text-center" rowspan="2" style="min-width: 50px;">Ações</th>
                             <th class="text-center" rowspan="2">Função</th>
                             <th class="text-center" rowspan="2">OPM</th>
                             <th class="text-center" rowspan="2">GH</th>
                             <th class="text-center" rowspan="2">Nome</th>
-                            <th class="text-center" rowspan="2">Matrícula</th>
+                            <th class="text-center" rowspan="2">Mat.</th>
                             <th class="text-center" rowspan="2">Tel</th>
                             {% for dia in range(1, 32) %}
-                            <th class="text-center px-1" style="min-width: 30px;">{{ dia }}</th>
+                            <th class="text-center px-1" style="min-width: 30px; font-size: 0.6rem; color: #adb5bd;">
+                                {{ dia_semanas.get(dia, '') }}
+                            </th>
+                            {% endfor %}
+                        </tr>
+                        <tr class="table-dark">
+                            {% for dia in range(1, 32) %}
+                            <th class="text-center px-1" style="min-width: 30px; font-size: 0.75rem;">{{ dia }}</th>
                             {% endfor %}
                         </tr>
                     </thead>
@@ -81,10 +89,21 @@
                         {% for escala in escalas %}
                         {% if escala.is_separador %}
                         <tr class="table-secondary">
-                            <td colspan="{{ 6 + 31 }}" class="fw-bold text-center">{{ escala.separador_texto or '-' }}</td>
+                            <td colspan="{{ 7 + 31 }}" class="fw-bold text-center">{{ escala.separador_texto or '-' }}</td>
                         </tr>
                         {% else %}
                         <tr>
+                            <td class="text-center" style="white-space: nowrap;">
+                                <a href="{{ url_for('escala.p2_editar', id=escala.id) }}" class="btn btn-sm btn-outline-primary py-0 px-1" title="Editar">
+                                    <i class="bi bi-pencil" style="font-size: 0.7rem;"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('escala.p2_excluir', id=escala.id) }}" class="d-inline" onsubmit="return confirm('Excluir este item?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-1" title="Excluir">
+                                        <i class="bi bi-trash" style="font-size: 0.7rem;"></i>
+                                    </button>
+                                </form>
+                            </td>
                             <td class="text-nowrap">{{ escala.funcao or '-' }}</td>
                             <td class="text-nowrap">{{ escala.opm or '-' }}</td>
                             <td class="text-center">{{ escala.gh or '-' }}</td>

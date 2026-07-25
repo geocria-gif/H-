@@ -13,6 +13,7 @@ from app.forms import (
 from app.services import escala_service, efetivo_service, escala_salva_service
 from app.repository import efetivo_repo
 import json
+from datetime import date
 
 escala_bp = Blueprint('escala', __name__, url_prefix='/escala')
 
@@ -125,11 +126,27 @@ def p2():
     meta = EscalaP2Meta.query.first()
     legendas = EscalaP2Legenda.query.order_by(EscalaP2Legenda.codigo).all()
     
+    effective_mes = mes or (meta.mes if meta else None)
+    effective_ano = ano or (meta.ano if meta else None)
+    
+    weekdays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom']
+    dia_semanas = {}
+    if effective_mes and effective_ano:
+        import calendar
+        max_day = calendar.monthrange(effective_ano, effective_mes)[1]
+        for d in range(1, max_day + 1):
+            try:
+                dt = date(effective_ano, effective_mes, d)
+                dia_semanas[d] = weekdays[dt.weekday()]
+            except:
+                pass
+    
     return render_template('escala/p2.html',
                            escalas=escalas,
                            meta=meta,
                            legendas=legendas,
-                           mes=mes, ano=ano)
+                           mes=mes, ano=ano,
+                           dia_semanas=dia_semanas)
 
 
 @escala_bp.route('/p2/novo', methods=['GET', 'POST'])
