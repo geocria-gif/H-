@@ -136,8 +136,8 @@ class EfetivoPMForm(FlaskForm):
 
 class EventoForm(FlaskForm):
     evento_desc = StringField('Descrição', validators=[DataRequired(), Length(max=200)])
-    evento_dta_inicio = DateField('Data Início', format='%Y-%m-%d', validators=[DataRequired()])
-    evento_dta_fim = DateField('Data Fim', format='%Y-%m-%d', validators=[DataRequired()])
+    evento_dta_inicio = StringField('Data Início', validators=[DataRequired()])
+    evento_dta_fim = StringField('Data Fim', validators=[Optional()])
     campo1 = TextAreaField('Observações', validators=[Optional()])
     tipo_pagamento = SelectField('Tipo Pagamento', choices=[
         ('HE', 'Hora Extra'),
@@ -204,6 +204,7 @@ class EscalaP2Form(FlaskForm):
         ('VD', 'Vale Transporte'),
         ('SO', 'Serviço Ordinário')
     ], default='HE')
+    dias = StringField('Dias (JSON)', validators=[Optional()])
     submit = SubmitField('Salvar')
 
 

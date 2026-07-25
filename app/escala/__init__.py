@@ -12,6 +12,7 @@ from app.forms import (
 )
 from app.services import escala_service, efetivo_service, escala_salva_service
 from app.repository import efetivo_repo
+import json
 
 escala_bp = Blueprint('escala', __name__, url_prefix='/escala')
 
@@ -135,14 +136,21 @@ def p2():
 @login_required
 def p2_novo():
     form = EscalaP2Form()
+    legendas = EscalaP2Legenda.query.order_by(EscalaP2Legenda.codigo).all()
     if form.validate_on_submit():
         escala = EscalaP2()
         form.populate_obj(escala)
+        dias = {}
+        for d in range(1, 32):
+            val = request.form.get(f'd_{d}', '').strip()
+            if val:
+                dias[str(d)] = val
+        escala.dias = json.dumps(dias, ensure_ascii=False)
         db.session.add(escala)
         db.session.commit()
         flash('Item adicionado!', 'success')
         return redirect(url_for('escala.p2'))
-    return render_template('escala/p2_form.html', form=form)
+    return render_template('escala/p2_form.html', form=form, legendas=legendas)
 
 
 @escala_bp.route('/p2/<int:id>/editar', methods=['GET', 'POST'])
@@ -154,12 +162,19 @@ def p2_editar(id):
         return redirect(url_for('escala.p2'))
     
     form = EscalaP2Form(obj=escala)
+    legendas = EscalaP2Legenda.query.order_by(EscalaP2Legenda.codigo).all()
     if form.validate_on_submit():
         form.populate_obj(escala)
+        dias = {}
+        for d in range(1, 32):
+            val = request.form.get(f'd_{d}', '').strip()
+            if val:
+                dias[str(d)] = val
+        escala.dias = json.dumps(dias, ensure_ascii=False)
         db.session.commit()
         flash('Atualizado!', 'success')
         return redirect(url_for('escala.p2'))
-    return render_template('escala/p2_form.html', form=form)
+    return render_template('escala/p2_form.html', form=form, legendas=legendas, escala=escala)
 
 
 @escala_bp.route('/p2/<int:id>/excluir', methods=['POST'])

@@ -93,9 +93,11 @@
                             <td class="text-nowrap">{{ escala.telefone or '-' }}</td>
                             {% for dia in range(1, 32) %}
                             <td class="text-center px-1">
-                                {% if escala.dias_dict and dia in escala.dias_dict and escala.dias_dict[dia] %}
-                                <span class="badge bg-{% if escala.dias_dict[dia] in ['F', 'f'] %}danger{% elif escala.dias_dict[dia] in ['D', 'd'] %}primary{% elif escala.dias_dict[dia] in ['N', 'n'] %}dark{% elif escala.dias_dict[dia] in ['A', 'a'] %}warning{% else %}secondary{% endif %}" style="font-size: 0.7rem;">
-                                    {{ escala.dias_dict[dia] }}
+                                {% set dias = escala.dias_dict or {} %}
+                                {% set dia_val = dias.get(dia|string, dias.get(dia, '')) %}
+                                {% if dia_val %}
+                                <span class="badge bg-{% if dia_val in ['F', 'f'] %}danger{% elif dia_val in ['D', 'd'] %}primary{% elif dia_val in ['N', 'n'] %}dark{% elif dia_val in ['A', 'a'] %}warning{% else %}secondary{% endif %}" style="font-size: 0.7rem;">
+                                    {{ dia_val }}
                                 </span>
                                 {% else %}
                                 -
