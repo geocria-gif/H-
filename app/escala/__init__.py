@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, make_response
 from flask_login import login_required, current_user
 from sqlalchemy import extract
 from app import db
@@ -242,6 +242,211 @@ def p2_legenda():
         return redirect(url_for('escala.p2_legenda'))
     
     return render_template('escala/p2_legenda.html', legendas=legendas, form=form)
+
+
+
+@escala_bp.route('/p2/salvar', methods=['POST'])
+@login_required
+def p2_salvar():
+    if not current_user.is_supervisor:
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('escala.p2'))
+
+    mes = request.form.get('mes', type=int)
+    ano = request.form.get('ano', type=int)
+    if not mes or not ano:
+        meta = EscalaP2Meta.query.first()
+        mes = mes or (meta.mes if meta else None)
+        ano = ano or (meta.ano if meta else None)
+
+    if not mes or not ano:
+        flash('Defina mes e ano nas configuracoes da P2.', 'danger')
+        return redirect(url_for('escala.p2'))
+
+    query = db.select(EscalaP2).where(
+        db.and_(EscalaP2.mes == mes, EscalaP2.ano == ano)
+    ).order_by(EscalaP2.ordem)
+    escalas = db.session.execute(query).scalars().all()
+
+    if not escalas:
+        flash('Nenhum item para salvar.', 'danger')
+        return redirect(url_for('escala.p2'))
+
+    nome = f'Escala P2 - {mes:02d}/{ano}'
+    itens = []
+    for e in escalas:
+        itens.append({
+            'funcao': e.funcao,
+            'opm': e.opm,
+            'gh': e.gh,
+            'nome': e.nome,
+            'matricula': e.matricula,
+            'telefone': e.telefone,
+            'dias': e.dias,
+            'tipo_pagamento': e.tipo_pagamento,
+            'is_separador': e.is_separador,
+            'separador_texto': e.separador_texto,
+            'ordem': e.ordem,
+        })
+
+    meta_p2 = EscalaP2Meta.query.first()
+    meta_dict = {}
+    if meta_p2:
+        meta_dict = {
+            'local': meta_p2.local,
+            'responsavel': meta_p2.responsavel,
+            'cargo': meta_p2.cargo,
+            'emissao': meta_p2.emissao,
+            'nota': meta_p2.nota,
+            'titulo': meta_p2.titulo,
+        }
+
+    escala_salva = EscalaSalva(nome=nome, mes=mes, ano=ano, ativa=1)
+    db.session.add(escala_salva)
+    db.session.flush()
+
+    for item_data in itens:
+        item = EscalaSalvaItem(escala_salva_id=escala_salva.id, **item_data)
+        db.session.add(item)
+
+    if meta_dict:
+        meta_obj = EscalaSalvaMeta(escala_salva_id=escala_salva.id, **meta_dict)
+        db.session.add(meta_obj)
+
+    db.session.commit()
+    flash(f'Escala salva como "{nome}"!', 'success')
+    return redirect(url_for('escala.p2'))
+
+
+@escala_bp.route('/p2/rascunho', methods=['POST'])
+@login_required
+def p2_rascunho():
+    if not current_user.is_supervisor:
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('escala.p2'))
+
+    mes = request.form.get('mes', type=int)
+    ano = request.form.get('ano', type=int)
+    if not mes or not ano:
+        meta = EscalaP2Meta.query.first()
+        mes = mes or (meta.mes if meta else None)
+        ano = ano or (meta.ano if meta else None)
+
+    if not mes or not ano:
+        flash('Defina mes e ano nas configuracoes da P2.', 'danger')
+        return redirect(url_for('escala.p2'))
+
+    query = db.select(EscalaP2).where(
+        db.and_(EscalaP2.mes == mes, EscalaP2.ano == ano)
+    ).order_by(EscalaP2.ordem)
+    escalas = db.session.execute(query).scalars().all()
+
+    if not escalas:
+        flash('Nenhum item para salvar.', 'danger')
+        return redirect(url_for('escala.p2'))
+
+    nome = f'Rascunho P2 - {mes:02d}/{ano}'
+    itens = []
+    for e in escalas:
+        itens.append({
+            'funcao': e.funcao,
+            'opm': e.opm,
+            'gh': e.gh,
+            'nome': e.nome,
+            'matricula': e.matricula,
+            'telefone': e.telefone,
+            'dias': e.dias,
+            'tipo_pagamento': e.tipo_pagamento,
+            'is_separador': e.is_separador,
+            'separador_texto': e.separador_texto,
+            'ordem': e.ordem,
+        })
+
+    meta_p2 = EscalaP2Meta.query.first()
+    meta_dict = {}
+    if meta_p2:
+        meta_dict = {
+            'local': meta_p2.local,
+            'responsavel': meta_p2.responsavel,
+            'cargo': meta_p2.cargo,
+            'emissao': meta_p2.emissao,
+            'nota': meta_p2.nota,
+            'titulo': meta_p2.titulo,
+        }
+
+    escala_salva = EscalaSalva(nome=nome, mes=mes, ano=ano, ativa=0)
+    db.session.add(escala_salva)
+    db.session.flush()
+
+    for item_data in itens:
+        item = EscalaSalvaItem(escala_salva_id=escala_salva.id, **item_data)
+        db.session.add(item)
+
+    if meta_dict:
+        meta_obj = EscalaSalvaMeta(escala_salva_id=escala_salva.id, **meta_dict)
+        db.session.add(meta_obj)
+
+    db.session.commit()
+    flash(f'Rascunho salvo como "{nome}"!', 'success')
+    return redirect(url_for('escala.p2'))
+
+
+@escala_bp.route('/p2/exportar-pdf')
+@login_required
+def p2_exportar_pdf():
+    from xhtml2pdf import pisa
+    import calendar as cal
+    from io import BytesIO
+
+    mes = request.args.get('mes', type=int)
+    ano = request.args.get('ano', type=int)
+
+    if not mes or not ano:
+        meta = EscalaP2Meta.query.first()
+        mes = mes or (meta.mes if meta else None)
+        ano = ano or (meta.ano if meta else None)
+
+    if not mes or not ano:
+        flash('Defina mes e ano nas configuracoes da P2.', 'danger')
+        return redirect(url_for('escala.p2'))
+
+    query = db.select(EscalaP2).where(
+        db.and_(EscalaP2.mes == mes, EscalaP2.ano == ano)
+    ).order_by(EscalaP2.ordem)
+    escalas = db.session.execute(query).scalars().all()
+    meta = EscalaP2Meta.query.first()
+    legendas = EscalaP2Legenda.query.order_by(EscalaP2Legenda.codigo).all()
+
+    weekdays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom']
+    dia_semanas = {}
+    max_day = cal.monthrange(ano, mes)[1]
+    for d in range(1, max_day + 1):
+        dt = date(ano, mes, d)
+        dia_semanas[d] = weekdays[dt.weekday()]
+
+    mes_nome = ['', 'Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho',
+                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+
+    html_string = render_template('escala/p2_pdf.html',
+                                  escalas=escalas,
+                                  meta=meta,
+                                  legendas=legendas,
+                                  mes=mes,
+                                  ano=ano,
+                                  mes_nome=mes_nome[mes],
+                                  dia_semanas=dia_semanas,
+                                  max_day=max_day)
+
+    result = BytesIO()
+    pdf = pisa.pisaDocument(BytesIO(html_string.encode('utf-8')), result)
+    if pdf.err:
+        flash('Erro ao gerar PDF.', 'danger')
+        return redirect(url_for('escala.p2'))
+
+    response = make_response(result.getvalue())
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=escala_p2_{mes:02d}_{ano}.pdf'
+    return response
 
 
 @escala_bp.route('/salvas')

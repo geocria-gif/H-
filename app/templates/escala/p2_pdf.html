@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@page {
+    size: A3 landscape;
+    margin: 10mm;
+}
+body {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 7pt;
+    margin: 0;
+    padding: 0;
+}
+h1 {
+    font-size: 11pt;
+    text-align: center;
+    margin: 2px 0;
+}
+h2 {
+    font-size: 9pt;
+    text-align: center;
+    margin: 1px 0;
+    font-weight: normal;
+}
+.header-info {
+    text-align: center;
+    font-size: 7pt;
+    margin-bottom: 4px;
+    color: #333;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+th, td {
+    border: 1px solid #333;
+    padding: 2px 1px;
+    text-align: center;
+    vertical-align: middle;
+    overflow: hidden;
+}
+th {
+    background-color: #2c3e50;
+    color: white;
+    font-weight: bold;
+}
+th.dia-header {
+    font-size: 6pt;
+    width: 18px;
+    min-width: 18px;
+    max-width: 18px;
+}
+th.dow-header {
+    font-size: 5pt;
+    width: 18px;
+    min-width: 18px;
+    max-width: 18px;
+    background-color: #34495e;
+}
+td.col-funcao { width: 55px; text-align: left; }
+td.col-opm { width: 55px; text-align: left; }
+td.col-gh { width: 25px; }
+td.col-nome { width: 110px; text-align: left; }
+td.col-mat { width: 45px; }
+td.col-tel { width: 55px; }
+td.col-dia {
+    width: 18px;
+    min-width: 18px;
+    max-width: 18px;
+    font-size: 6pt;
+    font-weight: bold;
+}
+.separador td {
+    background-color: #bdc3c7;
+    font-weight: bold;
+    font-size: 7pt;
+}
+.footer {
+    margin-top: 6px;
+    font-size: 6pt;
+    color: #555;
+}
+.legend {
+    font-size: 6pt;
+    margin-top: 4px;
+}
+.legend span {
+    margin-right: 8px;
+}
+.assinatura {
+    margin-top: 20px;
+    font-size: 7pt;
+    text-align: center;
+}
+.assinatura-linha {
+    width: 200px;
+    border-top: 1px solid #333;
+    margin: 0 auto;
+    padding-top: 2px;
+}
+</style>
+</head>
+<body>
+
+{% if meta and meta.titulo %}
+<h1>{{ meta.titulo }}</h1>
+{% else %}
+<h1>ESCALA DE COORDENADOR REGIONAL DO CPR-CN</h1>
+{% endif %}
+
+<h2>{{ mes_nome }}/{{ ano }}</h2>
+
+<div class="header-info">
+    {% if meta %}
+        {% if meta.local %}<strong>Local:</strong> {{ meta.local }} | {% endif %}
+        {% if meta.responsavel %}<strong>Responsavel:</strong> {{ meta.responsavel }} | {% endif %}
+        {% if meta.cargo %}<strong>Cargo:</strong> {{ meta.cargo }} | {% endif %}
+        {% if meta.emissao %}<strong>Emissao:</strong> {{ meta.emissao }}{% endif %}
+    {% endif %}
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th class="col-funcao">Funcao</th>
+            <th class="col-opm">OPM</th>
+            <th class="col-gh">GH</th>
+            <th class="col-nome">Nome</th>
+            <th class="col-mat">Mat.</th>
+            <th class="col-tel">Tel</th>
+            {% for dia in range(1, max_day + 1) %}
+            <th class="dow-header">{{ dia_semanas.get(dia, '') }}</th>
+            {% endfor %}
+        </tr>
+        <tr>
+            <th class="col-funcao"></th>
+            <th class="col-opm"></th>
+            <th class="col-gh"></th>
+            <th class="col-nome"></th>
+            <th class="col-mat"></th>
+            <th class="col-tel"></th>
+            {% for dia in range(1, max_day + 1) %}
+            <th class="dia-header">{{ dia }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for escala in escalas %}
+            {% if escala.is_separador %}
+            <tr class="separador">
+                <td colspan="{{ 6 + max_day }}">{{ escala.separador_texto or '-' }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td class="col-funcao">{{ escala.funcao or '' }}</td>
+                <td class="col-opm">{{ escala.opm or '' }}</td>
+                <td class="col-gh">{{ escala.gh or '' }}</td>
+                <td class="col-nome">{{ escala.nome }}</td>
+                <td class="col-mat">{{ escala.matricula }}</td>
+                <td class="col-tel">{{ escala.telefone or '' }}</td>
+                {% set dias = escala.dias_dict or {} %}
+                {% for dia in range(1, max_day + 1) %}
+                <td class="col-dia">{{ dias.get(dia|string, '') }}</td>
+                {% endfor %}
+            </tr>
+            {% endif %}
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if legendas %}
+<div class="legend">
+    <strong>Legendas:</strong>
+    {% for leg in legendas %}
+    <span><strong>{{ leg.codigo }}</strong> = {{ leg.descricao }}</span>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if meta and meta.nota %}
+<div class="footer">
+    <strong>Nota:</strong> {{ meta.nota }}
+</div>
+{% endif %}
+
+</body>
+</html>
