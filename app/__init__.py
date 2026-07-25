@@ -174,35 +174,33 @@ def register_blueprints(app):
     from app.auth import bp as auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
     
-    from app.main import bp as main_bp
+    from app.routes import main_bp
     app.register_blueprint(main_bp)
     
-    from app.dashboard import bp as dashboard_bp
-    app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
+    from app.dashboard import dashboard_bp
+    app.register_blueprint(dashboard_bp)
     
-    from app.escala import bp as escala_bp
-    app.register_blueprint(escala_bp, url_prefix='/escala')
+    from app.escala import escala_bp
+    app.register_blueprint(escala_bp)
     
-    from app.evento import bp as evento_bp
-    app.register_blueprint(evento_bp, url_prefix='/evento')
+    from app.evento import evento_bp
+    app.register_blueprint(evento_bp)
     
-    from app.relatorio import bp as relatorio_bp
-    app.register_blueprint(relatorio_bp, url_prefix='/relatorio')
+    from app.relatorio import relatorio_bp
+    app.register_blueprint(relatorio_bp)
     
-    from app.admin import bp as admin_bp
-    app.register_blueprint(admin_bp, url_prefix='/admin')
+    from app.admin import admin_bp
+    app.register_blueprint(admin_bp)
     
-    from app.ocorrencia import bp as ocorrencia_bp
-    app.register_blueprint(ocorrencia_bp, url_prefix='/ocorrencia')
+    from app.ocorrencia import ocorrencia_bp, viatura_bp
+    app.register_blueprint(ocorrencia_bp)
+    app.register_blueprint(viatura_bp)
     
-    from app.viatura import bp as viatura_bp
-    app.register_blueprint(viatura_bp, url_prefix='/viatura')
+    from app.api import api_bp
+    app.register_blueprint(api_bp)
     
-    from app.api import bp as api_bp
-    app.register_blueprint(api_bp, url_prefix='/api/v1')
-    
-    from app.upload import bp as upload_bp
-    app.register_blueprint(upload_bp, url_prefix='/upload')
+    from app.upload import upload_bp
+    app.register_blueprint(upload_bp)
 
 
 def register_error_handlers(app):

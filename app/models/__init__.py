@@ -1,5 +1,6 @@
 from app import db
 from datetime import datetime
+from sqlalchemy import ForeignKey
 from werkzeug.security import generate_password_hash, check_password_hash
 import json
 
@@ -61,7 +62,6 @@ class Cargo(db.Model):
     classif_of = db.Column('ClassifOf', db.String(50))
     
     efetivos = db.relationship('EfetivoPM', back_populates='cargo_rel')
-    valores = db.relationship('TabelaValores', back_populates='posto_grad_rel')
     
     def to_dict(self):
         return {
@@ -92,7 +92,7 @@ class OPM(db.Model):
     
     efetivos = db.relationship('EfetivoPM', back_populates='opm_rel')
     opm_eventos = db.relationship('OpmEvento', back_populates='opm_rel')
-    escalas_p2 = db.relationship('EscalaP2', back_populates='opm_rel')
+    escalas_p2 = db.relationship('EscalaP2', primaryjoin='OPM.opm_sigla == foreign(EscalaP2.opm)', viewonly=True)
     
     def to_dict(self):
         return {
@@ -177,7 +177,6 @@ class Evento(db.Model):
     tipo_pagamento = db.Column('TipoPagamento', db.String(10), default='HE')
     
     opm_eventos = db.relationship('OpmEvento', back_populates='evento', cascade='all, delete-orphan')
-    escalas = db.relationship('Escala', back_populates='evento', cascade='all, delete-orphan')
     
     TIPOS_PAGAMENTO = ['HE', 'VD', 'SO']
     
@@ -287,8 +286,6 @@ class TabelaValores(db.Model):
     vd_diurno = db.Column('VDDiurno', db.Float, default=0)
     vd_noturno = db.Column('VDNoturno', db.Float, default=0)
     
-    posto_grad_rel = db.relationship('Cargo', back_populates='valores')
-    
     def to_dict(self):
         return {
             'id': self.id,
@@ -322,7 +319,7 @@ class EscalaP2(db.Model):
     tipo_pagamento = db.Column('TipoPagamento', db.String(10), default='HE')
     
     militar = db.relationship('EfetivoPM', back_populates='escalas_p2')
-    opm_rel = db.relationship('OPM', foreign_keys=[opm], primaryjoin='EscalaP2.opm==OPM.opm_sigla', back_populates='escalas_p2')
+    opm_rel = db.relationship('OPM', primaryjoin='foreign(EscalaP2.opm) == OPM.opm_sigla', viewonly=True)
     
     @property
     def dias_dict(self):
@@ -524,7 +521,7 @@ class OcorrenciaConfig(db.Model):
 class EscalaSalva(db.Model):
     __tablename__ = 'tbEscalaSalva'
     
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = db.Column('Id', db.Integer, primary_key=True, autoincrement=True)
     nome = db.Column('Nome', db.String(200), nullable=False)
     mes = db.Column('Mes', db.Integer, nullable=False)
     ano = db.Column('Ano', db.Integer, nullable=False)

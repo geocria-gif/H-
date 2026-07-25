@@ -14,7 +14,7 @@ from app.forms import (
     SearchForm, RelatorioForm, ImportForm, BackupForm, RestoreForm
 )
 
-auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
+bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 
 def role_required(*roles):
@@ -45,7 +45,7 @@ def api_role_required(*roles):
     return decorator
 
 
-@auth_bp.route('/login', methods=['GET', 'POST'])
+@bp.route('/login', methods=['GET', 'POST'])
 @limiter.limit('5 per minute')
 def login():
     form = LoginForm()
@@ -73,7 +73,7 @@ def login():
     return render_template('auth/login.html', form=form)
 
 
-@auth_bp.route('/logout')
+@bp.route('/logout')
 @login_required
 def logout():
     logout_user()
@@ -81,7 +81,7 @@ def logout():
     return redirect(url_for('auth.login'))
 
 
-@auth_bp.route('/register', methods=['GET', 'POST'])
+@bp.route('/register', methods=['GET', 'POST'])
 @login_required
 @role_required('ADMIN')
 def register():
@@ -105,7 +105,7 @@ def register():
     return render_template('auth/register.html', form=form)
 
 
-@auth_bp.route('/perfil', methods=['GET', 'POST'])
+@bp.route('/perfil', methods=['GET', 'POST'])
 @login_required
 def perfil():
     from app.forms import FlaskForm
@@ -136,7 +136,7 @@ def perfil():
     return render_template('auth/perfil.html', form=form)
 
 
-@auth_bp.route('/recuperar', methods=['GET', 'POST'])
+@bp.route('/recuperar', methods=['GET', 'POST'])
 def recuperar_senha():
     from app.forms import FlaskForm
     from wtforms import StringField, SubmitField
@@ -157,7 +157,7 @@ def recuperar_senha():
 
 
 # API Auth endpoints
-@auth_bp.route('/api/login', methods=['POST'])
+@bp.route('/api/login', methods=['POST'])
 @limiter.limit('10 per minute')
 def api_login():
     data = request.get_json()
@@ -188,7 +188,7 @@ def api_login():
     return jsonify(error='Unauthorized', message='Credenciais inválidas'), 401
 
 
-@auth_bp.route('/api/refresh', methods=['POST'])
+@bp.route('/api/refresh', methods=['POST'])
 @jwt_required(refresh=True)
 def api_refresh():
     current_user_id = get_jwt_identity()
@@ -204,7 +204,7 @@ def api_refresh():
     return jsonify(access_token=access_token), 200
 
 
-@auth_bp.route('/api/me', methods=['GET'])
+@bp.route('/api/me', methods=['GET'])
 @jwt_required()
 def api_me():
     current_user_id = get_jwt_identity()
@@ -215,7 +215,7 @@ def api_me():
     return jsonify(usuario.to_dict()), 200
 
 
-@auth_bp.route('/api/change-password', methods=['POST'])
+@bp.route('/api/change-password', methods=['POST'])
 @jwt_required()
 def api_change_password():
     current_user_id = get_jwt_identity()

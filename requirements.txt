@@ -11,7 +11,7 @@ Flask-Talisman==1.1.0
 Flask-Compress==1.13
 WTForms==3.1.1
 SQLAlchemy==2.0.23
-psycopg2-binary==2.9.9
+# psycopg2==2.9.9  # Install on production: pip install psycopg2-binary
 python-dotenv==1.0.0
 gunicorn==21.2.0
 werkzeug==3.0.1
@@ -27,7 +27,7 @@ python-dateutil==2.8.2
 marshmallow==3.21.1
 marshmallow-sqlalchemy==0.29.0
 openpyxl==3.1.2
-pandas==2.1.4
+# pandas==2.1.4  # Requires build tools, install on production
 requests==2.31.0
 python-multipart==0.0.6
 email-validator==2.1.0.post1

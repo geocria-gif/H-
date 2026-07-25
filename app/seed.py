@@ -263,6 +263,8 @@ def seed_all(full=False):
     """Run all seed functions"""
     click.echo("🌱 Starting database seeding...")
     
+    db.create_all()
+    
     seed_admin()
     seed_cargos()
     seed_opms()
