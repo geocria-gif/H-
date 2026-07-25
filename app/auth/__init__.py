@@ -52,7 +52,7 @@ def login():
     if form.validate_on_submit():
         matricula = form.matricula.data
         senha = form.senha.data
-        remember = form.remember.data
+        remember = form.remember_me.data
         
         usuario = Usuario.query.filter_by(matricula=matricula).first()
         

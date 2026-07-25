@@ -373,5 +373,3 @@ def register_login_manager(app):
 
 
 import time
-
-app = create_app()

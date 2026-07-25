@@ -26,6 +26,21 @@ class Usuario(db.Model):
         return check_password_hash(self._senha, senha)
     
     @property
+    def is_active(self):
+        return bool(self.ativo)
+    
+    @property
+    def is_authenticated(self):
+        return True
+    
+    @property
+    def is_anonymous(self):
+        return False
+    
+    def get_id(self):
+        return str(self.id)
+    
+    @property
     def is_admin(self):
         return self.tipo == 'ADMIN'
     

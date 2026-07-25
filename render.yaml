@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: python -m flask seed --full && gunicorn --config gunicorn.conf.py app:app
+    startCommand: python -m flask seed --full && gunicorn --config gunicorn.conf.py wsgi:app
     envVars:
       - key: FLASK_APP
         value: app
