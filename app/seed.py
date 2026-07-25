@@ -6,7 +6,7 @@ from flask.cli import with_appcontext
 from app import db
 from app.models import (
     Usuario, Cargo, OPM, EfetivoPM, Evento, OpmEvento,
-    TabelaValores, EscalaP2Legenda, EscalaP2Meta
+    TabelaValores, EscalaP2Legenda, EscalaP2Meta, Municipio
 )
 from werkzeug.security import generate_password_hash
 
@@ -259,6 +259,43 @@ def seed_sample_eventos():
     click.echo('  ✓ Sample eventos created')
 
 
+def seed_municipios():
+    """Seed the 22 municipalities of CPR-CN with IBGE codes and coordinates"""
+    municipios = [
+        (1,'America Dourada','BA','Centro-Norte',-11.455,-41.436,'290115',841.62,'44910-000',15170,35,'Joelson','PSD'),
+        (2,'Barra do Mendes','BA','Centro-Norte',-11.81,-42.06,'290300',1582.16,'44990-000',12620,70,'Dr. Neu','PP'),
+        (3,'Barro Alto','BA','Centro-Norte',-11.76,-41.91,'290323',416.88,'44895-000',13430,55,'Orlando Amorim','PSD'),
+        (4,'Bonito','BA','Centro-Norte',-11.967,-41.268,'2904050',791.3,'46820-000',18812,61,'Reinan Cedro de Oliveira','PSD'),
+        (5,'Cafarnaum','BA','Centro-Norte',-11.693,-41.469,'290530',684.63,'44880-000',18770,45,'Sueli Fernandes','PSD'),
+        (6,'Canarana','BA','Centro-Norte',-11.686,-41.767,'290682',605.3,'44890-000',25180,25,'Ezenivaldo Alves Dourado (Zeni)','PSD'),
+        (7,'Central','BA','Centro-Norte',-11.139,-42.111,'290760',566.1,'44940-000',16050,40,'Renatinho','AVANTE'),
+        (8,'Gentio do Ouro','BA','Centro-Norte',-11.434,-42.507,'291130',3674.22,'47450-000',10990,90,'Murilo Franca','PSD'),
+        (9,'Ibipeba','BA','Centro-Norte',-11.641,-42.011,'291240',1383.68,'44970-000',16650,45,'Demostenes Sousa Barreto Filho (Deme)','PSD'),
+        (10,'Ibitita','BA','Centro-Norte',-11.546,-41.974,'291300',623.08,'44960-000',17100,30,'Dr. Afonso','PSD'),
+        (11,'Ipupiara','BA','Centro-Norte',-11.823,-42.617,'291410',1055.8,'47590-000',8950,105,'Ascir Leite','PSD'),
+        (12,'Irece','BA','Centro-Norte',-11.304,-41.857,'291460',319.03,'44900-000',74507,0,'Murilo Franca','PSB'),
+        (13,'Itaguacu da Bahia','BA','Centro-Norte',-11.013,-42.399,'291535',4451.27,'47440-000',14240,80,'Adozinho','PSD'),
+        (14,'Joao Dourado','BA','Centro-Norte',-11.35,-41.654,'291835',913.55,'44920-000',22420,22,'Di Cardoso','PCdoB'),
+        (15,'Jussara','BA','Centro-Norte',-11.045,-41.971,'291850',876.68,'44925-000',14620,38,'Tacinho Mendes','PSD'),
+        (16,'Lapao','BA','Centro-Norte',-11.385,-41.828,'291915',627.68,'44905-000',30620,10,'Marcio Messias','PDT'),
+        (17,'Morro do Chapueu','BA','Centro-Norte',-11.549,-41.156,'2921708',5744.97,'44850-000',33594,98,'Juliana Pereira Araujo Leal','PDT'),
+        (18,'Mulungu do Morro','BA','Centro-Norte',-11.965,-41.639,'292205',567.17,'44885-000',12340,60,'Acio Teles','MDB'),
+        (19,'Presidente Dutra','BA','Centro-Norte',-11.296,-41.987,'292340',244.76,'44930-000',14690,15,'Roberto','MDB'),
+        (20,'Sao Gabriel','BA','Centro-Norte',-11.229,-41.911,'292925',1145.56,'44915-000',19660,12,'Mateus Machado','PSD'),
+        (21,'Uibai','BA','Centro-Norte',-11.339,-42.136,'293240',504.2,'44950-000',13840,30,'Dr. Jarbas','PSD'),
+        (22,'Xique-Xique','BA','Centro-Norte',-10.823,-42.73,'293360',5052.81,'47400-000',46997,98,'Reinaldinho Braga','MDB'),
+    ]
+    for m in municipios:
+        if not db.session.get(Municipio, m[0]):
+            db.session.add(Municipio(
+                id=m[0], nome=m[1], uf=m[2], regiao=m[3],
+                latitude=m[4], longitude=m[5], codigo_ibge=m[6],
+                area=m[7], cep=m[8], populacao=m[9],
+                dist_irece=m[10], prefeito=m[11], partido=m[12]
+            ))
+    click.echo('  ✓ 22 municípios CPR-CN created')
+
+
 def seed_all(full=False):
     """Run all seed functions"""
     click.echo("🌱 Starting database seeding...")
@@ -271,6 +308,7 @@ def seed_all(full=False):
     seed_tabela_valores()
     seed_legendas()
     seed_meta_p2()
+    seed_municipios()
     
     if full:
         seed_sample_efetivo()

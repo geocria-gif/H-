@@ -62,11 +62,13 @@ def nova():
 @ocorrencia_bp.route('/mapa')
 @login_required
 def mapa():
-    ocorrencias = Ocorrencia.query.filter(
-        Ocorrencia.latitude.isnot(None),
-        Ocorrencia.longitude.isnot(None)
-    ).all()
-    return render_template('ocorrencia/mapa.html', ocorrencias=ocorrencias)
+    municipios = [m.to_dict() for m in Municipio.query.order_by(Municipio.nome).all()]
+    ocorrencias = [
+        o.to_dict() for o in Ocorrencia.query.order_by(desc(Ocorrencia.data_hora)).all()
+    ]
+    return render_template('ocorrencia/mapa.html',
+                           municipios_json=municipios,
+                           ocorrencias_json=ocorrencias)
 
 
 @ocorrencia_bp.route('/estatisticas')

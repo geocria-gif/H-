@@ -469,7 +469,9 @@ class Viatura(db.Model):
     telefone = db.Column('Telefone', db.String(20))
     
     def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        from sqlalchemy import inspect
+        mapper = inspect(type(self))
+        return {attr.key: getattr(self, attr.key) for attr in mapper.attrs}
     
     def __repr__(self):
         return f'<Viatura {self.prefixo} - {self.placa}>'
@@ -493,7 +495,9 @@ class Municipio(db.Model):
     partido = db.Column('Partido', db.String(50))
     
     def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        from sqlalchemy import inspect
+        mapper = inspect(type(self))
+        return {attr.key: getattr(self, attr.key) for attr in mapper.attrs}
     
     def __repr__(self):
         return f'<Municipio {self.nome}>'
@@ -510,7 +514,9 @@ class OcorrenciaEvento(db.Model):
     ordem_metrica = db.Column('OrdemMetrica', db.Integer, default=0)
     
     def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        from sqlalchemy import inspect
+        mapper = inspect(type(self))
+        return {attr.key: getattr(self, attr.key) for attr in mapper.attrs}
 
 
 class OcorrenciaMeta(db.Model):
