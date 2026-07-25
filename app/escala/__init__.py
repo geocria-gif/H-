@@ -136,7 +136,8 @@ def p2():
 def p2_novo():
     form = EscalaP2Form()
     if form.validate_on_submit():
-        escala = EscalaP2(**form.data)
+        escala = EscalaP2()
+        form.populate_obj(escala)
         db.session.add(escala)
         db.session.commit()
         flash('Item adicionado!', 'success')
@@ -201,7 +202,8 @@ def p2_legenda():
     form = EscalaP2LegendaForm()
     
     if form.validate_on_submit():
-        legenda = EscalaP2Legenda(**form.data)
+        legenda = EscalaP2Legenda()
+        form.populate_obj(legenda)
         db.session.add(legenda)
         db.session.commit()
         flash('Legenda adicionada!', 'success')
@@ -266,7 +268,8 @@ def salvas_item_novo(id):
     
     form = EscalaSalvaItemForm()
     if form.validate_on_submit():
-        item = EscalaSalvaItem(escala_salva_id=id, **form.data)
+        item = EscalaSalvaItem(escala_salva_id=id)
+        form.populate_obj(item)
         db.session.add(item)
         db.session.commit()
         flash('Item adicionado!', 'success')
