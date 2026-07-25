@@ -37,7 +37,7 @@ RUN mkdir -p /app/uploads /app/backups /app/logs /app/instance && \
 USER appuser
 
 # Expose port
-EXPOSE 5000
+EXPOSE ${PORT:-5000}
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \

@@ -3,8 +3,10 @@
 import os
 import multiprocessing
 
+basedir = os.path.abspath(os.path.dirname(__file__))
+
 # Server socket
-bind = "0.0.0.0:5000"
+bind = "0.0.0.0:" + os.environ.get("PORT", "5000")
 backlog = 2048
 
 # Worker processes
@@ -17,8 +19,10 @@ max_requests = 1000
 max_requests_jitter = 100
 
 # Logging
-accesslog = "/app/logs/access.log"
-errorlog = "/app/logs/error.log"
+log_dir = os.path.join(basedir, 'logs')
+os.makedirs(log_dir, exist_ok=True)
+accesslog = os.path.join(log_dir, "access.log")
+errorlog = os.path.join(log_dir, "error.log")
 loglevel = os.environ.get('LOG_LEVEL', 'info').lower()
 access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %(D)s'
 
@@ -27,9 +31,6 @@ proc_name = 'sispm'
 
 # Server mechanics
 daemon = False
-pidfile = '/tmp/gunicorn.pid'
-user = 'appuser'
-group = 'appuser'
 tmp_upload_dir = '/tmp'
 
 # Security
