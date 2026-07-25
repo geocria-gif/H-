@@ -86,7 +86,7 @@ def adicionar_militar():
             escala = escala_service.salvar_escala(
                 opm_evento_id=form.opm_evento_id.data,
                 matricula=form.matricula.data,
-                data=form.escala_data.data.isoformat() if form.escala_data.data else '',
+                data=form.escala_data.data or '',
                 hora_inicio=form.hora_inicio.data or '',
                 hora_fim=form.hora_fim.data or '',
                 tipo_pagamento=form.tipo_pagamento.data

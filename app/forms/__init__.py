@@ -159,9 +159,9 @@ class OpmEventoForm(FlaskForm):
 
 
 class EscalaForm(FlaskForm):
-    opm_evento_id = HiddenField('OPM Evento', validators=[DataRequired()])
+    opm_evento_id = SelectField('OPM Evento', coerce=int, validators=[DataRequired()])
     matricula = StringField('Matrícula', validators=[DataRequired()])
-    escala_data = DateField('Data', format='%Y-%m-%d', validators=[DataRequired()])
+    escala_data = StringField('Data', validators=[DataRequired()])
     escala_ch_diurna = FloatField('CH Diurna', validators=[Optional(), NumberRange(min=0)], default=0)
     escala_ch_noturna = FloatField('CH Noturna', validators=[Optional(), NumberRange(min=0)], default=0)
     hora_inicio = StringField('Hora Início (HH:MM)', validators=[Optional(), Length(max=5)])

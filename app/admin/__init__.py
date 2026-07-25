@@ -231,3 +231,30 @@ def logs():
             logs[log_file] = ['Arquivo não encontrado']
     
     return render_template('admin/logs.html', logs=logs)
+
+
+@admin_bp.route('/efetivo')
+@login_required
+def efetivo():
+    if not current_user.is_supervisor:
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('dashboard.index'))
+    
+    page = request.args.get('page', 1, type=int)
+    search = request.args.get('search', '')
+    opm_filter = request.args.get('opm', '')
+    
+    query = EfetivoPM.query
+    if search:
+        query = query.filter(
+            db.or_(
+                EfetivoPM.nome.ilike(f'%{search}%'),
+                EfetivoPM.matricula.ilike(f'%{search}%')
+            )
+        )
+    if opm_filter:
+        query = query.filter(EfetivoPM.opm_id == opm_filter)
+    
+    pagination = query.order_by(EfetivoPM.nome).paginate(page=page, per_page=30, error_out=False)
+    opms = OPM.query.order_by(OPM.opm_sigla).all()
+    return render_template('admin/efetivo.html', pagination=pagination, search=search, opm_filter=opm_filter, opms=opms)
