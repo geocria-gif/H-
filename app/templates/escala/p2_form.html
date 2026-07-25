@@ -24,18 +24,13 @@
                         <div class="row g-3">
                             <div class="col-md-3">
                                 <label class="form-label">{{ form.mes.label }}</label>
-                                {{ form.mes(class="form-control") }}
+                                {{ form.mes(class="form-control", id="field_mes") }}
                                 {% if form.mes.errors %}<div class="text-danger small">{{ form.mes.errors[0] }}</div>{% endif %}
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">{{ form.ano.label }}</label>
-                                {{ form.ano(class="form-control") }}
+                                {{ form.ano(class="form-control", id="field_ano") }}
                                 {% if form.ano.errors %}<div class="text-danger small">{{ form.ano.errors[0] }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">{{ form.gh.label }}</label>
-                                {{ form.gh(class="form-control") }}
-                                {% if form.gh.errors %}<div class="text-danger small">{{ form.gh.errors[0] }}</div>{% endif %}
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">{{ form.tipo_pagamento.label }}</label>
@@ -68,15 +63,20 @@
                                 {{ form.nome(class="form-control", id="field_nome") }}
                                 {% if form.nome.errors %}<div class="text-danger small">{{ form.nome.errors[0] }}</div>{% endif %}
                             </div>
+                            <div class="col-md-3">
+                                <label class="form-label">GH (Posto/Grad)</label>
+                                {{ form.gh(class="form-control", id="field_gh") }}
+                                {% if form.gh.errors %}<div class="text-danger small">{{ form.gh.errors[0] }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">OPM (Unidade)</label>
+                                {{ form.opm(class="form-control", id="field_opm") }}
+                                {% if form.opm.errors %}<div class="text-danger small">{{ form.opm.errors[0] }}</div>{% endif %}
+                            </div>
                             <div class="col-md-4">
                                 <label class="form-label">{{ form.funcao.label }}</label>
                                 {{ form.funcao(class="form-control", id="field_funcao") }}
                                 {% if form.funcao.errors %}<div class="text-danger small">{{ form.funcao.errors[0] }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">OPM (Posto/Grad)</label>
-                                {{ form.opm(class="form-control", id="field_opm") }}
-                                {% if form.opm.errors %}<div class="text-danger small">{{ form.opm.errors[0] }}</div>{% endif %}
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">{{ form.telefone.label }}</label>
@@ -110,13 +110,10 @@
                         {% endif %}
 
                         <div class="table-responsive mb-3">
-                            <table class="table table-bordered table-sm mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        {% for d in range(1, 32) %}
-                                        <th class="text-center px-1" style="min-width: 32px;">{{ d }}</th>
-                                        {% endfor %}
-                                    </tr>
+                            <table class="table table-bordered table-sm mb-0" id="tabela_dias">
+                                <thead>
+                                    <tr id="dow_row"></tr>
+                                    <tr id="dia_row"></tr>
                                 </thead>
                                 <tbody>
                                     <tr>
@@ -159,6 +156,58 @@
 {% block extra_js %}
 <script>
 (function() {
+    const DOW = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'];
+    const dowRow = document.getElementById('dow_row');
+    const diaRow = document.getElementById('dia_row');
+    const fieldMes = document.getElementById('field_mes');
+    const fieldAno = document.getElementById('field_ano');
+
+    function renderDiaHeaders() {
+        const mes = parseInt(fieldMes.value) || 0;
+        const ano = parseInt(fieldAno.value) || 2026;
+        dowRow.innerHTML = '';
+        diaRow.innerHTML = '';
+
+        for (let d = 1; d <= 31; d++) {
+            const thDow = document.createElement('th');
+            thDow.className = 'text-center px-1';
+            thDow.style.cssText = 'min-width:32px; font-size:0.6rem;';
+
+            const thDia = document.createElement('th');
+            thDia.className = 'text-center px-1';
+            thDia.style.cssText = 'min-width:32px; font-size:0.75rem;';
+            thDia.textContent = d;
+
+            if (mes >= 1 && mes <= 12 && ano >= 2020) {
+                try {
+                    const dt = new Date(ano, mes - 1, d);
+                    if (dt.getMonth() === mes - 1 && dt.getDate() === d) {
+                        const dow = DOW[dt.getDay()];
+                        thDow.textContent = dow;
+                        if (dow === 'SEX' || dow === 'SAB' || dow === 'DOM') {
+                            thDow.style.color = '#e74c3c';
+                            thDow.style.fontWeight = 'bold';
+                            thDia.style.backgroundColor = '#fde8e8';
+                        }
+                    } else {
+                        thDow.textContent = '-';
+                        thDow.style.color = '#ccc';
+                        thDia.style.color = '#ccc';
+                    }
+                } catch(e) {
+                    thDow.textContent = '';
+                }
+            }
+
+            dowRow.appendChild(thDow);
+            diaRow.appendChild(thDia);
+        }
+    }
+
+    fieldMes.addEventListener('change', renderDiaHeaders);
+    fieldAno.addEventListener('change', renderDiaHeaders);
+    renderDiaHeaders();
+
     const input = document.getElementById('busca_militar');
     const btn = document.getElementById('btn_buscar');
     const resultados = document.getElementById('resultados_busca');
@@ -166,9 +215,19 @@
     const fieldNome = document.getElementById('field_nome');
     const fieldFuncao = document.getElementById('field_funcao');
     const fieldOpm = document.getElementById('field_opm');
+    const fieldGh = document.getElementById('field_gh');
     const fieldTelefone = document.getElementById('field_telefone');
 
     let debounceTimer;
+
+    function preencherCampos(m) {
+        fieldMatricula.value = m.matricula;
+        fieldNome.value = m.nome;
+        fieldGh.value = m.cargo || '';
+        fieldOpm.value = m.opm || '';
+        fieldFuncao.value = m.funcao || '';
+        fieldTelefone.value = m.telefone || '';
+    }
 
     function buscar() {
         const termo = input.value.trim();
@@ -193,11 +252,7 @@
                         (m.cargo ? ' <small class="text-muted">(' + m.cargo + ')</small>' : '') +
                         (m.opm ? ' <small class="text-muted">' + m.opm + '</small>' : '');
                     item.addEventListener('click', function() {
-                        fieldMatricula.value = m.matricula;
-                        fieldNome.value = m.nome;
-                        fieldFuncao.value = m.funcao || '';
-                        fieldOpm.value = m.opm || '';
-                        fieldTelefone.value = m.telefone || '';
+                        preencherCampos(m);
                         resultados.style.display = 'none';
                         input.value = '';
                     });
@@ -234,11 +289,7 @@
             .then(r => r.json())
             .then(data => {
                 if (data.length === 1) {
-                    const m = data[0];
-                    fieldNome.value = m.nome;
-                    fieldFuncao.value = m.funcao || '';
-                    fieldOpm.value = m.opm || '';
-                    fieldTelefone.value = m.telefone || '';
+                    preencherCampos(data[0]);
                 }
             });
     });

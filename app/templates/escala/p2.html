@@ -86,22 +86,26 @@
                 <table class="table table-bordered table-sm mb-0">
                     <thead>
                         <tr class="table-dark">
-                            <th class="text-center" rowspan="2" style="min-width: 50px;">Ações</th>
-                            <th class="text-center" rowspan="2">Função</th>
+                            <th class="text-center" rowspan="2" style="min-width: 50px;">Acoes</th>
+                            <th class="text-center" rowspan="2">Funcao</th>
                             <th class="text-center" rowspan="2">OPM</th>
                             <th class="text-center" rowspan="2">GH</th>
                             <th class="text-center" rowspan="2">Nome</th>
                             <th class="text-center" rowspan="2">Mat.</th>
                             <th class="text-center" rowspan="2">Tel</th>
                             {% for dia in range(1, 32) %}
-                            <th class="text-center px-1" style="min-width: 30px; font-size: 0.6rem; color: #adb5bd;">
-                                {{ dia_semanas.get(dia, '') }}
+                            {% set dow = dia_semanas.get(dia, '') %}
+                            {% set is_fim = dow in ['SEX', 'Sab', 'Dom'] %}
+                            <th class="text-center px-1" style="min-width: 30px; font-size: 0.6rem; color: {{ '#ff6b6b' if is_fim else '#adb5bd' }}; {{ 'font-weight:bold;' if is_fim else '' }}">
+                                {{ dow }}
                             </th>
                             {% endfor %}
                         </tr>
                         <tr class="table-dark">
                             {% for dia in range(1, 32) %}
-                            <th class="text-center px-1" style="min-width: 30px; font-size: 0.75rem;">{{ dia }}</th>
+                            {% set dow = dia_semanas.get(dia, '') %}
+                            {% set is_fim = dow in ['SEX', 'Sab', 'Dom'] %}
+                            <th class="text-center px-1" style="min-width: 30px; font-size: 0.75rem; {{ 'background-color:#4a1a1a;' if is_fim else '' }}">{{ dia }}</th>
                             {% endfor %}
                         </tr>
                     </thead>
@@ -131,7 +135,9 @@
                             <td class="text-center">{{ escala.matricula }}</td>
                             <td class="text-nowrap">{{ escala.telefone or '-' }}</td>
                             {% for dia in range(1, 32) %}
-                            <td class="text-center px-1">
+                            {% set dow = dia_semanas.get(dia, '') %}
+                            {% set is_fim = dow in ['SEX', 'Sab', 'Dom'] %}
+                            <td class="text-center px-1" style="{{ 'background-color:#fff5f5;' if is_fim else '' }}">
                                 {% set dias = escala.dias_dict or {} %}
                                 {% set dia_val = dias.get(dia|string, dias.get(dia, '')) %}
                                 {% if dia_val %}
