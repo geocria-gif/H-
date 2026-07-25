@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>GestOper CPR-CN — Gestão Operacional</title>
+<title>H.Extra PM — Sistema de Gestão de Hora Extra</title>
 
 
 <!-- Dependências embutidas para uso offline -->
@@ -902,9 +902,12 @@ tbody tr:hover{background:#1c2541}
 
   <!-- ===================== SIDEBAR ===================== -->
   <aside class="sidebar" id="sidebar">
-    <div class="brand" style="flex-direction:column;padding:0;text-align:center">
-      <img src="assets/img/GestOper.png" alt="GestOper" style="width:100%;height:auto;display:block">
-      <div style="padding:6px 12px 10px;font-size:13px;color:#94a3b8;font-weight:600;letter-spacing:.5px">Gestão Operacional</div>
+    <div class="brand">
+      <div class="brand-icon">H+</div>
+      <div>
+        <div class="brand-name">H.Extra PM</div>
+        <div class="brand-sub">Gestão de Escala</div>
+      </div>
     </div>
 
     <div class="nav-section">Principal</div>
@@ -1313,12 +1316,6 @@ tbody tr:hover{background:#1c2541}
                 <th>CNH</th>
                 <th>Categoria</th>
                 <th>Tipo Sang.</th>
-                <th>Data Nasc.</th>
-                <th>Idade</th>
-                <th>Admissão</th>
-                <th>Tempo Serv.</th>
-                <th>Local Trab.</th>
-                <th>Comport.</th>
                 <th></th>
               </tr>
             </thead>
@@ -1920,7 +1917,7 @@ ORDER BY qtd DESC;</textarea>
       </div>
       <div class="card">
         <div class="card-title">ℹ️ Sobre o Sistema</div>
-        <div class="card-sub">Aplicativo gerado a partir do Microsoft Access "Aplicativo H.Extra.mdb" — renomeado para GestOper CPR-CN</div>
+        <div class="card-sub">Aplicativo gerado a partir do Microsoft Access "Aplicativo H.Extra.mdb"</div>
         <ul style="color:var(--muted);font-size:13px;line-height:1.8;margin:0;padding-left:20px">
           <li>Banco SQLite carregado em memória — todas as alterações são feitas localmente no seu navegador</li>
           <li>Para persistir alterações, use <b>Exportar Banco</b> e guarde o arquivo .sqlite</li>
@@ -1993,8 +1990,9 @@ ORDER BY qtd DESC;</textarea>
 <div id="login-overlay" style="display:none;position:fixed;z-index:99999;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,.85);backdrop-filter:blur(6px);align-items:center;justify-content:center;font-family:Inter,system-ui,sans-serif">
   <div style="background:#1e293b;border-radius:16px;padding:36px 40px;width:380px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.5);border:1px solid #334155">
     <div style="text-align:center;margin-bottom:24px">
-      <div style="margin-bottom:6px"><img src="assets/img/GestOper.png" alt="GestOper" style="width:180px;height:auto"></div>
-      <div style="font-size:13px;color:#94a3b8;margin-top:4px">Gestão Operacional</div>
+      <div style="font-size:42px;margin-bottom:6px">👮</div>
+      <div style="font-size:20px;font-weight:700;color:#f1f5f9">H.Extra PM</div>
+      <div style="font-size:13px;color:#94a3b8;margin-top:4px">Gestão de Escala — CPR-CN</div>
     </div>
     <div id="login-error" style="display:none;background:#7f1d1d;color:#fca5a5;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;text-align:center"></div>
     <div class="field" style="margin-bottom:12px">
@@ -2281,10 +2279,6 @@ function migrateSchema(){
     addCol("CNH","TEXT");
     addCol("Categoria","TEXT");
     addCol("TipoSanguineo","TEXT");
-    addCol("Admissao","TEXT");
-    addCol("DataNascimento","TEXT");
-    addCol("LocalTrabalho","TEXT");
-    addCol("Comportamento","TEXT");
   } catch(e){ console.warn("migration error (tbEfetivoPM cols):", e); }
 }
 
@@ -2627,7 +2621,7 @@ const Dashboard = {
           <div class="mx-auto w-16 h-16 bg-[#1e2937] rounded-full flex items-center justify-center mb-4">
             <span class="text-4xl">👋</span>
           </div>
-          <h2 class="text-2xl font-bold text-white mb-2">Bem-vindo ao GestOper CPR-CN!</h2>
+          <h2 class="text-2xl font-bold text-white mb-2">Bem-vindo ao H.Extra PM!</h2>
           <p class="text-[#94a3b8] max-w-md mx-auto mb-6">
             Este é o seu primeiro acesso. Para começar a usar o sistema, cadastre os dados básicos:
           </p>
@@ -3129,7 +3123,7 @@ const Dashboard = {
     ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 4; ctx.stroke();
     // Footer
     ctx.fillStyle = '#64748b'; ctx.font = '17px Inter,sans-serif'; ctx.textBaseline = 'bottom';
-    ctx.fillText(`Mapa gerado em ${new Date().toLocaleDateString('pt-BR')} · GestOper CPR-CN · dados © OpenStreetMap`, W/2, H-12);
+    ctx.fillText(`Mapa gerado em ${new Date().toLocaleDateString('pt-BR')} · H.Extra PM · dados © OpenStreetMap`, W/2, H-12);
     ctx.textBaseline = 'top'; ctx.fillStyle = '#f59e0b80'; ctx.font = '14px Inter,sans-serif'; ctx.textAlign = 'left';
     ctx.fillText('ⓘ Apenas municípios da área do CPR-CN', 18, MAP_TOP+5);
     canvas.toBlob(b => downloadFile(b, `mapa_cprcn_${new Date().toISOString().slice(0,10)}.png`));
@@ -3312,28 +3306,11 @@ function formatDateBr(s){
 }
 
 /* ===================== EFETIVO ===================== */
-const POSTOS_GRAD = [
-  'CEL PM','TEN CEL PM','MAJ PM','CAP PM','TEN PM','ASP OF PM',
-  'AL OF PM 1 ANO','AL OF PM 2 ANO','AL OF PM 3 ANO',
-  'SUB TEN PM','SGT PM','CB PM','SD PM','AL SD PM',
-  'ALUNO OFICIAL - CFOA PM - SGT','ALUNO OFICIAL - CFOA PM - ST',
-  'ALUNO OFICIAL - CFTA PM - ST'
-];
 const Efetivo = {
   page:1, pageSize:50, sort:"Nome", dir:"ASC",
   init(){
-    const all = exec("SELECT Matricula, Cargo FROM tbEfetivoPM WHERE Cargo IS NOT NULL AND Cargo!=''");
-    const cargosMap = {};
-    exec("SELECT CargoId,PostoGrad FROM tbCargo").forEach(r => cargosMap[r.CargoId] = r.PostoGrad);
-    const pendentes = all.filter(r => cargosMap[r.Cargo]);
-    if (pendentes.length) {
-      db.run("BEGIN");
-      pendentes.forEach(r => db.run("UPDATE tbEfetivoPM SET Cargo=? WHERE Matricula=?",[cargosMap[r.Cargo],r.Matricula]));
-      db.run("COMMIT");
-      try { localStorage.setItem('sispm_db', btoa(String.fromCharCode(...new Uint8Array(db.export())))); } catch(e){}
-      console.log("Cargos migrados:", pendentes.length);
-    }
-    $("ef-filter-cargo").innerHTML = `<option value="">Todos os Cargos</option>` + POSTOS_GRAD.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+    const cargos = exec("SELECT CargoId,PostoGrad FROM tbCargo ORDER BY PostoGrad");
+    $("ef-filter-cargo").innerHTML = `<option value="">Todos os Cargos</option>` + cargos.map(c => `<option value="${c.CargoId}">${escapeHtml(c.PostoGrad)}</option>`).join("");
     const opms = exec("SELECT OpmId, COALESCE(OpmSigla,OpmDesc) s FROM tbOPM ORDER BY s");
     $("ef-filter-opm").innerHTML = `<option value="">Todas as OPMs</option>` + opms.map(o => `<option value="${o.OpmId}">${escapeHtml(o.s)}</option>`).join("");
     this.page = 1;
@@ -3369,17 +3346,16 @@ const Efetivo = {
     if (this.page > totalPages) this.page = totalPages;
     const off = (this.page-1)*this.pageSize;
     const rows = exec(`
-      SELECT e.Matricula, e.Nome, e.Funcao, e.Telefone, e.Cargo PostoGrad, e.OpmId, COALESCE(o.OpmSigla,o.OpmDesc) opm, e.Sit,
-             e.CPF, e.RG, e.Titulo, e.CNH, e.Categoria, e.TipoSanguineo,
-             e.Admissao, e.DataNascimento, e.LocalTrabalho, e.Comportamento
-      FROM tbEfetivoPM e LEFT JOIN tbOPM o ON o.OpmId=e.OpmId
+      SELECT e.Matricula, e.Nome, e.Funcao, e.Telefone, e.Cargo, c.PostoGrad, e.OpmId, COALESCE(o.OpmSigla,o.OpmDesc) opm, e.Sit,
+             e.CPF, e.RG, e.Titulo, e.CNH, e.Categoria, e.TipoSanguineo
+      FROM tbEfetivoPM e LEFT JOIN tbCargo c ON c.CargoId=e.Cargo LEFT JOIN tbOPM o ON o.OpmId=e.OpmId
       ${where} ORDER BY e.${this.sort} ${this.dir} LIMIT ${this.pageSize} OFFSET ${off}
     `, p);
     $("ef-tbody").innerHTML = rows.length ? rows.map(r => `
       <tr>
         <td><b>${escapeHtml(r.Matricula)}</b></td>
         <td>${escapeHtml(r.Nome)}</td>
-        <td><span class="badge">${escapeHtml(r.PostoGrad||"-")}</span></td>
+        <td><span class="badge">${escapeHtml(r.PostoGrad||r.Cargo||"-")}</span></td>
         <td>${escapeHtml(r.opm||"-")}</td>
         <td>${escapeHtml(r.Funcao||"-")}</td>
         <td>${escapeHtml(r.Telefone||"-")}</td>
@@ -3390,73 +3366,31 @@ const Efetivo = {
         <td>${escapeHtml(r.CNH||"-")}</td>
         <td>${escapeHtml(r.Categoria||"-")}</td>
         <td>${escapeHtml(r.TipoSanguineo||"-")}</td>
-        <td>${r.DataNascimento?escapeHtml(r.DataNascimento):"-"}</td>
-        <td>${r.DataNascimento?this._calcIdade(r.DataNascimento):"-"}</td>
-        <td>${r.Admissao?escapeHtml(r.Admissao):"-"}</td>
-        <td>${r.Admissao?this._calcTempo(r.Admissao):"-"}</td>
-        <td>${escapeHtml(r.LocalTrabalho||"-")}</td>
-        <td>${r.Comportamento?`<span class="badge">${escapeHtml(r.Comportamento)}</span>`:"-"}</td>
         <td class="actions-col">
           <button class="btn btn-sm" onclick="Efetivo.openModal('${escapeHtml(r.Matricula)}')">✏️</button>
           <button class="btn btn-sm btn-danger" onclick="Efetivo.del('${escapeHtml(r.Matricula)}')">🗑</button>
         </td>
       </tr>
-    `).join("") : `<tr><td colspan="21" class="empty">Nenhum policial encontrado</td></tr>`;
+    `).join("") : `<tr><td colspan="14" class="empty">Nenhum policial encontrado</td></tr>`;
     $("ef-info").textContent = `${tot.toLocaleString("pt-BR")} registros — página ${this.page} de ${totalPages}`;
     $("efetivo-count").textContent = `${tot.toLocaleString("pt-BR")} policiais cadastrados`;
   },
   prevPage(){ if (this.page>1){this.page--; this.render();} },
   nextPage(){ this.page++; this.render(); },
-  _calcIdade(dtnasc){
-    if(!dtnasc) return '';
-    const hoje=new Date(), n=new Date(dtnasc.split('/').reverse().join('-'));
-    let idade=hoje.getFullYear()-n.getFullYear();
-    const m=hoje.getMonth()-n.getMonth();
-    if(m<0||(m===0&&hoje.getDate()<n.getDate())) idade--;
-    return idade;
-  },
-  _calcTempo(adm){
-    if(!adm) return '';
-    const hoje=new Date(), a=new Date(adm.split('/').reverse().join('-'));
-    let anos=hoje.getFullYear()-a.getFullYear();
-    const m=hoje.getMonth()-a.getMonth();
-    if(m<0||(m===0&&hoje.getDate()<a.getDate())) anos--;
-    const meses=m<0?m+12:m;
-    return `${anos}a ${meses}m`;
-  },
-  _recalc(){
-    const dtnasc=$("m-dtnasc").value, adm=$("m-admissao").value;
-    if(dtnasc){ const d=new Date(dtnasc+'T12:00:00'); let i=new Date().getFullYear()-d.getFullYear(); const m=new Date().getMonth()-d.getMonth(); if(m<0||(m===0&&new Date().getDate()<d.getDate())) i--; $("m-idade").value=i; }
-    else $("m-idade").value='';
-    if(adm){ const a=new Date(adm+'T12:00:00'); let an=new Date().getFullYear()-a.getFullYear(); const m=new Date().getMonth()-a.getMonth(); if(m<0||(m===0&&new Date().getDate()<a.getDate())) an--; const me=m<0?m+12:m; $("m-tempo").value=an+'a '+me+'m'; }
-    else $("m-tempo").value='';
-  },
   openModal(mat){
     const isEdit = !!mat;
-    let r = { Matricula:"", Nome:"", Funcao:"", Telefone:"", Cargo:"", OpmId:"", Sit:"", CPF:"", RG:"", Titulo:"", CNH:"", Categoria:"", TipoSanguineo:"", Admissao:"", DataNascimento:"", LocalTrabalho:"", Comportamento:"" };
+    let r = { Matricula:"", Nome:"", Funcao:"", Telefone:"", Cargo:"", OpmId:"", Sit:"", CPF:"", RG:"", Titulo:"", CNH:"", Categoria:"", TipoSanguineo:"" };
     if (isEdit) r = exec("SELECT * FROM tbEfetivoPM WHERE Matricula=?",[mat])[0];
+    const cargos = exec("SELECT CargoId,PostoGrad FROM tbCargo ORDER BY PostoGrad");
     const opms = exec("SELECT OpmId, COALESCE(OpmSigla,OpmDesc) s FROM tbOPM ORDER BY s");
-    const idadeCalc = r.DataNascimento ? this._calcIdade(r.DataNascimento) : '';
-    const tempoCalc = r.Admissao ? this._calcTempo(r.Admissao) : '';
     openModal(isEdit?"Editar Policial":"Novo Policial", `
       <div class="form-grid">
         <div class="field"><label>Matrícula *</label><input id="m-mat" value="${escapeHtml(r.Matricula||'')}" ${isEdit?'readonly':''} /></div>
         <div class="field"><label>Nome *</label><input id="m-nome" value="${escapeHtml(r.Nome||'')}" /></div>
-        <div class="field"><label>Admissão</label><input id="m-admissao" type="date" value="${r.Admissao||''}" onchange="Efetivo._recalc()" /></div>
-        <div class="field"><label>Data Nascimento</label><input id="m-dtnasc" type="date" value="${r.DataNascimento||''}" onchange="Efetivo._recalc()" /></div>
-        <div class="field"><label>Idade</label><input id="m-idade" readonly style="background:#f0f0f0" value="${idadeCalc}" /></div>
-        <div class="field"><label>Tempo de Serviço</label><input id="m-tempo" readonly style="background:#f0f0f0" value="${tempoCalc}" /></div>
-        <div class="field"><label>Local de Trabalho</label><input id="m-local" value="${escapeHtml(r.LocalTrabalho||'')}" /></div>
-        <div class="field"><label>Comportamento</label>
-          <select id="m-comportamento">
-            <option value="">--</option>
-            ${['BOM','ÓTIMO','EXCELENTE','EXCEPCIONAL','REGULAR','MAU'].map(c=>`<option value="${c}" ${(r.Comportamento||'').toUpperCase()===c?'selected':''}>${c}</option>`).join("")}
-          </select>
-        </div>
         <div class="field"><label>Função</label><input id="m-funcao" value="${escapeHtml(r.Funcao||'')}" /></div>
         <div class="field"><label>Telefone</label><input id="m-telefone" value="${escapeHtml(r.Telefone||'')}" /></div>
         <div class="field"><label>Posto/Graduação</label><select id="m-cargo">
-          <option value="">--</option>${POSTOS_GRAD.map(c=>`<option value="${escapeHtml(c)}" ${r.Cargo===c?'selected':''}>${escapeHtml(c)}</option>`).join("")}
+          <option value="">--</option>${cargos.map(c=>`<option value="${c.CargoId}" ${r.Cargo===c.CargoId?'selected':''}>${escapeHtml(c.PostoGrad)}</option>`).join("")}
         </select></div>
         <div class="field"><label>OPM</label><select id="m-opm">
           <option value="">--</option>${opms.map(o=>`<option value="${o.OpmId}" ${r.OpmId===o.OpmId?'selected':''}>${escapeHtml(o.s)}</option>`).join("")}
@@ -3484,13 +3418,9 @@ const Efetivo = {
       const cnh = $("m-cnh").value.trim() || null;
       const categoria = $("m-categoria").value.trim() || null;
       const tipoSang = $("m-tipo-sang").value.trim() || null;
-      const admissao = $("m-admissao").value || null;
-      const dtnasc = $("m-dtnasc").value || null;
-      const local = $("m-local").value.trim() || null;
-      const comportamento = $("m-comportamento").value || null;
       try {
-        if (isEdit) run("UPDATE tbEfetivoPM SET Nome=?,Funcao=?,Telefone=?,Cargo=?,OpmId=?,Sit=?,CPF=?,RG=?,Titulo=?,CNH=?,Categoria=?,TipoSanguineo=?,Admissao=?,DataNascimento=?,LocalTrabalho=?,Comportamento=? WHERE Matricula=?",[nome,funcao,telefone,cargo,opm,sit,cpf,rg,titulo,cnh,categoria,tipoSang,admissao,dtnasc,local,comportamento,mat2]);
-        else run("INSERT INTO tbEfetivoPM (Matricula,Nome,Funcao,Telefone,Cargo,OpmId,Sit,CPF,RG,Titulo,CNH,Categoria,TipoSanguineo,Admissao,DataNascimento,LocalTrabalho,Comportamento) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",[mat2,nome,funcao,telefone,cargo,opm,sit,cpf,rg,titulo,cnh,categoria,tipoSang,admissao,dtnasc,local,comportamento]);
+        if (isEdit) run("UPDATE tbEfetivoPM SET Nome=?,Funcao=?,Telefone=?,Cargo=?,OpmId=?,Sit=?,CPF=?,RG=?,Titulo=?,CNH=?,Categoria=?,TipoSanguineo=? WHERE Matricula=?",[nome,funcao,telefone,cargo,opm,sit,cpf,rg,titulo,cnh,categoria,tipoSang,mat2]);
+        else run("INSERT INTO tbEfetivoPM (Matricula,Nome,Funcao,Telefone,Cargo,OpmId,Sit,CPF,RG,Titulo,CNH,Categoria,TipoSanguineo) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",[mat2,nome,funcao,telefone,cargo,opm,sit,cpf,rg,titulo,cnh,categoria,tipoSang]);
         closeModal(); toast(isEdit?"Atualizado!":"Cadastrado!"); this.render();
       } catch(e){ toast("Erro: "+e.message,"error"); }
     });
@@ -3503,14 +3433,13 @@ const Efetivo = {
   exportCsv(){
     const [where, p] = this.buildWhere();
     const rows = exec(`
-      SELECT e.Matricula, e.Nome, e.Funcao, e.Telefone, e.Cargo postoGrad, COALESCE(o.OpmSigla,o.OpmDesc) opm, e.Sit,
-             e.CPF, e.RG, e.Titulo, e.CNH, e.Categoria, e.TipoSanguineo,
-             e.Admissao, e.DataNascimento, e.LocalTrabalho, e.Comportamento
-      FROM tbEfetivoPM e LEFT JOIN tbOPM o ON o.OpmId=e.OpmId
+      SELECT e.Matricula, e.Nome, e.Funcao, e.Telefone, c.PostoGrad, COALESCE(o.OpmSigla,o.OpmDesc) opm, e.Sit,
+             e.CPF, e.RG, e.Titulo, e.CNH, e.Categoria, e.TipoSanguineo
+      FROM tbEfetivoPM e LEFT JOIN tbCargo c ON c.CargoId=e.Cargo LEFT JOIN tbOPM o ON o.OpmId=e.OpmId
       ${where} ORDER BY e.Nome
     `, p);
-    let csv = "Matrícula;Nome;Função;Telefone;Posto/Grad;OPM;Situação;CPF;RG;Título;CNH;Categoria;Tipo Sanguíneo;Admissão;Data Nascimento;Local Trabalho;Comportamento\n";
-    rows.forEach(r => csv += `${r.Matricula};${r.Nome};${r.Funcao||""};${r.Telefone||""};${r.postoGrad||""};${r.opm||""};${r.Sit||""};${r.CPF||""};${r.RG||""};${r.Titulo||""};${r.CNH||""};${r.Categoria||""};${r.TipoSanguineo||""};${r.Admissao||""};${r.DataNascimento||""};${r.LocalTrabalho||""};${r.Comportamento||""}\n`);
+    let csv = "Matrícula;Nome;Função;Telefone;Posto/Grad;OPM;Situação;CPF;RG;Título;CNH;Categoria;Tipo Sanguíneo\n";
+    rows.forEach(r => csv += `${r.Matricula};${r.Nome};${r.Funcao||""};${r.Telefone||""};${r.PostoGrad||""};${r.opm||""};${r.Sit||""};${r.CPF||""};${r.RG||""};${r.Titulo||""};${r.CNH||""};${r.Categoria||""};${r.TipoSanguineo||""}\n`);
     downloadFile(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}), "efetivo.csv");
     toast("CSV exportado!");
   },
@@ -3536,10 +3465,6 @@ const Efetivo = {
           const pg = mapIdx("posto/grad") ?? mapIdx("postograd");
           const op = mapIdx("opm");
           const si = mapIdx("situação") ?? mapIdx("situacao");
-          const adm = mapIdx("admissão") >= 0 ? mapIdx("admissão") : mapIdx("admissao");
-          const dn = mapIdx("data nascimento") >= 0 ? mapIdx("data nascimento") : mapIdx("datanascimento");
-          const lt = mapIdx("local trabalho") >= 0 ? mapIdx("local trabalho") : mapIdx("localtrabalho");
-          const cp = mapIdx("comportamento");
           if (mi==null || mi<0 || no==null || no<0) { toast("CSV precisa das colunas Matrícula e Nome","error"); return; }
           let imported = 0, skipped = 0;
           const tx = (sql, params) => run(sql, params);
@@ -3553,20 +3478,21 @@ const Efetivo = {
             const postoGrad = pg!=null&&pg>=0 ? (cols[pg]||"").trim() : "";
             const opmStr = op!=null&&op>=0 ? (cols[op]||"").trim() : "";
             const sit = si!=null&&si>=0 ? (cols[si]||"").trim() : "";
-            const admissao = adm>=0 ? (cols[adm]||"").trim() : "";
-            const dtnasc = dn>=0 ? (cols[dn]||"").trim() : "";
-            const localTrab = lt>=0 ? (cols[lt]||"").trim() : "";
-            const comportamento = cp>=0 ? (cols[cp]||"").trim() : "";
             let opmId = null;
             if (opmStr) {
               const opmRow = exec("SELECT OpmId FROM tbOPM WHERE OpmSigla=? OR OpmDesc LIKE ?",[opmStr, "%"+opmStr+"%"])[0];
               if (opmRow) opmId = opmRow.OpmId;
             }
+            let cargoId = null;
+            if (postoGrad) {
+              const cargoRow = exec("SELECT CargoId FROM tbCargo WHERE PostoGrad=?",[postoGrad])[0];
+              if (cargoRow) cargoId = cargoRow.CargoId;
+            }
             const existing = exec("SELECT Matricula FROM tbEfetivoPM WHERE Matricula=?",[mat])[0];
             if (existing) {
-              tx("UPDATE tbEfetivoPM SET Nome=?,Funcao=?,Telefone=?,Cargo=?,OpmId=?,Sit=?,Admissao=?,DataNascimento=?,LocalTrabalho=?,Comportamento=? WHERE Matricula=?",[nome,funcao,telefone||null,postoGrad||null,opmId,sit||null,admissao||null,dtnasc||null,localTrab||null,comportamento||null,mat]);
+              tx("UPDATE tbEfetivoPM SET Nome=?,Funcao=?,Telefone=?,Cargo=?,OpmId=?,Sit=? WHERE Matricula=?",[nome,funcao,telefone||null,cargoId,opmId,sit||null,mat]);
             } else {
-              tx("INSERT INTO tbEfetivoPM (Matricula,Nome,Funcao,Telefone,Cargo,OpmId,Sit,Admissao,DataNascimento,LocalTrabalho,Comportamento) VALUES (?,?,?,?,?,?,?,?,?,?,?)",[mat,nome,funcao,telefone||null,postoGrad||null,opmId,sit||null,admissao||null,dtnasc||null,localTrab||null,comportamento||null]);
+              tx("INSERT INTO tbEfetivoPM (Matricula,Nome,Funcao,Telefone,Cargo,OpmId,Sit) VALUES (?,?,?,?,?,?,?)",[mat,nome,funcao,telefone||null,cargoId,opmId,sit||null]);
             }
             imported++;
           }
@@ -6040,14 +5966,15 @@ const EscalasSalvas = {
     const r=exec("SELECT * FROM tbEscalaSalva WHERE Id=?",[id])[0];
     if(!r){ toast("Escala não encontrada","error"); return; }
     try{
-      const nova = r.Ativa ? 0 : 1;
-      run("UPDATE tbEscalaSalva SET Ativa=? WHERE Id=?",[nova,id]);
-      toast(`"${r.Nome}" ${nova?'ativada':'desativada'} para cálculos!`);
+      run("UPDATE tbEscalaSalva SET Ativa=0");
+      run("UPDATE tbEscalaSalva SET Ativa=1 WHERE Id=?",[id]);
+      toast(`"${r.Nome}" definida como ativa para cálculos!`);
       this.render();
     } catch(e){ toast("Erro: "+e.message,"error"); }
   },
-  getAtivas(){
-    return exec("SELECT * FROM tbEscalaSalva WHERE Ativa=1");
+  getAtiva(){
+    const r=exec("SELECT * FROM tbEscalaSalva WHERE Ativa=1")[0];
+    return r||null;
   }
 };
 
@@ -6566,24 +6493,19 @@ const RelatorioHoras = {
     // tbEscala (Escala de Eventos)
     const esc=exec(`SELECT e.Matricula,e.Nome,c.PostoGrad,es.EscalaCHDiurna,es.EscalaCHNoturna FROM tbEscala es JOIN tbEfetivoPM e ON e.Matricula=es.Matricula LEFT JOIN tbCargo c ON c.CargoId=e.Cargo WHERE es.EscalaData LIKE ?${tipoWhere}`,[mesStr+'%'].concat(tipoParam));
     esc.forEach(r=>add(r.Matricula,r.Nome,r.PostoGrad,+r.EscalaCHDiurna||0,+r.EscalaCHNoturna||0));
-    // Origem: escalas salvas ativas ou tbEscalaP2 diretamente
-    const ativas=EscalasSalvas.getAtivas();
+    // Origem: escala salva ativa ou tbEscalaP2 diretamente
+    const ativa=EscalasSalvas.getAtiva();
     const tipoWhere2 = tipo ? " AND TipoPagamento=?" : "";
     const tipoParam2 = tipo ? [tipo] : [];
-    let usouAtiva = false;
-    ativas.forEach(ativa => {
-      if(ativa.Mes===mes+1 && ativa.Ano===ano){
-        usouAtiva = true;
-        const p2=exec(`SELECT * FROM tbEscalaSalvaItem WHERE EscalaSalvaId=? AND IsSeparador=0${tipoWhere2}`,[ativa.Id].concat(tipoParam2));
-        p2.forEach(r=>{
-          const dias=GerarEscalaP2._getDias(r.Dias);
-          let chd=0,chn=0;
-          for(const dia in dias){ const ch=GerarEscalaP2._calcDiaHoras(dias[dia]); chd+=ch.hD; chn+=ch.hN; }
-          add(r.Matricula,r.Nome,r.GH,chd,chn);
-        });
-      }
-    });
-    if(!usouAtiva){
+    if(ativa && ativa.Mes===mes+1 && ativa.Ano===ano){
+      const p2=exec(`SELECT * FROM tbEscalaSalvaItem WHERE EscalaSalvaId=? AND IsSeparador=0${tipoWhere2}`,[ativa.Id].concat(tipoParam2));
+      p2.forEach(r=>{
+        const dias=GerarEscalaP2._getDias(r.Dias);
+        let chd=0,chn=0;
+        for(const dia in dias){ const ch=GerarEscalaP2._calcDiaHoras(dias[dia]); chd+=ch.hD; chn+=ch.hN; }
+        add(r.Matricula,r.Nome,r.GH,chd,chn);
+      });
+    } else {
       const p2=exec(`SELECT * FROM tbEscalaP2 WHERE Mes=? AND Ano=? AND IsSeparador=0${tipoWhere2}`,[mes+1,ano].concat(tipoParam2));
       p2.forEach(r=>{
         const dias=GerarEscalaP2._getDias(r.Dias);

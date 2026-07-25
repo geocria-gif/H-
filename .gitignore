@@ -1,7 +1,101 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Database
 *.sqlite
-* - Copia*
-CARd/
-NOVO/
-CPR-CN_edited.png
-PMBA_branco.png
-hextra_2026-07-13 (7).sqlite
+*.sqlite3
+*.db
+instance/
+
+# Migrations
+migrations/versions/*.py
+!migrations/versions/__init__.py
+
+# Logs
+logs/
+*.log
+
+# Uploads
+uploads/
+
+# Backups
+backups/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Distribution
+dist/
+build/
+*.egg-info/
+
+# Docker
+.docker/
+
+# SSL certificates
+ssl/
+
+# Node modules (if any frontend build)
+node_modules/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Python profiling
+*.prof
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Spyder
+.spyderproject
+.spyproject
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Coverage
+coverage.xml
+*.cover
+
+# Hypothesis
+.hypothesis/
+
+# IPython
+profile_default/
+
+# PyInstaller
+*.manifest
+*.spec

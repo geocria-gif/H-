@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}Administração - SISPM{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="h3 mb-4"><i class="bi bi-gear me-2"></i>Painel Administrativo</h1>
+    
+    <div class="row g-4">
+        <div class="col-md-6 col-xl-3">
+            <a href="{{ url_for('admin.usuarios') }}" class="text-decoration-none">
+                <div class="card admin-card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-people fs-1 text-primary mb-3"></i>
+                        <h5 class="card-title">Usuários</h5>
+                        <p class="card-text text-muted">Gerenciar usuários e permissões</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <a href="{{ url_for('admin.cargos') }}" class="text-decoration-none">
+                <div class="card admin-card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-briefcase fs-1 text-success mb-3"></i>
+                        <h5 class="card-title">Cargos/Postos</h5>
+                        <p class="card-text text-muted">Gerenciar postos e graduações</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <a href="{{ url_for('admin.opms') }}" class="text-decoration-none">
+                <div class="card admin-card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-building fs-1 text-info mb-3"></i>
+                        <h5 class="card-title">OPMs</h5>
+                        <p class="card-text text-muted">Organizações Policiais Militares</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <a href="{{ url_for('admin.tabela_valores') }}" class="text-decoration-none">
+                <div class="card admin-card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-currency-dollar fs-1 text-warning mb-3"></i>
+                        <h5 class="card-title">Tabela de Valores</h5>
+                        <p class="card-text text-muted">Valores HE/VD por posto</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <a href="{{ url_for('admin.efetivos') }}" class="text-decoration-none">
+                <div class="card admin-card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-person-badge fs-1 text-danger mb-3"></i>
+                        <h5 class="card-title">Efetivos</h5>
+                        <p class="card-text text-muted">Gerenciar efetivo PM</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <a href="{{ url_for('admin.municipios') }}" class="text-decoration-none">
+                <div class="card admin-card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-geo-alt fs-1 text-secondary mb-3"></i>
+                        <h5 class="card-title">Municípios</h5>
+                        <p class="card-text text-muted">Cadastro de municípios</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <a href="{{ url_for('admin.viaturas') }}" class="text-decoration-none">
+                <div class="card admin-card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-truck fs-1 text-dark mb-3"></i>
+                        <h5 class="card-title">Viaturas</h5>
+                        <p class="card-text text-muted">Frota de viaturas</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <a href="{{ url_for('admin.backup') }}" class="text-decoration-none">
+                <div class="card admin-card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-database fs-1 text-success mb-3"></i>
+                        <h5 class="card-title">Backup</h5>
+                        <p class="card-text text-muted">Backup e restauração do BD</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <a href="{{ url_for('admin.logs') }}" class="text-decoration-none">
+                <div class="card admin-card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-file-earmark-text fs-1 text-warning mb-3"></i>
+                        <h5 class="card-title">Logs</h5>
+                        <p class="card-text text-muted">Visualizar logs do sistema</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

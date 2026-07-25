@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatório de Horas - SISPM{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><i class="bi bi-file-earmark-bar-graph me-2"></i>Relatório de Horas</h1>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                {{ form.hidden_tag() }}
+                <div class="col-md-3">
+                    <label class="form-label">{{ form.mes.label }}</label>
+                    {{ form.mes(class="form-select") }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">{{ form.ano.label }}</label>
+                    {{ form.ano(class="form-select") }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">{{ form.tipo_pagamento.label }}</label>
+                    {{ form.tipo_pagamento(class="form-select") }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">{{ form.opm_id.label }}</label>
+                    {{ form.opm_id(class="form-select") }}
+                </div>
+                <div class="col-12">
+                    {{ form.submit(class="btn btn-primary") }}
+                    <a href="{{ url_for('relatorio.exportar', mes=request.args.get('mes'), ano=request.args.get('ano'), tipo_pagamento=request.args.get('tipo_pagamento'), opm_id=request.args.get('opm_id')) }}" class="btn btn-success">
+                        <i class="bi bi-download me-1"></i>Exportar CSV
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    {% if relatorio %}
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Resultado do Relatório</h5>
+            <div>
+                <span class="badge bg-primary me-2">Total Dias: {{ total_geral }}</span>
+                <span class="badge bg-success">Valor Total: {{ valor_geral|currency }}</span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Evento</th>
+                            <th>OPM</th>
+                            <th>Matrícula</th>
+                            <th>Nome</th>
+                            <th>Posto/Grad</th>
+                            <th>CH Diurna</th>
+                            <th>CH Noturna</th>
+                            <th>Dias</th>
+                            <th>Tipo</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in relatorio %}
+                        <tr>
+                            <td>{{ item.evento }}</td>
+                            <td>{{ item.opm }}</td>
+                            <td>{{ item.matricula }}</td>
+                            <td>{{ item.nome }}</td>
+                            <td>{{ item.posto }}</td>
+                            <td>{{ item.ch_diurna }}h</td>
+                            <td>{{ item.ch_noturna }}h</td>
+                            <td>{{ item.dias }}</td>
+                            <td><span class="badge bg-{% if item.tipo_pagamento == 'HE' %}primary{% elif item.tipo_pagamento == 'VD' %}success{% else %}secondary{% endif %}">{{ item.tipo_pagamento }}</span></td>
+                            <td class="fw-bold">{{ item.valor|currency }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% elif request.args.get('mes') %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-search fs-1 text-muted"></i>
+            <h4 class="mt-3 text-muted">Nenhum resultado encontrado</h4>
+            <p class="text-muted">Não há escalas para os filtros selecionados.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

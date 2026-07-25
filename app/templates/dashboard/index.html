@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - SISPM{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Efetivo Total</p>
+                            <h3 class="mb-0 fw-bold">{{ stats.total_efetivos }}</h3>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 rounded-circle p-3">
+                            <i class="bi bi-people fs-2 text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Eventos Ativos</p>
+                            <h3 class="mb-0 fw-bold">{{ stats.total_eventos }}</h3>
+                        </div>
+                        <div class="bg-success bg-opacity-10 rounded-circle p-3">
+                            <i class="bi bi-calendar-event fs-2 text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Ocorrências</p>
+                            <h3 class="mb-0 fw-bold">{{ stats.total_ocorrencias }}</h3>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 rounded-circle p-3">
+                            <i class="bi bi-exclamation-triangle fs-2 text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Viaturas</p>
+                            <h3 class="mb-0 fw-bold">{{ stats.total_viaturas }}</h3>
+                        </div>
+                        <div class="bg-info bg-opacity-10 rounded-circle p-3">
+                            <i class="bi bi-truck fs-2 text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-3">
+        <!-- Ocorrências Recentes -->
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Ocorrências Recentes</h5>
+                    <a href="{{ url_for('ocorrencia.index') }}" class="btn btn-sm btn-outline-primary">Ver Todas</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if ocorrencias_recentes %}
+                    <div class="list-group list-group-flush">
+                        {% for oc in ocorrencias_recentes %}
+                        <a href="#" class="list-group-item list-group-item-action border-0">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <span class="badge bg-{% if oc.tipo == 'ACIDENTE' %}danger{% elif oc.tipo == 'ROUBO' %}warning{% else %}secondary{% endif %} me-2">{{ oc.tipo }}</span>
+                                    <strong>{{ oc.descricao[:60] }}{% if oc.descricao|length > 60 %}...{% endif %}</strong>
+                                </div>
+                                <small class="text-muted">{{ oc.data_hora }}</small>
+                            </div>
+                            {% if oc.cidade %}
+                            <small class="text-muted"><i class="bi bi-geo-alt me-1"></i>{{ oc.cidade }}</small>
+                            {% endif %}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-inbox fs-1"></i>
+                        <p class="mt-2">Nenhuma ocorrência registrada</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Eventos Próximos -->
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Eventos Próximos</h5>
+                    <a href="{{ url_for('evento.index') }}" class="btn btn-sm btn-outline-primary">Ver Todos</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if eventos_proximos %}
+                    <div class="list-group list-group-flush">
+                        {% for ev in eventos_proximos %}
+                        <a href="#" class="list-group-item list-group-item-action border-0">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <strong>{{ ev.evento_desc }}</strong>
+                                    <br><small class="text-muted">{{ ev.evento_dta_inicio }} a {{ ev.evento_dta_fim }}</small>
+                                </div>
+                                <span class="badge bg-{% if ev.tipo_pagamento == 'HE' %}primary{% elif ev.tipo_pagamento == 'VD' %}success{% else %}secondary{% endif %}">{{ ev.tipo_pagamento }}</span>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-calendar-x fs-1"></i>
+                        <p class="mt-2">Nenhum evento agendado</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gráfico Ocorrências por Tipo -->
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>Ocorrências por Tipo</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="ocorrenciasTipoChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gráfico Efetivo por OPM -->
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Efetivo por OPM</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="efetivoOpmChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Ocorrências por Tipo
+    const ocorrenciasTipoCtx = document.getElementById('ocorrenciasTipoChart');
+    if (ocorrenciasTipoCtx) {
+        const labels = {{ ocorrencias_por_tipo|map(attribute=0)|list|tojson }};
+        const data = {{ ocorrencias_por_tipo|map(attribute=1)|list|tojson }};
+        
+        new Chart(ocorrenciasTipoCtx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: [
+                        'rgba(220, 53, 69, 0.8)',
+                        'rgba(255, 193, 7, 0.8)',
+                        'rgba(13, 110, 253, 0.8)',
+                        'rgba(25, 135, 84, 0.8)',
+                        'rgba(111, 66, 193, 0.8)'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+    
+    // Efetivo por OPM
+    const efetivoOpmCtx = document.getElementById('efetivoOpmChart');
+    if (efetivoOpmCtx) {
+        const labels = {{ efetivos_por_opm|map(attribute=0)|list|tojson }};
+        const data = {{ efetivos_por_opm|map(attribute=1)|list|tojson }};
+        
+        new Chart(efetivoOpmCtx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Efetivo',
+                    data: data,
+                    backgroundColor: 'rgba(13, 110, 253, 0.8)',
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { beginAtZero: true }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

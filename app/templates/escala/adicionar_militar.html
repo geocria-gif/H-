@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block title %}Adicionar Militar à Escala - SISPM{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><i class="bi bi-person-plus me-2"></i>Adicionar Militar à Escala</h1>
+        <a href="{{ url_for('escala.geral_mensal') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Voltar
+        </a>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Dados da Escala</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.opm_evento_id.id }}" class="form-label">{{ form.opm_evento_id.label }}</label>
+                                {{ form.opm_evento_id(class="form-select") }}
+                                {% if form.opm_evento_id.errors %}
+                                    <div class="text-danger small">{{ form.opm_evento_id.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.matricula.id }}" class="form-label">{{ form.matricula.label }}</label>
+                                <div class="input-group">
+                                    {{ form.matricula(class="form-control", id="matricula-input", autocomplete="off") }}
+                                    <button type="button" class="btn btn-outline-secondary" id="buscar-militar" title="Buscar militar">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                </div>
+                                <div id="sugestoes-militar" class="dropdown-menu w-100 mt-1" style="display: none; max-height: 200px; overflow-y: auto;"></div>
+                                {% if form.matricula.errors %}
+                                    <div class="text-danger small">{{ form.matricula.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.escala_data.id }}" class="form-label">{{ form.escala_data.label }}</label>
+                                {{ form.escala_data(class="form-control", type="date") }}
+                                {% if form.escala_data.errors %}
+                                    <div class="text-danger small">{{ form.escala_data.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label for="{{ form.hora_inicio.id }}" class="form-label">{{ form.hora_inicio.label }}</label>
+                                {{ form.hora_inicio(class="form-control", type="time") }}
+                                {% if form.hora_inicio.errors %}
+                                    <div class="text-danger small">{{ form.hora_inicio.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label for="{{ form.hora_fim.id }}" class="form-label">{{ form.hora_fim.label }}</label>
+                                {{ form.hora_fim(class="form-control", type="time") }}
+                                {% if form.hora_fim.errors %}
+                                    <div class="text-danger small">{{ form.hora_fim.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.tipo_pagamento.id }}" class="form-label">{{ form.tipo_pagamento.label }}</label>
+                                {{ form.tipo_pagamento(class="form-select") }}
+                                {% if form.tipo_pagamento.errors %}
+                                    <div class="text-danger small">{{ form.tipo_pagamento.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-12">
+                                <div id="militar-info" class="alert alert-info d-none">
+                                    <strong>Militar encontrado:</strong> <span id="militar-nome"></span>
+                                    <br><small>Posto: <span id="militar-posto"></span> | OPM: <span id="militar-opm"></span> | Função: <span id="militar-funcao"></span></small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{{ url_for('escala.geral_mensal') }}" class="btn btn-secondary">Cancelar</a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const matriculaInput = document.getElementById('matricula-input');
+    const sugestoesDiv = document.getElementById('sugestoes-militar');
+    const buscarBtn = document.getElementById('buscar-militar');
+    const militarInfo = document.getElementById('militar-info');
+    const militarNome = document.getElementById('militar-nome');
+    const militarPosto = document.getElementById('militar-posto');
+    const militarOpms = document.getElementById('militar-opm');
+    const militarFuncao = document.getElementById('militar-funcao');
+    
+    let debounceTimer;
+    
+    function buscarMilitares(termo) {
+        if (termo.length < 2) {
+            sugestoesDiv.style.display = 'none';
+            return;
+        }
+        
+        fetch(`/escala/buscar-militar?q=${encodeURIComponent(termo)}`)
+            .then(response => response.json())
+            .then(data => {
+                sugestoesDiv.innerHTML = '';
+                if (data.length > 0) {
+                    data.forEach(m => {
+                        const item = document.createElement('a');
+                        item.className = 'dropdown-item';
+                        item.href = '#';
+                        item.innerHTML = `<strong>${m.nome}</strong> <small class="text-muted">(${m.matricula} - ${m.posto_grad} - ${m.opm_sigla})</small>`;
+                        item.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            matriculaInput.value = m.matricula;
+                            sugestoesDiv.style.display = 'none';
+                            mostrarInfo(m);
+                        });
+                        sugestoesDiv.appendChild(item);
+                    });
+                    sugestoesDiv.style.display = 'block';
+                } else {
+                    sugestoesDiv.style.display = 'none';
+                }
+            });
+    }
+    
+    function mostrarInfo(m) {
+        militarNome.textContent = m.nome;
+        militarPosto.textContent = m.posto_grad || '-';
+        militarOpms.textContent = m.opm_sigla || '-';
+        militarFuncao.textContent = m.funcao || '-';
+        militarInfo.classList.remove('d-none');
+    }
+    
+    matriculaInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => buscarMilitares(this.value), 300);
+    });
+    
+    buscarBtn.addEventListener('click', function() {
+        buscarMilitares(matriculaInput.value);
+    });
+    
+    document.addEventListener('click', function(e) {
+        if (!matriculaInput.contains(e.target) && !sugestoesDiv.contains(e.target) && !buscarBtn.contains(e.target)) {
+            sugestoesDiv.style.display = 'none';
+        }
+    });
+    
+    // Auto-fill when date is selected
+    const dataInput = document.querySelector('[name="escala_data"]');
+    if (dataInput) {
+        dataInput.valueAsDate = new Date();
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,133 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sispm_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sispm}
+      POSTGRES_USER: ${POSTGRES_USER:-sispm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sispm}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sispm} -d ${POSTGRES_DB:-sispm}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - sispm_network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  redis:
+    image: redis:7-alpine
+    container_name: sispm_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - sispm_network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sispm_app
+    environment:
+      - FLASK_CONFIG=docker
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-sispm}:${POSTGRES_PASSWORD:-sispm}@postgres:5432/${POSTGRES_DB:-sispm}
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - ./uploads:/app/uploads
+      - ./backups:/app/backups
+      - ./logs:/app/logs
+      - ./instance:/app/instance
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - sispm_network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sispm_worker
+    command: python -m app.tasks.worker
+    environment:
+      - FLASK_CONFIG=docker
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-sispm}:${POSTGRES_PASSWORD:-sispm}@postgres:5432/${POSTGRES_DB:-sispm}
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+    volumes:
+      - ./uploads:/app/uploads
+      - ./backups:/app/backups
+      - ./logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - sispm_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: sispm_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - sispm_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  sispm_network:
+    driver: bridge

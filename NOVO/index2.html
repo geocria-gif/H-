@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>GestOper CPR-CN — Gestão Operacional</title>
+<title>H.Extra PM — Sistema de Gestão de Hora Extra</title>
 
 
 <!-- Dependências embutidas para uso offline -->
@@ -902,9 +902,12 @@ tbody tr:hover{background:#1c2541}
 
   <!-- ===================== SIDEBAR ===================== -->
   <aside class="sidebar" id="sidebar">
-    <div class="brand" style="flex-direction:column;padding:0;text-align:center">
-      <img src="assets/img/GestOper.png" alt="GestOper" style="width:100%;height:auto;display:block">
-      <div style="padding:6px 12px 10px;font-size:13px;color:#94a3b8;font-weight:600;letter-spacing:.5px">Gestão Operacional</div>
+    <div class="brand">
+      <div class="brand-icon">H+</div>
+      <div>
+        <div class="brand-name">H.Extra PM</div>
+        <div class="brand-sub">Gestão de Escala</div>
+      </div>
     </div>
 
     <div class="nav-section">Principal</div>
@@ -913,7 +916,6 @@ tbody tr:hover{background:#1c2541}
       <div class="nav-item" data-page="escala"><span class="ico">🎯</span> Escala de Eventos</div>
       <div class="nav-item" data-page="gerarescala"><span class="ico">📋</span> Gerar Escala</div>
       <div class="nav-item" data-page="gerarescalap2"><span class="ico">📋</span> ESCALA GERAL - MENSAL</div>
-      <div class="nav-item" data-page="escalassalvas"><span class="ico">💾</span> Escalas Salvas</div>
     </nav>
 
     <div class="nav-section">Cadastros</div>
@@ -924,18 +926,16 @@ tbody tr:hover{background:#1c2541}
       <div class="nav-item" data-page="evento"><span class="ico">📅</span> Eventos</div>
       <div class="nav-item" data-page="viatura"><span class="ico">🚔</span> Viaturas</div>
       <div class="nav-item" data-page="ocorrencias"><span class="ico">🚨</span> Ocorrências em Eventos</div>
-      <div class="nav-item" data-page="novaocorrencia"><span class="ico">🆕</span> Nova Ocorrência</div>
     </nav>
 
     <div class="nav-section">Análise</div>
     <nav class="nav">
       <div class="nav-item" data-page="relatorio"><span class="ico">📈</span> Relatórios</div>
-      <div class="nav-item" data-page="sql" style="display:none"><span class="ico">💻</span> SQL Console</div>
+      <div class="nav-item" data-page="sql"><span class="ico">💻</span> SQL Console</div>
     </nav>
 
     <div class="nav-section">Sistema</div>
     <nav class="nav">
-      <div class="nav-item" data-page="usuarios"><span class="ico">👥</span> Usuários</div>
       <div class="nav-item" data-page="backup"><span class="ico">💾</span> Backup / Restore</div>
     </nav>
   </aside>
@@ -983,32 +983,16 @@ tbody tr:hover{background:#1c2541}
         </div>
       </div>
 
-      <div class="row-2">
-        <div class="card">
-          <div class="card-title">🚨 Ocorrências por Data</div>
-          <div class="card-sub">Distribuição diária de ocorrências registradas</div>
-          <div class="chart-box"><canvas id="chart-ocorrencia-data"></canvas></div>
-        </div>
-        <div class="card">
-          <div class="card-title">🚨 Ocorrências por Tipo</div>
-          <div class="card-sub">Distribuição por tipo de ocorrência</div>
-          <div class="chart-box"><canvas id="chart-ocorrencia-tipo"></canvas></div>
-        </div>
-      </div>
-
       <div class="card">
-        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
           <span>🗺️ Municípios CPR-CN</span>
-          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-            <select id="map-ocorrencia-filter" style="font-size:12px;padding:3px 8px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;max-width:220px">
-              <option value="">🚨 Todas as Ocorrências</option>
-            </select>
+          <div style="display:flex;gap:6px">
             <button class="btn btn-sm" onclick="Dashboard.exportMap()">🖼️ Exportar Mapa</button>
             <button class="btn btn-sm" onclick="Dashboard.exportKmz()">📍 Exportar KMZ</button>
           </div>
         </div>
-        <div class="card-sub">Clique nos marcadores para ver detalhes do município | Com zoom ≥ 13, clique no mapa para registrar ocorrência</div>
-        <div id="map" style="height:600px;border-radius:12px;margin-top:8px"></div>
+        <div class="card-sub">Clique nos marcadores para ver detalhes do município</div>
+        <div id="map" style="height:480px;border-radius:12px;margin-top:8px"></div>
       </div>
     </section>
 
@@ -1059,7 +1043,7 @@ tbody tr:hover{background:#1c2541}
 
       <div class="card" id="esc-policial-card" style="display:none">
         <div class="card-title" id="esc-policial-title">3️⃣ Lançamento de Horas — Policiais Escalados</div>
-        <div class="card-sub">Adicione policiais, informe horário início/fim — CH Diurna (05:00-22:00) e Noturna (22:00-05:00) são calculadas automaticamente</div>
+        <div class="card-sub">Adicione policiais e informe a carga horária diurna e noturna</div>
 
         <div class="form-grid">
           <div class="field" style="grid-column:span 2">
@@ -1072,27 +1056,12 @@ tbody tr:hover{background:#1c2541}
             <input type="date" id="esc-data" />
           </div>
           <div class="field">
-            <label>Hora Início</label>
-            <input type="time" id="esc-hora-inicio" oninput="Escala.calcularCHForm()" />
-          </div>
-          <div class="field">
-            <label>Hora Término</label>
-            <input type="time" id="esc-hora-fim" oninput="Escala.calcularCHForm()" />
-          </div>
-          <div class="field">
             <label>CH Diurna</label>
-            <input type="number" id="esc-ch-d" step="0.5" min="0" value="0" readonly style="background:#0b1222;color:#94a3b8;cursor:default" />
+            <input type="number" id="esc-ch-d" step="0.5" min="0" value="0" />
           </div>
           <div class="field">
             <label>CH Noturna</label>
-            <input type="number" id="esc-ch-n" step="0.5" min="0" value="0" readonly style="background:#0b1222;color:#94a3b8;cursor:default" />
-          </div>
-          <div class="field">
-            <label>Tipo Pagamento</label>
-            <select id="esc-tipo-pagamento" style="padding:5px;border-radius:6px;border:1px solid var(--line);background:#0b1224;color:var(--text);font-size:12px">
-              <option value="HE">HE (Hora Extra)</option>
-              <option value="VD">VD (Valor Diferencial)</option>
-            </select>
+            <input type="number" id="esc-ch-n" step="0.5" min="0" value="0" />
           </div>
           <div class="field">
             <label>&nbsp;</label>
@@ -1106,7 +1075,7 @@ tbody tr:hover{background:#1c2541}
 
         <div class="table-wrap" style="margin-top:14px">
           <table>
-            <thead><tr><th>Matrícula</th><th>Nome</th><th>Posto/Grad</th><th>Tipo</th><th>Data</th><th>Início</th><th>Término</th><th>CH D</th><th>CH N</th><th>Total</th><th></th></tr></thead>
+            <thead><tr><th>Matrícula</th><th>Nome</th><th>Posto/Grad</th><th>Data</th><th>CH Diurna</th><th>CH Noturna</th><th>Total</th><th></th></tr></thead>
             <tbody id="esc-pol-tbody"></tbody>
           </table>
         </div>
@@ -1216,20 +1185,12 @@ tbody tr:hover{background:#1c2541}
           <div class="field"><label>Título da Escala</label><input id="gep2-titulo" placeholder="Ex.: ESCALA DE COORDENADOR REGIONAL DO CPR-CN - JULHO DE 2026" oninput="GerarEscalaP2.meta.titulo=this.value" /></div>
         </div>
       </div>
-      <div class="card" id="gep2-legenda-card">
-        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
-          <span>📋 Legenda dos Códigos</span>
-          <button class="btn btn-sm btn-primary" onclick="GerarEscalaP2.adicionarLegenda()">➕ Adicionar</button>
-        </div>
-        <div id="gep2-legenda-list"></div>
-      </div>
       <div class="topbar" style="margin-top:8px">
         <div><h2 style="margin:0;font-size:18px;font-weight:700">👥 Efetivo da Escala</h2></div>
         <div class="topbar-actions">
           <button class="btn btn-primary" onclick="GerarEscalaP2.abrirModal()">+ Adicionar Militar</button>
           <button class="btn" onclick="GerarEscalaP2.importarCsv()">⬆ CSV</button>
           <button class="btn" onclick="GerarEscalaP2.abrirModalSeparador()">➖ Separador</button>
-          <button class="btn btn-success" onclick="GerarEscalaP2.salvarEscala()">💾 SALVA ESCALA</button>
           <button class="btn btn-danger" onclick="GerarEscalaP2.limparMes()">🗑 Limpar Mês</button>
         </div>
       </div>
@@ -1252,28 +1213,6 @@ tbody tr:hover{background:#1c2541}
       </div>
       <div class="table-wrap" style="overflow:auto">
         <div id="gep2-grid"></div>
-      </div>
-    </section>
-
-    <!-- ===== ESCALAS SALVAS ===== -->
-    <section class="page" id="page-escalassalvas">
-      <div class="topbar">
-        <div>
-          <h1 class="page-title">💾 Escalas Salvas</h1>
-          <div class="page-sub" id="es-salvas-count">Carregando...</div>
-        </div>
-        <div class="topbar-actions">
-          <button class="btn" onclick="EscalasSalvas.importarCsv()">⬆ Importar CSV</button>
-          <button class="btn" onclick="EscalasSalvas.exportarCsv()">⬇ Exportar CSV</button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>ID</th><th>Nome</th><th>Mês</th><th>Ano</th><th>Salva em</th><th>Militares</th><th>Ativa</th><th></th></tr></thead>
-            <tbody id="es-salvas-body"></tbody>
-          </table>
-        </div>
       </div>
     </section>
 
@@ -1313,12 +1252,6 @@ tbody tr:hover{background:#1c2541}
                 <th>CNH</th>
                 <th>Categoria</th>
                 <th>Tipo Sang.</th>
-                <th>Data Nasc.</th>
-                <th>Idade</th>
-                <th>Admissão</th>
-                <th>Tempo Serv.</th>
-                <th>Local Trab.</th>
-                <th>Comport.</th>
                 <th></th>
               </tr>
             </thead>
@@ -1424,7 +1357,7 @@ tbody tr:hover{background:#1c2541}
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>ID</th><th>Descrição</th><th>Início</th><th>Fim</th><th>Tipo Pag.</th><th>OPMs Alocadas</th><th>Policiais</th><th>CH Total</th><th></th></tr></thead>
+          <thead><tr><th>ID</th><th>Descrição</th><th>Início</th><th>Fim</th><th>OPMs Alocadas</th><th>Policiais</th><th>CH Total</th><th></th></tr></thead>
           <tbody id="evt-tbody"></tbody>
         </table>
       </div>
@@ -1637,102 +1570,7 @@ tbody tr:hover{background:#1c2541}
       </div>
     </section>
 
-    <!-- ===== NOVA OCORRÊNCIA ===== -->
-    <section class="page" id="page-novaocorrencia">
-      <div class="topbar">
-        <div>
-          <h1 class="page-title">🆕 CADASTRO DE OCORRÊNCIAS NA ÁREA DO CPR-CN</h1>
-          <div class="page-sub" id="noc-count"></div>
-        </div>
-        <div class="topbar-actions">
-          <button class="btn btn-success" onclick="NovaOcorrencia.publicarLink()">🔗 Link Público</button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
-          <span>📝 Registrar Ocorrência</span>
-          <div>
-            <button class="btn btn-sm" onclick="NovaOcorrencia.limpar()">🔄 Novo</button>
-            <button class="btn btn-sm btn-primary" onclick="NovaOcorrencia.salvar()">💾 Salvar</button>
-          </div>
-        </div>
-        <div class="form-grid">
-          <div class="field"><label>Tipo de Ocorrência *</label>
-            <select id="noc-tipo">
-              <option value="">Selecione...</option>
-              <option value="Homicídio">🔴 Homicídio</option>
-              <option value="Feminicídio">🔴 Feminicídio</option>
-              <option value="Latrocínio">🟠 Latrocínio</option>
-              <option value="Tentativa de Homicídio">🔴 Tentativa de Homicídio</option>
-              <option value="Estupro">🟣 Estupro</option>
-              <option value="Estupro de Vulnerável">🟣 Estupro de Vulnerável</option>
-              <option value="Violência Doméstica - LMP">🩷 Violência Doméstica (Lei Maria da Penha)</option>
-              <option value="Lesão Corporal">🔵 Lesão Corporal</option>
-              <option value="Roubo">🟡 Roubo</option>
-              <option value="Roubo a Banco">🟡 Roubo a Banco</option>
-              <option value="Roubo de Veículo">🟡 Roubo de Veículo</option>
-              <option value="Furto">🟡 Furto</option>
-              <option value="Furto de Veículo">🟡 Furto de Veículo</option>
-              <option value="Tráfico de Drogas">🟢 Tráfico de Drogas</option>
-              <option value="Porte de Drogas">🟢 Porte de Drogas</option>
-              <option value="Porte Ilegal de Arma">🟢 Porte Ilegal de Arma</option>
-              <option value="Sequestro">🟣 Sequestro</option>
-              <option value="Extorsão">🟠 Extorsão</option>
-              <option value="Dano ao Patrimônio">🔵 Dano ao Patrimônio</option>
-              <option value="Ameaça">🔵 Ameaça</option>
-              <option value="Direção Perigosa">🔵 Direção Perigosa</option>
-              <option value="Perturbação do Sossego">🔵 Perturbação do Sossego</option>
-              <option value="Receptação">🔵 Receptação</option>
-              <option value="Estelionato">🔵 Estelionato</option>
-              <option value="Desaparecimento">⚪ Desaparecimento de Pessoa</option>
-              <option value="Suicídio">⚪ Suicídio / Tentativa</option>
-              <option value="Incêndio Criminoso">🟠 Incêndio Criminoso</option>
-              <option value="Violação de Domicílio">🔵 Violação de Domicílio</option>
-              <option value="Atentado ao Pudor">🟣 Atentado ao Pudor</option>
-              <option value="Corrupção de Menores">🟣 Corrupção de Menores</option>
-              <option value="Crime Cibernético">💻 Crime Cibernético</option>
-              <option value="Acidente de Trânsito">🔵 Acidente de Trânsito</option>
-              <option value="Atropelamento">🔵 Atropelamento</option>
-              <option value="Achado de Cadáver">⚪ Achado de Cadáver</option>
-              <option value="Outros">⚪ Outros</option>
-            </select>
-          </div>
-          <div class="field"><label>Data e Hora *</label><input type="datetime-local" id="noc-datahora" /></div>
-          <div class="field"><label>Cidade</label>
-            <select id="noc-cidade" onchange="NovaOcorrencia._onCidadeChange()">
-              <option value="">Selecione...</option>
-            </select>
-          </div>
-          <div class="field"><label>VTR Que Atendeu</label><input id="noc-vtr" placeholder="Ex.: VTR-01" /></div>
-          <div class="field" style="grid-column:1/-1"><label>Descrição dos Fatos</label><textarea id="noc-descricao" rows="3" style="width:100%;padding:6px;border-radius:6px;background:#101a30;color:var(--text);border:1px solid var(--line);font-size:13px;font-family:inherit;resize:vertical"></textarea></div>
-          <div class="field" style="grid-column:1/-1"><label>Dados Relevantes</label><textarea id="noc-dados" rows="2" style="width:100%;padding:6px;border-radius:6px;background:#101a30;color:var(--text);border:1px solid var(--line);font-size:13px;font-family:inherit;resize:vertical"></textarea></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title"><span>🗺️ Local no Mapa</span></div>
-        <div class="card-sub">Selecione a cidade acima e clique no mapa para marcar o ponto</div>
-        <div id="noc-map" style="height:350px;border-radius:8px;margin-top:6px"></div>
-      </div>
-      <div class="card">
-        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
-          <span>📋 Registros</span>
-          <span id="noc-table-count"></span>
-        </div>
-        <div class="table-wrap">
-          <div class="table-toolbar">
-            <input type="text" class="search-input" id="noc-search" placeholder="🔍 Buscar por tipo, cidade, VTR..." oninput="NovaOcorrencia.renderTabela()" />
-          </div>
-          <div style="max-height:500px;overflow-y:auto">
-            <table>
-              <thead><tr>
-                <th>ID</th><th>Tipo</th><th>Data/Hora</th><th>Cidade</th><th>VTR</th><th>Descrição</th><th>Dados</th><th>Coordenadas</th><th></th>
-              </tr></thead>
-              <tbody id="noc-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </section>
+
 
 
         <!-- ===== RELATORIO ===== -->
@@ -1748,7 +1586,6 @@ tbody tr:hover{background:#1c2541}
         <div class="tab active" data-rep="rep-evento" onclick="Relatorio.show('rep-evento')">📅 Por Evento / OPM</div>
         <div class="tab" data-rep="rep-periodo" onclick="Relatorio.show('rep-periodo')">📆 Por Período</div>
         <div class="tab" data-rep="rep-analitico" onclick="Relatorio.show('rep-analitico')">📊 Analítico</div>
-        <div class="tab" data-rep="rep-horas" onclick="Relatorio.show('rep-horas')">💰 Relatório de Horas</div>
       </div>
 
       <!-- ============ POR EVENTO ============ -->
@@ -1791,59 +1628,6 @@ tbody tr:hover{background:#1c2541}
         <div class="card" id="rep-pe-preview-card" style="display:none">
           <div class="card-title">Pré-visualização</div>
           <div id="rep-pe-preview"></div>
-        </div>
-      </div>
-
-      <!-- ============ RELATORIO DE HORAS ============ -->
-      <div id="rep-horas" class="rep-pane" style="display:none">
-        <div class="card">
-          <div class="card-title">💰 Tabela de Valores — HE / VD por Posto/Graduação</div>
-          <div class="card-sub">Edite diretamente os valores. Alterações são salvas automaticamente.</div>
-          <div style="margin-top:10px;display:flex;gap:8px">
-            <button class="btn" onclick="RelatorioHoras.exportarCsvValores()">⬇ Exportar CSV</button>
-            <button class="btn" onclick="document.getElementById('rh-import-csv').click()">⬆ Importar CSV</button>
-            <input type="file" id="rh-import-csv" accept=".csv,.txt" style="display:none" onchange="RelatorioHoras.importarCsvValores(event)" />
-          </div>
-          <div class="table-wrap" style="margin-top:10px">
-            <table>
-              <thead><tr><th>POSTO/GRAD</th><th>HE Diurna</th><th>Ad. HE Noturna</th><th>VD Diurno</th><th>VD Noturno</th></tr></thead>
-              <tbody id="rh-tabela-valores-body"></tbody>
-            </table>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title">📊 Planilha HE (Hora Extra)</div>
-          <div class="card-sub">Carga horária mensal × valores de HE por graduação</div>
-          <div class="form-grid" style="grid-template-columns:auto auto 1fr auto auto">
-            <div class="field"><label>Mês</label><select id="rh-he-mes"></select></div>
-            <div class="field"><label>Ano</label><select id="rh-he-ano"></select></div>
-            <div class="field" style="align-self:end"><button class="btn btn-primary" onclick="RelatorioHoras.gerarHE()">🔍 Gerar</button></div>
-            <div class="field" style="align-self:end"><button class="btn btn-success" onclick="RelatorioHoras.exportarExcelHE()">📊 Excel</button></div>
-            <div class="field" style="align-self:end"><button class="btn" onclick="RelatorioHoras.exportarPdfHE()">📄 PDF</button></div>
-          </div>
-          <div class="table-wrap" style="margin-top:10px">
-            <table>
-              <thead><tr><th>GH</th><th>NOME</th><th>MATRÍCULA</th><th>CH D</th><th>CH N</th><th>T. Horas</th><th>Valor Diurno</th><th>Valor Ad. HE Noturna</th><th>Total</th></tr></thead>
-              <tbody id="rh-he-body"></tbody>
-            </table>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title">📊 Planilha VD (Valor Diferencial)</div>
-          <div class="card-sub">Carga horária mensal × valores de VD por graduação</div>
-          <div class="form-grid" style="grid-template-columns:auto auto 1fr auto auto">
-            <div class="field"><label>Mês</label><select id="rh-vd-mes"></select></div>
-            <div class="field"><label>Ano</label><select id="rh-vd-ano"></select></div>
-            <div class="field" style="align-self:end"><button class="btn btn-primary" onclick="RelatorioHoras.gerarVD()">🔍 Gerar</button></div>
-            <div class="field" style="align-self:end"><button class="btn btn-success" onclick="RelatorioHoras.exportarExcelVD()">📊 Excel</button></div>
-            <div class="field" style="align-self:end"><button class="btn" onclick="RelatorioHoras.exportarPdfVD()">📄 PDF</button></div>
-          </div>
-          <div class="table-wrap" style="margin-top:10px">
-            <table>
-              <thead><tr><th>GH</th><th>NOME</th><th>MATRÍCULA</th><th>CH D</th><th>CH N</th><th>Valor Diurno</th><th>Valor Noturno</th><th>Total</th></tr></thead>
-              <tbody id="rh-vd-body"></tbody>
-            </table>
-          </div>
         </div>
       </div>
 
@@ -1920,52 +1704,13 @@ ORDER BY qtd DESC;</textarea>
       </div>
       <div class="card">
         <div class="card-title">ℹ️ Sobre o Sistema</div>
-        <div class="card-sub">Aplicativo gerado a partir do Microsoft Access "Aplicativo H.Extra.mdb" — renomeado para GestOper CPR-CN</div>
+        <div class="card-sub">Aplicativo gerado a partir do Microsoft Access "Aplicativo H.Extra.mdb"</div>
         <ul style="color:var(--muted);font-size:13px;line-height:1.8;margin:0;padding-left:20px">
           <li>Banco SQLite carregado em memória — todas as alterações são feitas localmente no seu navegador</li>
           <li>Para persistir alterações, use <b>Exportar Banco</b> e guarde o arquivo .sqlite</li>
           <li>Para restaurar, use <b>Importar Banco</b> em uma próxima sessão</li>
           <li>Compatível com qualquer navegador moderno — funciona <b>100% offline</b></li>
         </ul>
-      </div>
-    </section>
-
-    <!-- ===== USUÁRIOS ===== -->
-    <section class="page" id="page-usuarios">
-      <div class="topbar">
-        <div>
-          <h1 class="page-title">👥 Usuários</h1>
-          <div class="page-sub">Gerencie os usuários do sistema</div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">Registrar Novo Usuário</div>
-        <div class="form-grid" style="grid-template-columns:1fr 2fr 1fr;gap:8px">
-          <div class="field"><label>Matrícula *</label><input id="usr-matricula" placeholder="Ex: 30481332" /></div>
-          <div class="field"><label>Nome *</label><input id="usr-nome" placeholder="Nome completo" /></div>
-          <div class="field"><label>Senha *</label><input id="usr-senha" type="password" placeholder="Senha" /></div>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <div class="field" style="flex:1"><label>Tipo</label>
-            <select id="usr-tipo"><option value="USER">Usuário</option><option value="ADMIN">Administrador</option></select>
-          </div>
-          <div style="display:flex;align-items:flex-end;gap:6px">
-            <button class="btn btn-primary" onclick="Usuarios.salvar()">💾 Salvar</button>
-            <button class="btn" onclick="Usuarios.limpar()">↩ Cancelar</button>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
-          <span>Usuários Cadastrados</span>
-          <span id="usr-count" style="font-size:12px;color:var(--muted)">0 registro(s)</span>
-        </div>
-        <div style="overflow-x:auto">
-          <table class="table">
-            <thead><tr><th>Matrícula</th><th>Nome</th><th>Tipo</th><th>Criado Em</th><th>Ações</th></tr></thead>
-            <tbody id="usr-tbody"></tbody>
-          </table>
-        </div>
       </div>
     </section>
 
@@ -1988,27 +1733,6 @@ ORDER BY qtd DESC;</textarea>
 </div>
 
 <div class="toast" id="toast"></div>
-
-<!-- ===== Login Overlay ===== -->
-<div id="login-overlay" style="display:none;position:fixed;z-index:99999;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,.85);backdrop-filter:blur(6px);align-items:center;justify-content:center;font-family:Inter,system-ui,sans-serif">
-  <div style="background:#1e293b;border-radius:16px;padding:36px 40px;width:380px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.5);border:1px solid #334155">
-    <div style="text-align:center;margin-bottom:24px">
-      <div style="margin-bottom:6px"><img src="assets/img/GestOper.png" alt="GestOper" style="width:180px;height:auto"></div>
-      <div style="font-size:13px;color:#94a3b8;margin-top:4px">Gestão Operacional</div>
-    </div>
-    <div id="login-error" style="display:none;background:#7f1d1d;color:#fca5a5;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;text-align:center"></div>
-    <div class="field" style="margin-bottom:12px">
-      <label style="color:#94a3b8;font-size:12px;font-weight:600">MATRÍCULA</label>
-      <input id="login-matricula" type="text" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:14px;outline:none;box-sizing:border-box" placeholder="Digite sua matrícula" autofocus />
-    </div>
-    <div class="field" style="margin-bottom:20px">
-      <label style="color:#94a3b8;font-size:12px;font-weight:600">SENHA</label>
-      <input id="login-senha" type="password" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:14px;outline:none;box-sizing:border-box" placeholder="Digite sua senha" />
-    </div>
-    <button id="login-btn" class="btn btn-primary" style="width:100%;padding:11px;font-size:15px;font-weight:600;border-radius:8px">🔐 Entrar</button>
-    <div style="text-align:center;margin-top:16px;font-size:12px;color:#64748b">Sistema de Gestão Operacional</div>
-  </div>
-</div>
 
 <!-- ============== JAVASCRIPT ============== -->
 <script>
@@ -2044,11 +1768,6 @@ function exec(sql, params){
 }
 function run(sql, params){
   db.run(sql, params || []);
-  // Auto-save DB to localStorage after every write operation
-  const s = sql.trim().toUpperCase();
-  if(s.startsWith('INSERT')||s.startsWith('UPDATE')||s.startsWith('DELETE')||s.startsWith('CREATE')||s.startsWith('ALTER')||s.startsWith('DROP')||s.startsWith('REPLACE')){
-    try { localStorage.setItem('sispm_db', btoa(String.fromCharCode(...new Uint8Array(db.export())))); } catch(e){}
-  }
 }
 function openModal(title, bodyHtml, onSave){
   $("modal-title").textContent = title;
@@ -2058,71 +1777,6 @@ function openModal(title, bodyHtml, onSave){
 }
 function closeModal(){ $("modal").classList.remove("show"); }
 function confirm2(msg){ return window.confirm(msg); }
-
-/* ===== Autenticação ===== */
-const Auth = {
-  currentUser: null,
-  init(){
-    const saved = sessionStorage.getItem('auth_user');
-    if(saved){ try{ this.currentUser = JSON.parse(saved); return true; }catch(e){} }
-    return false;
-  },
-  login(matricula, senha){
-    const users = exec("SELECT * FROM tbUsuario WHERE Matricula=? AND Senha=?", [matricula, senha]);
-    if(users.length){
-      this.currentUser = users[0];
-      sessionStorage.setItem('auth_user', JSON.stringify(users[0]));
-      return true;
-    }
-    return false;
-  },
-  logout(){
-    this.currentUser = null;
-    sessionStorage.removeItem('auth_user');
-  },
-  isAdmin(){ return this.currentUser && this.currentUser.Tipo === 'ADMIN'; },
-  getNome(){ return this.currentUser ? this.currentUser.Nome : ''; },
-  getMatricula(){ return this.currentUser ? this.currentUser.Matricula : ''; }
-};
-
-function doLogin(){
-  const mat = $("login-matricula").value.trim();
-  const sen = $("login-senha").value;
-  const err = $("login-error");
-  if(!mat || !sen){ err.textContent = "Preencha matrícula e senha"; err.style.display = "block"; return; }
-  if(Auth.login(mat, sen)){
-    $("login-overlay").style.display = "none";
-    bindNav();
-    afterLoginUI();
-    Dashboard.render();
-  } else {
-    err.textContent = "Matrícula ou senha inválidos";
-    err.style.display = "block";
-    $("login-senha").value = "";
-    $("login-senha").focus();
-  }
-}
-
-function afterLoginUI(){
-  const sidebar = document.querySelector(".sidebar .nav:last-child");
-  if(!sidebar) return;
-
-  // Hide admin-only nav items from regular users
-  if(!Auth.isAdmin()){
-    ["usuarios","sql","backup"].forEach(p => {
-      const el = document.querySelector(`.nav-item[data-page="${p}"]`);
-      if(el) el.style.display = "none";
-    });
-  }
-
-  const logoff = document.createElement("div");
-  logoff.style.cssText = "padding:12px 16px;border-top:1px solid #1e293b;cursor:pointer;font-size:13px;color:#94a3b8;display:flex;align-items:center;gap:8px";
-  logoff.innerHTML = `<span style="font-size:16px">🚪</span> Sair (${Auth.getNome()})`;
-  logoff.onclick = () => {
-    if(confirm("Deseja realmente sair?")){ Auth.logout(); location.reload(); }
-  };
-  sidebar.parentElement.appendChild(logoff);
-}
 
 /* ===== Inicialização ===== */
 async function init(){
@@ -2137,14 +1791,11 @@ async function init(){
 
     if (loadingEl) loadingEl.innerHTML = `Inicializando banco de dados...`;
 
-    const saved = localStorage.getItem('sispm_db');
-    if (saved && saved.length > 10) {
-      const bin = base64ToUint8Array(saved);
-      db = new SQL.Database(bin);
-    } else if (DB_BASE64 && DB_BASE64.length > 10) {
+    if (DB_BASE64 && DB_BASE64.length > 10) {
       const bin = base64ToUint8Array(DB_BASE64);
       db = new SQL.Database(bin);
     } else {
+      // Banco vazio (arquivo limpo)
       db = new SQL.Database();
     }
 
@@ -2152,41 +1803,8 @@ async function init(){
     migrateSchema();
     createEssentialTables();
 
-    // External access mode — show only occurrence form
-    if(window.location.search.includes('registrar')){
-      if (loadingEl) loadingEl.style.display = "none";
-      document.body.innerHTML = `
-        <div style="max-width:700px;margin:20px auto;padding:20px;font-family:Calibri,Arial">
-          <div style="text-align:center;margin-bottom:20px">
-            <h1 style="color:#2B488B;margin:0">🆕 Registro de Ocorrências</h1>
-            <p style="color:#666">Área do CPR-CN — Preencha os dados abaixo</p>
-          </div>
-          <div style="background:#f8f9fa;padding:16px;border-radius:8px;border:1px solid #dee2e6">
-            <div class="form-grid" id="ext-form"></div>
-          </div>
-          <div style="text-align:center;margin-top:12px">
-            <button class="btn btn-primary" onclick="NovaOcorrencia.salvarExterno()">💾 Registrar Ocorrência</button>
-          </div>
-          <div id="ext-msg" style="display:none;margin-top:12px;padding:12px;border-radius:8px;background:#d4edda;color:#155724;text-align:center;font-weight:700"></div>
-        </div>`;
-      NovaOcorrencia._renderFormExterno();
-      return;
-    }
-
-    // Authentication
-    if(!Auth.init()){
-      if (loadingEl) loadingEl.style.display = "none";
-      const overlay = $("login-overlay");
-      overlay.style.display = "flex";
-      $("login-btn").onclick = doLogin;
-      $("login-senha").onkeydown = e => { if(e.key === "Enter") doLogin(); };
-      $("login-matricula").onkeydown = e => { if(e.key === "Enter") $("login-senha").focus(); };
-      return;
-    }
-
     if (loadingEl) loadingEl.style.display = "none";
     bindNav();
-    afterLoginUI();
     Dashboard.render();
   } catch (e) {
     console.error("Erro detalhado no init():", e);
@@ -2263,11 +1881,6 @@ function migrateSchema(){
       run("PRAGMA foreign_keys = ON");
       console.log("[migration] PK de tbEscala estendida para incluir EscalaData");
     }
-    // Add HoraInicio / HoraFim columns to tbEscala
-    const escalaCols = exec("PRAGMA table_info(tbEscala)").map(c => c.name);
-    if(!escalaCols.includes("HoraInicio")){ run("ALTER TABLE tbEscala ADD COLUMN HoraInicio TEXT DEFAULT ''"); }
-    if(!escalaCols.includes("HoraFim")){ run("ALTER TABLE tbEscala ADD COLUMN HoraFim TEXT DEFAULT ''"); }
-    if(!escalaCols.includes("TipoPagamento")){ run("ALTER TABLE tbEscala ADD COLUMN TipoPagamento TEXT DEFAULT 'HE'"); }
   } catch(e){ console.warn("migration error:", e); }
 
   // Garante colunas adicionais na tbEfetivoPM
@@ -2281,10 +1894,6 @@ function migrateSchema(){
     addCol("CNH","TEXT");
     addCol("Categoria","TEXT");
     addCol("TipoSanguineo","TEXT");
-    addCol("Admissao","TEXT");
-    addCol("DataNascimento","TEXT");
-    addCol("LocalTrabalho","TEXT");
-    addCol("Comportamento","TEXT");
   } catch(e){ console.warn("migration error (tbEfetivoPM cols):", e); }
 }
 
@@ -2303,28 +1912,6 @@ function createEssentialTables() {
       PostoGrad TEXT,
       TipoMilitar TEXT
     )`);
-    if(exec("SELECT COUNT(*) c FROM tbCargo")[0].c === 0){
-      const cargos = [
-        [1,"CEL PM","OFICIAL"],
-        [2,"TEN CEL PM","OFICIAL"],
-        [3,"MAJ PM","OFICIAL"],
-        [4,"CAP PM","OFICIAL"],
-        [5,"TEN PM","OFICIAL"],
-        [6,"ASP OF PM","OFICIAL"],
-        [7,"AL OF PM 1 ANO","ALUNO"],
-        [8,"AL OF PM 2 ANO","ALUNO"],
-        [9,"AL OF PM 3 ANO","ALUNO"],
-        [10,"SUB TEN PM","PRAÇA"],
-        [11,"SGT PM","PRAÇA"],
-        [12,"CB PM","PRAÇA"],
-        [13,"SD PM","PRAÇA"],
-        [14,"AL SD PM","ALUNO"],
-        [15,"ALUNO OFICIAL - CFOA PM - SGT","ALUNO"],
-        [16,"ALUNO OFICIAL - CFOA PM - ST","ALUNO"],
-        [17,"ALUNO OFICIAL - CFTA PM - ST","ALUNO"]
-      ];
-      cargos.forEach(c => run("INSERT INTO tbCargo (CargoId,PostoGrad,TipoMilitar) VALUES (?,?,?)",c));
-    }
 
     run(`CREATE TABLE IF NOT EXISTS tbEfetivoPM (
       Matricula TEXT PRIMARY KEY,
@@ -2348,16 +1935,13 @@ function createEssentialTables() {
     try{ run("ALTER TABLE tbEscalaP2 ADD COLUMN IsSeparador INTEGER DEFAULT 0"); }catch(e){}
     try{ run("ALTER TABLE tbEscalaP2 ADD COLUMN SeparadorTexto TEXT DEFAULT ''"); }catch(e){}
     try{ run("ALTER TABLE tbEscalaP2 ADD COLUMN Ordem INTEGER DEFAULT 0"); }catch(e){}
-    try{ run("ALTER TABLE tbEscalaP2 ADD COLUMN TipoPagamento TEXT DEFAULT 'HE'"); }catch(e){}
 
     run(`CREATE TABLE IF NOT EXISTS tbEvento (
       EventoId INTEGER PRIMARY KEY AUTOINCREMENT,
       EventoDesc TEXT,
       EventoDtaInicio TEXT,
-      EventoDtaFim TEXT,
-      TipoPagamento TEXT DEFAULT 'HE'
+      EventoDtaFim TEXT
     )`);
-    try{ run("ALTER TABLE tbEvento ADD COLUMN TipoPagamento TEXT DEFAULT 'HE'"); }catch(e){}
 
     run(`CREATE TABLE IF NOT EXISTS tbOpmEvento (
       OpmEventoId INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2457,109 +2041,7 @@ function createEssentialTables() {
       Titulo TEXT DEFAULT 'ESCALA DE COORDENADOR REGIONAL DO CPR-CN'
     )`);
     try { run("ALTER TABLE tbEscalaP2Meta ADD COLUMN Titulo TEXT"); } catch(e) {}
-    run(`CREATE TABLE IF NOT EXISTS tbEscalaP2Legenda (
-      Id INTEGER PRIMARY KEY AUTOINCREMENT,
-      Codigo TEXT NOT NULL,
-      Descricao TEXT NOT NULL
-    )`);
-    // Seed defaults if table is empty
-    if(exec("SELECT COUNT(*) c FROM tbEscalaP2Legenda")[0].c === 0){
-      const defs = [
-        ["C1","7h-19h"],["C2","19h-7h"],["F","Férias"],
-        ["A1","8h-12h + 14h-18h"],["A2","7h-13h"],["B1","13h-19h"]
-      ];
-      defs.forEach(d => run("INSERT INTO tbEscalaP2Legenda (Codigo,Descricao) VALUES (?,?)",d));
-    }
-    run(`CREATE TABLE IF NOT EXISTS tbEscalaSalva (
-      Id INTEGER PRIMARY KEY AUTOINCREMENT,
-      Nome TEXT NOT NULL,
-      Mes INTEGER NOT NULL,
-      Ano INTEGER NOT NULL,
-      DataSalva TEXT DEFAULT (datetime('now','localtime')),
-      Ativa INTEGER DEFAULT 0
-    )`);
-    run(`CREATE TABLE IF NOT EXISTS tbEscalaSalvaItem (
-      Id INTEGER PRIMARY KEY AUTOINCREMENT,
-      EscalaSalvaId INTEGER NOT NULL,
-      Funcao TEXT NOT NULL,
-      OPM TEXT NOT NULL,
-      GH TEXT NOT NULL,
-      Nome TEXT NOT NULL,
-      Matricula TEXT NOT NULL,
-      Telefone TEXT,
-      Dias TEXT DEFAULT '{}',
-      TipoPagamento TEXT DEFAULT 'HE',
-      IsSeparador INTEGER DEFAULT 0,
-      SeparadorTexto TEXT DEFAULT '',
-      Ordem INTEGER DEFAULT 0
-    )`);
-    run(`CREATE TABLE IF NOT EXISTS tbEscalaSalvaMeta (
-      Id INTEGER PRIMARY KEY AUTOINCREMENT,
-      EscalaSalvaId INTEGER NOT NULL,
-      Local TEXT DEFAULT 'IRECÊ',
-      Responsavel TEXT,
-      Cargo TEXT,
-      Emissao TEXT,
-      Nota TEXT,
-      Titulo TEXT DEFAULT 'ESCALA DE COORDENADOR REGIONAL DO CPR-CN'
-    )`);
-    run(`CREATE TABLE IF NOT EXISTS tbOcorrencia (
-      Id INTEGER PRIMARY KEY AUTOINCREMENT,
-      Tipo TEXT NOT NULL,
-      DataHora TEXT NOT NULL,
-      Cidade TEXT,
-      Latitude REAL,
-      Longitude REAL,
-      VTR TEXT,
-      Descricao TEXT,
-      DadosRelevantes TEXT,
-      CreatedAt TEXT DEFAULT (datetime('now','localtime'))
-    )`);
-
-    run(`CREATE TABLE IF NOT EXISTS tbTabelaValores (
-      Id INTEGER PRIMARY KEY AUTOINCREMENT,
-      PostoGrad TEXT NOT NULL UNIQUE,
-      HEDiurna REAL DEFAULT 0,
-      AdHENoturna REAL DEFAULT 0,
-      VDDiurno REAL DEFAULT 0,
-      VDNoturno REAL DEFAULT 0
-    )`);
-    if(exec("SELECT COUNT(*) c FROM tbTabelaValores")[0].c === 0){
-      const vals = [
-        ["CEL PM",130.46,65.23,70.83,84.95],
-        ["TEN CEL PM",118.70,59.35,68.95,82.71],
-        ["MAJ PM",109.17,54.59,68.36,82.01],
-        ["CAP PM",89.95,44.98,68.19,81.74],
-        ["TEN PM",75.36,37.68,67.66,81.18],
-        ["ASP OF PM",45.25,22.63,47.08,56.49],
-        ["AL OF PM 1 ANO",45.00,22.50,37.73,45.25],
-        ["AL OF PM 2 ANO",45.00,22.50,37.73,45.25],
-        ["AL OF PM 3 ANO",45.00,22.50,37.73,45.25],
-        ["SUB TEN PM",44.44,22.22,35.27,42.34],
-        ["SGT PM",41.18,20.59,30.61,36.97],
-        ["CB PM",37.71,18.86,29.22,35.27],
-        ["SD PM",35.39,17.70,27.86,33.67],
-        ["AL SD PM",0,0,0,0],
-        ["ALUNO OFICIAL - CFOA PM - SGT",45.00,22.50,37.73,45.25],
-        ["ALUNO OFICIAL - CFOA PM - ST",45.00,22.50,37.73,45.25],
-        ["ALUNO OFICIAL - CFTA PM - ST",45.00,22.50,37.73,45.25]
-      ];
-      vals.forEach(v => run("INSERT INTO tbTabelaValores (PostoGrad,HEDiurna,AdHENoturna,VDDiurno,VDNoturno) VALUES (?,?,?,?,?)",v));
-    }
-
-    run(`CREATE TABLE IF NOT EXISTS tbUsuario (
-      Id INTEGER PRIMARY KEY AUTOINCREMENT,
-      Matricula TEXT NOT NULL UNIQUE,
-      Nome TEXT NOT NULL,
-      Senha TEXT NOT NULL,
-      Tipo TEXT NOT NULL DEFAULT 'USER',
-      CriadoEm TEXT DEFAULT (datetime('now','localtime'))
-    )`);
-    if(!exec("SELECT COUNT(*) c FROM tbUsuario")[0].c){
-      run("INSERT INTO tbUsuario (Matricula,Nome,Senha,Tipo) VALUES (?,?,?,?)",
-        ["30481332","FRANCISCO ROCHA JUNIOR","30481332","ADMIN"]);
-    }
-
+ 
     console.log("[schema] Tabelas essenciais verificadas/criadas");
   } catch(e) {
     console.warn("[schema] Erro ao criar tabelas:", e);
@@ -2573,28 +2055,19 @@ function bindNav(){
     escala:       () => Escala.init(),
     gerarescala:  () => GerarEscala.init(),
     gerarescalap2:  () => GerarEscalaP2.init(),
-    escalassalvas:  () => EscalasSalvas.init(),
     efetivo:      () => Efetivo.init(),
     opm:          () => OPM.init(),
     municipio:    () => Municipio.init(),
     evento:       () => Evento.init(),
     viatura:      () => Viatura.init(),
     ocorrencias:  () => Ocorrencias.init(),
-    novaocorrencia: () => NovaOcorrencia.init(),
     relatorio:    () => Relatorio.init(),
-    usuarios:     () => { if(Auth.isAdmin()) Usuarios.init(); else { toast("Acesso restrito a administradores","error"); document.querySelector('.nav-item[data-page="dashboard"]').click(); } },
     sql:          () => {},
     backup:       () => {}
   };
-  const adminPages = ["usuarios","sql","backup"];
   document.querySelectorAll(".nav-item").forEach(it => {
     it.addEventListener("click", () => {
       const p = it.dataset.page;
-      if(adminPages.includes(p) && !Auth.isAdmin()){
-        toast("Acesso restrito a administradores","error");
-        document.querySelector('.nav-item[data-page="dashboard"]').click();
-        return;
-      }
       document.querySelectorAll(".nav-item").forEach(x => x.classList.remove("active"));
       it.classList.add("active");
       document.querySelectorAll(".page").forEach(x => x.classList.remove("active"));
@@ -2627,7 +2100,7 @@ const Dashboard = {
           <div class="mx-auto w-16 h-16 bg-[#1e2937] rounded-full flex items-center justify-center mb-4">
             <span class="text-4xl">👋</span>
           </div>
-          <h2 class="text-2xl font-bold text-white mb-2">Bem-vindo ao GestOper CPR-CN!</h2>
+          <h2 class="text-2xl font-bold text-white mb-2">Bem-vindo ao H.Extra PM!</h2>
           <p class="text-[#94a3b8] max-w-md mx-auto mb-6">
             Este é o seu primeiro acesso. Para começar a usar o sistema, cadastre os dados básicos:
           </p>
@@ -2726,39 +2199,7 @@ const Dashboard = {
         </div>
       </div>
     `).join("") : `<div class="empty">Nenhum evento cadastrado</div>`;
-    // Ocorrências charts
-    const ocorrencias = exec("SELECT DataHora, Tipo FROM tbOcorrencia");
-    if(ocorrencias.length){
-      const byDate = {}; const byTipo = {};
-      ocorrencias.forEach(r => {
-        const d = (r.DataHora||'').split('T')[0] || (r.DataHora||'').split(' ')[0];
-        if(d){ byDate[d] = (byDate[d]||0)+1; }
-        byTipo[r.Tipo] = (byTipo[r.Tipo]||0)+1;
-      });
-      const dateLabels = Object.keys(byDate).sort();
-      this.makeChart("chart-ocorrencia-data", "line", dateLabels, dateLabels.map(d=>byDate[d]), "Ocorrências", "#ef4444");
-      const tipoLabels = Object.keys(byTipo);
-      const cores = ["#ef4444","#f59e0b","#8b5cf6","#06b6d4","#22c55e","#ec4899","#3b82f6","#14b8a6","#f97316","#a855f7","#84cc16","#e11d48","#0ea5e9","#d946ef","#65a30d"];
-      this.makeChart("chart-ocorrencia-tipo", "doughnut", tipoLabels, tipoLabels.map(t=>byTipo[t]), "", cores.slice(0,tipoLabels.length));
-    } else {
-      ["chart-ocorrencia-data","chart-ocorrencia-tipo"].forEach(id => { const el=$(id); if(el){ const ctx=el.getContext("2d"); if(this.charts[id])this.charts[id].destroy(); ctx.clearRect(0,0,el.width,el.height); ctx.fillStyle="#94a3b8"; ctx.font="14px Arial"; ctx.textAlign="center"; ctx.fillText("Nenhuma ocorrência registrada",el.width/2,el.height/2); }});
-    }
     this.renderMap();
-    this._initOcorrenciaFilter();
-  },
-  _initOcorrenciaFilter(){
-    const sel = $("map-ocorrencia-filter");
-    if(!sel || sel.dataset.initialized) return;
-    sel.dataset.initialized = "1";
-    const tipos = NovaOcorrencia ? NovaOcorrencia.tipos : [];
-    tipos.forEach(t => {
-      const opt = document.createElement("option");
-      opt.value = t; opt.textContent = t;
-      sel.appendChild(opt);
-    });
-    sel.onchange = () => {
-      this._addOcorrenciaMarkers(sel.value);
-    };
   },
   makeChart(id, type, labels, data, label, color){
     const el = $(id); if (!el) return;
@@ -2896,35 +2337,12 @@ const Dashboard = {
       }).addTo(this.map);
       this._municLayer = L.layerGroup().addTo(this.map);
       this._outlineLayer = L.layerGroup().addTo(this.map);
-      const toggleMunic = () => {
-        if(!this.map) return;
-        const z = this.map.getZoom();
-        if(z >= 13){
-          if(this.map.hasLayer(this._municLayer)) this.map.removeLayer(this._municLayer);
-          if(this.map.hasLayer(this._outlineLayer)) this.map.removeLayer(this._outlineLayer);
-        } else {
-          if(!this.map.hasLayer(this._municLayer) && this._municLayer) this._municLayer.addTo(this.map);
-          if(!this.map.hasLayer(this._outlineLayer) && this._outlineLayer) this._outlineLayer.addTo(this.map);
-        }
-      };
-      this.map.on('zoomend', toggleMunic);
-      this.map.on('click', (e) => {
-        if(this.map.getZoom() >= 13){
-          NovaOcorrencia.pendingCoords = e.latlng;
-          const navEl = document.querySelector('.nav-item[data-page="novaocorrencia"]');
-          if(navEl) navEl.click();
-        }
-      });
-      setTimeout(toggleMunic, 300);
     } else {
       this.map.invalidateSize();
       this._municLayer.clearLayers();
       this._outlineLayer.clearLayers();
-      if(this._ocorrenciaLayer) this._ocorrenciaLayer.clearLayers();
     }
     if (this._legendCtrl) { this.map.removeControl(this._legendCtrl); this._legendCtrl = null; }
-    if (this._ocorrenciaLegendCtrl) { this.map.removeControl(this._ocorrenciaLegendCtrl); this._ocorrenciaLegendCtrl = null; }
-    if (!this._ocorrenciaLayer) this._ocorrenciaLayer = L.layerGroup().addTo(this.map);
 
     // Always show fallback markers immediately, then upgrade to polygons if GeoJSON loads
     this._fallbackMap(nameToOpm, OPM_GROUPS);
@@ -2934,7 +2352,6 @@ const Dashboard = {
       this._municLayer.clearLayers();
       this._outlineLayer.clearLayers();
       if (this._legendCtrl) { this.map.removeControl(this._legendCtrl); this._legendCtrl = null; }
-      if (this._ocorrenciaLegendCtrl) { this.map.removeControl(this._ocorrenciaLegendCtrl); this._ocorrenciaLegendCtrl = null; }
 
       const matchedFeatures = [];
 
@@ -2974,7 +2391,6 @@ const Dashboard = {
       this._addLegend(OPM_GROUPS);
     };
 
-    this._addOcorrenciaMarkers();
     if (this._geojsonCache) { doRender(this._geojsonCache); return; }
 
     // Fetch GeoJSON with timeout
@@ -3129,7 +2545,7 @@ const Dashboard = {
     ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 4; ctx.stroke();
     // Footer
     ctx.fillStyle = '#64748b'; ctx.font = '17px Inter,sans-serif'; ctx.textBaseline = 'bottom';
-    ctx.fillText(`Mapa gerado em ${new Date().toLocaleDateString('pt-BR')} · GestOper CPR-CN · dados © OpenStreetMap`, W/2, H-12);
+    ctx.fillText(`Mapa gerado em ${new Date().toLocaleDateString('pt-BR')} · H.Extra PM · dados © OpenStreetMap`, W/2, H-12);
     ctx.textBaseline = 'top'; ctx.fillStyle = '#f59e0b80'; ctx.font = '14px Inter,sans-serif'; ctx.textAlign = 'left';
     ctx.fillText('ⓘ Apenas municípios da área do CPR-CN', 18, MAP_TOP+5);
     canvas.toBlob(b => downloadFile(b, `mapa_cprcn_${new Date().toISOString().slice(0,10)}.png`));
@@ -3241,58 +2657,6 @@ const Dashboard = {
       downloadFile(blob, `municipios_cprcn_${new Date().toISOString().slice(0,10)}.kmz`);
       toast('KMZ exportado!');
     } catch(e) { toast('Erro: '+e.message,'error'); }
-  },
-  _addOcorrenciaMarkers(tipoFilter){
-    if(!this.map || !this._ocorrenciaLayer) return;
-    if(!tipoFilter) tipoFilter = ($("map-ocorrencia-filter")||{}).value;
-    this._ocorrenciaLayer.clearLayers();
-    let sql = "SELECT * FROM tbOcorrencia WHERE Latitude IS NOT NULL AND Longitude IS NOT NULL";
-    const params = [];
-    if(tipoFilter){ sql += " AND Tipo=?"; params.push(tipoFilter); }
-    sql += " ORDER BY DataHora DESC";
-    const rows = exec(sql, params);
-    if(!rows.length) return;
-    const corMap = {
-      "Homicídio":"#dc2626","Feminicídio":"#991b1b","Tentativa de Homicídio":"#ef4444",
-      "Latrocínio":"#f97316","Incêndio Criminoso":"#ea580c","Extorsão":"#f59e0b",
-      "Roubo":"#eab308","Roubo a Banco":"#ca8a04","Roubo de Veículo":"#a16207",
-      "Furto":"#d97706","Furto de Veículo":"#92400e",
-      "Estupro":"#a855f7","Estupro de Vulnerável":"#7c3aed","Sequestro":"#9333ea","Atentado ao Pudor":"#c084fc","Corrupção de Menores":"#d8b4fe",
-      "Violência Doméstica - LMP":"#ec4899",
-      "Lesão Corporal":"#3b82f6","Dano ao Patrimônio":"#2563eb","Ameaça":"#60a5fa","Direção Perigosa":"#06b6d4","Perturbação do Sossego":"#22d3ee","Receptação":"#0ea5e9","Estelionato":"#0284c7","Acidente de Trânsito":"#14b8a6","Atropelamento":"#0d9488","Violação de Domicílio":"#0891b2",
-      "Tráfico de Drogas":"#22c55e","Porte de Drogas":"#16a34a","Porte Ilegal de Arma":"#65a30d",
-      "Desaparecimento":"#94a3b8","Suicídio":"#6b7280","Achado de Cadáver":"#4b5563","Crime Cibernético":"#8b5cf6",
-      "Outros":"#9ca3af"
-    };
-    const radiusMap = {
-      "Homicídio":10,"Feminicídio":11,"Tentativa de Homicídio":9,"Latrocínio":10,"Estupro":9,"Estupro de Vulnerável":9,"Sequestro":8,"Incêndio Criminoso":8
-    };
-    rows.forEach(r => {
-      if(!r.Latitude || !r.Longitude) return;
-      const cor = corMap[r.Tipo] || "#9ca3af";
-      const raio = radiusMap[r.Tipo] || 7;
-      L.circleMarker([r.Latitude, r.Longitude], {
-        radius: raio, color: cor, fillColor: cor, fillOpacity: 0.7, weight: 2, opacity: 0.9
-      }).bindPopup(`<b>${r.Tipo}</b><br>${(r.DataHora||'').replace('T',' ')}<br>${escapeHtml(r.Cidade||'')}${r.VTR?'<br><b>VTR:</b> '+escapeHtml(r.VTR):''}${r.Descricao?'<br><i>'+escapeHtml(r.Descricao)+'</i>':''}`)
-        .addTo(this._ocorrenciaLayer);
-    });
-    // Legend
-    if (this._ocorrenciaLegendCtrl) { this.map.removeControl(this._ocorrenciaLegendCtrl); this._ocorrenciaLegendCtrl = null; }
-    const tiposVisiveis = [...new Set(rows.filter(r => r.Latitude && r.Longitude).map(r => r.Tipo))].sort();
-    if (!tiposVisiveis.length) return;
-    const div = L.control({ position: 'bottomleft' });
-    div.onAdd = function() {
-      const el = L.DomUtil.create('div', '');
-      el.style.cssText = 'background:#fff;padding:8px 12px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.18);font:12px/1.5 Inter,system-ui,sans-serif;color:#222;max-height:200px;overflow-y:auto';
-      let html = '<div style="font-weight:700;margin-bottom:4px;font-size:13px">🚨 Tipos Visíveis</div>';
-      tiposVisiveis.forEach(t => {
-        const c = corMap[t] || "#9ca3af";
-        html += `<div style="display:flex;align-items:center;gap:6px;margin:1px 0"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c}"></span> ${t}</div>`;
-      });
-      el.innerHTML = html;
-      return el;
-    };
-    this._ocorrenciaLegendCtrl = div.addTo(this.map);
   }
 };
 function normalizeName(s){
@@ -3312,28 +2676,11 @@ function formatDateBr(s){
 }
 
 /* ===================== EFETIVO ===================== */
-const POSTOS_GRAD = [
-  'CEL PM','TEN CEL PM','MAJ PM','CAP PM','TEN PM','ASP OF PM',
-  'AL OF PM 1 ANO','AL OF PM 2 ANO','AL OF PM 3 ANO',
-  'SUB TEN PM','SGT PM','CB PM','SD PM','AL SD PM',
-  'ALUNO OFICIAL - CFOA PM - SGT','ALUNO OFICIAL - CFOA PM - ST',
-  'ALUNO OFICIAL - CFTA PM - ST'
-];
 const Efetivo = {
   page:1, pageSize:50, sort:"Nome", dir:"ASC",
   init(){
-    const all = exec("SELECT Matricula, Cargo FROM tbEfetivoPM WHERE Cargo IS NOT NULL AND Cargo!=''");
-    const cargosMap = {};
-    exec("SELECT CargoId,PostoGrad FROM tbCargo").forEach(r => cargosMap[r.CargoId] = r.PostoGrad);
-    const pendentes = all.filter(r => cargosMap[r.Cargo]);
-    if (pendentes.length) {
-      db.run("BEGIN");
-      pendentes.forEach(r => db.run("UPDATE tbEfetivoPM SET Cargo=? WHERE Matricula=?",[cargosMap[r.Cargo],r.Matricula]));
-      db.run("COMMIT");
-      try { localStorage.setItem('sispm_db', btoa(String.fromCharCode(...new Uint8Array(db.export())))); } catch(e){}
-      console.log("Cargos migrados:", pendentes.length);
-    }
-    $("ef-filter-cargo").innerHTML = `<option value="">Todos os Cargos</option>` + POSTOS_GRAD.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+    const cargos = exec("SELECT CargoId,PostoGrad FROM tbCargo ORDER BY PostoGrad");
+    $("ef-filter-cargo").innerHTML = `<option value="">Todos os Cargos</option>` + cargos.map(c => `<option value="${c.CargoId}">${escapeHtml(c.PostoGrad)}</option>`).join("");
     const opms = exec("SELECT OpmId, COALESCE(OpmSigla,OpmDesc) s FROM tbOPM ORDER BY s");
     $("ef-filter-opm").innerHTML = `<option value="">Todas as OPMs</option>` + opms.map(o => `<option value="${o.OpmId}">${escapeHtml(o.s)}</option>`).join("");
     this.page = 1;
@@ -3369,17 +2716,16 @@ const Efetivo = {
     if (this.page > totalPages) this.page = totalPages;
     const off = (this.page-1)*this.pageSize;
     const rows = exec(`
-      SELECT e.Matricula, e.Nome, e.Funcao, e.Telefone, e.Cargo PostoGrad, e.OpmId, COALESCE(o.OpmSigla,o.OpmDesc) opm, e.Sit,
-             e.CPF, e.RG, e.Titulo, e.CNH, e.Categoria, e.TipoSanguineo,
-             e.Admissao, e.DataNascimento, e.LocalTrabalho, e.Comportamento
-      FROM tbEfetivoPM e LEFT JOIN tbOPM o ON o.OpmId=e.OpmId
+      SELECT e.Matricula, e.Nome, e.Funcao, e.Telefone, e.Cargo, c.PostoGrad, e.OpmId, COALESCE(o.OpmSigla,o.OpmDesc) opm, e.Sit,
+             e.CPF, e.RG, e.Titulo, e.CNH, e.Categoria, e.TipoSanguineo
+      FROM tbEfetivoPM e LEFT JOIN tbCargo c ON c.CargoId=e.Cargo LEFT JOIN tbOPM o ON o.OpmId=e.OpmId
       ${where} ORDER BY e.${this.sort} ${this.dir} LIMIT ${this.pageSize} OFFSET ${off}
     `, p);
     $("ef-tbody").innerHTML = rows.length ? rows.map(r => `
       <tr>
         <td><b>${escapeHtml(r.Matricula)}</b></td>
         <td>${escapeHtml(r.Nome)}</td>
-        <td><span class="badge">${escapeHtml(r.PostoGrad||"-")}</span></td>
+        <td><span class="badge">${escapeHtml(r.PostoGrad||r.Cargo||"-")}</span></td>
         <td>${escapeHtml(r.opm||"-")}</td>
         <td>${escapeHtml(r.Funcao||"-")}</td>
         <td>${escapeHtml(r.Telefone||"-")}</td>
@@ -3390,73 +2736,31 @@ const Efetivo = {
         <td>${escapeHtml(r.CNH||"-")}</td>
         <td>${escapeHtml(r.Categoria||"-")}</td>
         <td>${escapeHtml(r.TipoSanguineo||"-")}</td>
-        <td>${r.DataNascimento?escapeHtml(r.DataNascimento):"-"}</td>
-        <td>${r.DataNascimento?this._calcIdade(r.DataNascimento):"-"}</td>
-        <td>${r.Admissao?escapeHtml(r.Admissao):"-"}</td>
-        <td>${r.Admissao?this._calcTempo(r.Admissao):"-"}</td>
-        <td>${escapeHtml(r.LocalTrabalho||"-")}</td>
-        <td>${r.Comportamento?`<span class="badge">${escapeHtml(r.Comportamento)}</span>`:"-"}</td>
         <td class="actions-col">
           <button class="btn btn-sm" onclick="Efetivo.openModal('${escapeHtml(r.Matricula)}')">✏️</button>
           <button class="btn btn-sm btn-danger" onclick="Efetivo.del('${escapeHtml(r.Matricula)}')">🗑</button>
         </td>
       </tr>
-    `).join("") : `<tr><td colspan="21" class="empty">Nenhum policial encontrado</td></tr>`;
+    `).join("") : `<tr><td colspan="14" class="empty">Nenhum policial encontrado</td></tr>`;
     $("ef-info").textContent = `${tot.toLocaleString("pt-BR")} registros — página ${this.page} de ${totalPages}`;
     $("efetivo-count").textContent = `${tot.toLocaleString("pt-BR")} policiais cadastrados`;
   },
   prevPage(){ if (this.page>1){this.page--; this.render();} },
   nextPage(){ this.page++; this.render(); },
-  _calcIdade(dtnasc){
-    if(!dtnasc) return '';
-    const hoje=new Date(), n=new Date(dtnasc.split('/').reverse().join('-'));
-    let idade=hoje.getFullYear()-n.getFullYear();
-    const m=hoje.getMonth()-n.getMonth();
-    if(m<0||(m===0&&hoje.getDate()<n.getDate())) idade--;
-    return idade;
-  },
-  _calcTempo(adm){
-    if(!adm) return '';
-    const hoje=new Date(), a=new Date(adm.split('/').reverse().join('-'));
-    let anos=hoje.getFullYear()-a.getFullYear();
-    const m=hoje.getMonth()-a.getMonth();
-    if(m<0||(m===0&&hoje.getDate()<a.getDate())) anos--;
-    const meses=m<0?m+12:m;
-    return `${anos}a ${meses}m`;
-  },
-  _recalc(){
-    const dtnasc=$("m-dtnasc").value, adm=$("m-admissao").value;
-    if(dtnasc){ const d=new Date(dtnasc+'T12:00:00'); let i=new Date().getFullYear()-d.getFullYear(); const m=new Date().getMonth()-d.getMonth(); if(m<0||(m===0&&new Date().getDate()<d.getDate())) i--; $("m-idade").value=i; }
-    else $("m-idade").value='';
-    if(adm){ const a=new Date(adm+'T12:00:00'); let an=new Date().getFullYear()-a.getFullYear(); const m=new Date().getMonth()-a.getMonth(); if(m<0||(m===0&&new Date().getDate()<a.getDate())) an--; const me=m<0?m+12:m; $("m-tempo").value=an+'a '+me+'m'; }
-    else $("m-tempo").value='';
-  },
   openModal(mat){
     const isEdit = !!mat;
-    let r = { Matricula:"", Nome:"", Funcao:"", Telefone:"", Cargo:"", OpmId:"", Sit:"", CPF:"", RG:"", Titulo:"", CNH:"", Categoria:"", TipoSanguineo:"", Admissao:"", DataNascimento:"", LocalTrabalho:"", Comportamento:"" };
+    let r = { Matricula:"", Nome:"", Funcao:"", Telefone:"", Cargo:"", OpmId:"", Sit:"", CPF:"", RG:"", Titulo:"", CNH:"", Categoria:"", TipoSanguineo:"" };
     if (isEdit) r = exec("SELECT * FROM tbEfetivoPM WHERE Matricula=?",[mat])[0];
+    const cargos = exec("SELECT CargoId,PostoGrad FROM tbCargo ORDER BY PostoGrad");
     const opms = exec("SELECT OpmId, COALESCE(OpmSigla,OpmDesc) s FROM tbOPM ORDER BY s");
-    const idadeCalc = r.DataNascimento ? this._calcIdade(r.DataNascimento) : '';
-    const tempoCalc = r.Admissao ? this._calcTempo(r.Admissao) : '';
     openModal(isEdit?"Editar Policial":"Novo Policial", `
       <div class="form-grid">
         <div class="field"><label>Matrícula *</label><input id="m-mat" value="${escapeHtml(r.Matricula||'')}" ${isEdit?'readonly':''} /></div>
         <div class="field"><label>Nome *</label><input id="m-nome" value="${escapeHtml(r.Nome||'')}" /></div>
-        <div class="field"><label>Admissão</label><input id="m-admissao" type="date" value="${r.Admissao||''}" onchange="Efetivo._recalc()" /></div>
-        <div class="field"><label>Data Nascimento</label><input id="m-dtnasc" type="date" value="${r.DataNascimento||''}" onchange="Efetivo._recalc()" /></div>
-        <div class="field"><label>Idade</label><input id="m-idade" readonly style="background:#f0f0f0" value="${idadeCalc}" /></div>
-        <div class="field"><label>Tempo de Serviço</label><input id="m-tempo" readonly style="background:#f0f0f0" value="${tempoCalc}" /></div>
-        <div class="field"><label>Local de Trabalho</label><input id="m-local" value="${escapeHtml(r.LocalTrabalho||'')}" /></div>
-        <div class="field"><label>Comportamento</label>
-          <select id="m-comportamento">
-            <option value="">--</option>
-            ${['BOM','ÓTIMO','EXCELENTE','EXCEPCIONAL','REGULAR','MAU'].map(c=>`<option value="${c}" ${(r.Comportamento||'').toUpperCase()===c?'selected':''}>${c}</option>`).join("")}
-          </select>
-        </div>
         <div class="field"><label>Função</label><input id="m-funcao" value="${escapeHtml(r.Funcao||'')}" /></div>
         <div class="field"><label>Telefone</label><input id="m-telefone" value="${escapeHtml(r.Telefone||'')}" /></div>
         <div class="field"><label>Posto/Graduação</label><select id="m-cargo">
-          <option value="">--</option>${POSTOS_GRAD.map(c=>`<option value="${escapeHtml(c)}" ${r.Cargo===c?'selected':''}>${escapeHtml(c)}</option>`).join("")}
+          <option value="">--</option>${cargos.map(c=>`<option value="${c.CargoId}" ${r.Cargo===c.CargoId?'selected':''}>${escapeHtml(c.PostoGrad)}</option>`).join("")}
         </select></div>
         <div class="field"><label>OPM</label><select id="m-opm">
           <option value="">--</option>${opms.map(o=>`<option value="${o.OpmId}" ${r.OpmId===o.OpmId?'selected':''}>${escapeHtml(o.s)}</option>`).join("")}
@@ -3484,13 +2788,9 @@ const Efetivo = {
       const cnh = $("m-cnh").value.trim() || null;
       const categoria = $("m-categoria").value.trim() || null;
       const tipoSang = $("m-tipo-sang").value.trim() || null;
-      const admissao = $("m-admissao").value || null;
-      const dtnasc = $("m-dtnasc").value || null;
-      const local = $("m-local").value.trim() || null;
-      const comportamento = $("m-comportamento").value || null;
       try {
-        if (isEdit) run("UPDATE tbEfetivoPM SET Nome=?,Funcao=?,Telefone=?,Cargo=?,OpmId=?,Sit=?,CPF=?,RG=?,Titulo=?,CNH=?,Categoria=?,TipoSanguineo=?,Admissao=?,DataNascimento=?,LocalTrabalho=?,Comportamento=? WHERE Matricula=?",[nome,funcao,telefone,cargo,opm,sit,cpf,rg,titulo,cnh,categoria,tipoSang,admissao,dtnasc,local,comportamento,mat2]);
-        else run("INSERT INTO tbEfetivoPM (Matricula,Nome,Funcao,Telefone,Cargo,OpmId,Sit,CPF,RG,Titulo,CNH,Categoria,TipoSanguineo,Admissao,DataNascimento,LocalTrabalho,Comportamento) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",[mat2,nome,funcao,telefone,cargo,opm,sit,cpf,rg,titulo,cnh,categoria,tipoSang,admissao,dtnasc,local,comportamento]);
+        if (isEdit) run("UPDATE tbEfetivoPM SET Nome=?,Funcao=?,Telefone=?,Cargo=?,OpmId=?,Sit=?,CPF=?,RG=?,Titulo=?,CNH=?,Categoria=?,TipoSanguineo=? WHERE Matricula=?",[nome,funcao,telefone,cargo,opm,sit,cpf,rg,titulo,cnh,categoria,tipoSang,mat2]);
+        else run("INSERT INTO tbEfetivoPM (Matricula,Nome,Funcao,Telefone,Cargo,OpmId,Sit,CPF,RG,Titulo,CNH,Categoria,TipoSanguineo) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",[mat2,nome,funcao,telefone,cargo,opm,sit,cpf,rg,titulo,cnh,categoria,tipoSang]);
         closeModal(); toast(isEdit?"Atualizado!":"Cadastrado!"); this.render();
       } catch(e){ toast("Erro: "+e.message,"error"); }
     });
@@ -3503,14 +2803,13 @@ const Efetivo = {
   exportCsv(){
     const [where, p] = this.buildWhere();
     const rows = exec(`
-      SELECT e.Matricula, e.Nome, e.Funcao, e.Telefone, e.Cargo postoGrad, COALESCE(o.OpmSigla,o.OpmDesc) opm, e.Sit,
-             e.CPF, e.RG, e.Titulo, e.CNH, e.Categoria, e.TipoSanguineo,
-             e.Admissao, e.DataNascimento, e.LocalTrabalho, e.Comportamento
-      FROM tbEfetivoPM e LEFT JOIN tbOPM o ON o.OpmId=e.OpmId
+      SELECT e.Matricula, e.Nome, e.Funcao, e.Telefone, c.PostoGrad, COALESCE(o.OpmSigla,o.OpmDesc) opm, e.Sit,
+             e.CPF, e.RG, e.Titulo, e.CNH, e.Categoria, e.TipoSanguineo
+      FROM tbEfetivoPM e LEFT JOIN tbCargo c ON c.CargoId=e.Cargo LEFT JOIN tbOPM o ON o.OpmId=e.OpmId
       ${where} ORDER BY e.Nome
     `, p);
-    let csv = "Matrícula;Nome;Função;Telefone;Posto/Grad;OPM;Situação;CPF;RG;Título;CNH;Categoria;Tipo Sanguíneo;Admissão;Data Nascimento;Local Trabalho;Comportamento\n";
-    rows.forEach(r => csv += `${r.Matricula};${r.Nome};${r.Funcao||""};${r.Telefone||""};${r.postoGrad||""};${r.opm||""};${r.Sit||""};${r.CPF||""};${r.RG||""};${r.Titulo||""};${r.CNH||""};${r.Categoria||""};${r.TipoSanguineo||""};${r.Admissao||""};${r.DataNascimento||""};${r.LocalTrabalho||""};${r.Comportamento||""}\n`);
+    let csv = "Matrícula;Nome;Função;Telefone;Posto/Grad;OPM;Situação;CPF;RG;Título;CNH;Categoria;Tipo Sanguíneo\n";
+    rows.forEach(r => csv += `${r.Matricula};${r.Nome};${r.Funcao||""};${r.Telefone||""};${r.PostoGrad||""};${r.opm||""};${r.Sit||""};${r.CPF||""};${r.RG||""};${r.Titulo||""};${r.CNH||""};${r.Categoria||""};${r.TipoSanguineo||""}\n`);
     downloadFile(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}), "efetivo.csv");
     toast("CSV exportado!");
   },
@@ -3536,10 +2835,6 @@ const Efetivo = {
           const pg = mapIdx("posto/grad") ?? mapIdx("postograd");
           const op = mapIdx("opm");
           const si = mapIdx("situação") ?? mapIdx("situacao");
-          const adm = mapIdx("admissão") >= 0 ? mapIdx("admissão") : mapIdx("admissao");
-          const dn = mapIdx("data nascimento") >= 0 ? mapIdx("data nascimento") : mapIdx("datanascimento");
-          const lt = mapIdx("local trabalho") >= 0 ? mapIdx("local trabalho") : mapIdx("localtrabalho");
-          const cp = mapIdx("comportamento");
           if (mi==null || mi<0 || no==null || no<0) { toast("CSV precisa das colunas Matrícula e Nome","error"); return; }
           let imported = 0, skipped = 0;
           const tx = (sql, params) => run(sql, params);
@@ -3553,20 +2848,21 @@ const Efetivo = {
             const postoGrad = pg!=null&&pg>=0 ? (cols[pg]||"").trim() : "";
             const opmStr = op!=null&&op>=0 ? (cols[op]||"").trim() : "";
             const sit = si!=null&&si>=0 ? (cols[si]||"").trim() : "";
-            const admissao = adm>=0 ? (cols[adm]||"").trim() : "";
-            const dtnasc = dn>=0 ? (cols[dn]||"").trim() : "";
-            const localTrab = lt>=0 ? (cols[lt]||"").trim() : "";
-            const comportamento = cp>=0 ? (cols[cp]||"").trim() : "";
             let opmId = null;
             if (opmStr) {
               const opmRow = exec("SELECT OpmId FROM tbOPM WHERE OpmSigla=? OR OpmDesc LIKE ?",[opmStr, "%"+opmStr+"%"])[0];
               if (opmRow) opmId = opmRow.OpmId;
             }
+            let cargoId = null;
+            if (postoGrad) {
+              const cargoRow = exec("SELECT CargoId FROM tbCargo WHERE PostoGrad=?",[postoGrad])[0];
+              if (cargoRow) cargoId = cargoRow.CargoId;
+            }
             const existing = exec("SELECT Matricula FROM tbEfetivoPM WHERE Matricula=?",[mat])[0];
             if (existing) {
-              tx("UPDATE tbEfetivoPM SET Nome=?,Funcao=?,Telefone=?,Cargo=?,OpmId=?,Sit=?,Admissao=?,DataNascimento=?,LocalTrabalho=?,Comportamento=? WHERE Matricula=?",[nome,funcao,telefone||null,postoGrad||null,opmId,sit||null,admissao||null,dtnasc||null,localTrab||null,comportamento||null,mat]);
+              tx("UPDATE tbEfetivoPM SET Nome=?,Funcao=?,Telefone=?,Cargo=?,OpmId=?,Sit=? WHERE Matricula=?",[nome,funcao,telefone||null,cargoId,opmId,sit||null,mat]);
             } else {
-              tx("INSERT INTO tbEfetivoPM (Matricula,Nome,Funcao,Telefone,Cargo,OpmId,Sit,Admissao,DataNascimento,LocalTrabalho,Comportamento) VALUES (?,?,?,?,?,?,?,?,?,?,?)",[mat,nome,funcao,telefone||null,postoGrad||null,opmId,sit||null,admissao||null,dtnasc||null,localTrab||null,comportamento||null]);
+              tx("INSERT INTO tbEfetivoPM (Matricula,Nome,Funcao,Telefone,Cargo,OpmId,Sit) VALUES (?,?,?,?,?,?,?)",[mat,nome,funcao,telefone||null,cargoId,opmId,sit||null]);
             }
             imported++;
           }
@@ -3705,14 +3001,12 @@ const Evento = {
         (SELECT COALESCE(SUM(es.EscalaCHDiurna+es.EscalaCHNoturna),0) FROM tbEscala es JOIN tbOpmEvento oe ON oe.OpmEventoId=es.OpmEventoId WHERE oe.EventoId=e.EventoId) ch
       FROM tbEvento e ORDER BY e.EventoDtaInicio DESC
     `);
-    $("evt-tbody").innerHTML = rows.length ? rows.map(r => {
-      const tpStyles = {HE:'badge',VD:'badge-purple',SO:'badge-green'};
-      return `<tr>
+    $("evt-tbody").innerHTML = rows.length ? rows.map(r => `
+      <tr>
         <td>${r.EventoId}</td>
         <td><b>${escapeHtml(r.EventoDesc)}</b></td>
         <td>${formatDateBr(r.EventoDtaInicio)}</td>
         <td>${formatDateBr(r.EventoDtaFim)}</td>
-        <td><span class="badge ${tpStyles[r.TipoPagamento]||'badge-blue'}">${r.TipoPagamento||'HE'}</span></td>
         <td><span class="badge badge-purple">${r.opms}</span></td>
         <td><span class="badge badge-green">${r.pols}</span></td>
         <td><b>${r.ch} h</b></td>
@@ -3720,30 +3014,29 @@ const Evento = {
           <button class="btn btn-sm" onclick="Evento.openModal(${r.EventoId})">✏️</button>
           <button class="btn btn-sm btn-danger" onclick="Evento.del(${r.EventoId})">🗑</button>
         </td>
-      </tr>`;
-    }).join("") : `<tr><td colspan="9" class="empty">Nenhum evento. Crie o primeiro!</td></tr>`;
+      </tr>
+    `).join("") : `<tr><td colspan="8" class="empty">Nenhum evento. Crie o primeiro!</td></tr>`;
     $("evt-count").textContent = `${rows.length} eventos cadastrados`;
   },
   openModal(id){
     const isEdit = !!id;
-    let r = { EventoDesc:"", EventoDtaInicio:"", EventoDtaFim:"", Campo1:"", TipoPagamento:"HE" };
+    let r = { EventoDesc:"", EventoDtaInicio:"", EventoDtaFim:"", Campo1:"" };
     if (isEdit) r = exec("SELECT * FROM tbEvento WHERE EventoId=?",[id])[0];
     openModal(isEdit?"Editar Evento":"Novo Evento", `
       <div class="form-grid">
         <div class="field" style="grid-column:span 2"><label>Descrição *</label><input id="m-desc" value="${escapeHtml(r.EventoDesc||'')}" /></div>
         <div class="field"><label>Data Início</label><input type="date" id="m-ini" value="${r.EventoDtaInicio||''}" /></div>
         <div class="field"><label>Data Fim</label><input type="date" id="m-fim" value="${r.EventoDtaFim||''}" /></div>
-        <div class="field"><label>Tipo Pagamento</label><select id="m-tp"><option value="HE" ${r.TipoPagamento==='HE'?'selected':''}>HE (Hora Extra)</option><option value="VD" ${r.TipoPagamento==='VD'?'selected':''}>VD (Valor Diferencial)</option><option value="SO" ${r.TipoPagamento==='SO'?'selected':''}>SO (Serviço Ordinário)</option></select></div>
         <div class="field" style="grid-column:span 2"><label>Observações</label><input id="m-obs" value="${escapeHtml(r.Campo1||'')}" /></div>
       </div>
     `, () => {
       const desc = $("m-desc").value.trim();
       if (!desc){ toast("Descrição é obrigatória","error"); return; }
       try{
-        if (isEdit) run("UPDATE tbEvento SET EventoDesc=?,EventoDtaInicio=?,EventoDtaFim=?,TipoPagamento=?,Campo1=? WHERE EventoId=?",
-          [desc,$("m-ini").value||null,$("m-fim").value||null,$("m-tp").value||null,$("m-obs").value||null,id]);
-        else run("INSERT INTO tbEvento (EventoDesc,EventoDtaInicio,EventoDtaFim,TipoPagamento,Campo1) VALUES (?,?,?,?,?)",
-          [desc,$("m-ini").value||null,$("m-fim").value||null,$("m-tp").value||null,$("m-obs").value||null]);
+        if (isEdit) run("UPDATE tbEvento SET EventoDesc=?,EventoDtaInicio=?,EventoDtaFim=?,Campo1=? WHERE EventoId=?",
+          [desc,$("m-ini").value||null,$("m-fim").value||null,$("m-obs").value||null,id]);
+        else run("INSERT INTO tbEvento (EventoDesc,EventoDtaInicio,EventoDtaFim,Campo1) VALUES (?,?,?,?)",
+          [desc,$("m-ini").value||null,$("m-fim").value||null,$("m-obs").value||null]);
         closeModal(); toast(isEdit?"Atualizado!":"Cadastrado!");
         if (currentPage==="evento") this.render();
         if (currentPage==="escala") Escala.init();
@@ -3763,7 +3056,7 @@ const Evento = {
   exportCsv(){
     const rows = exec("SELECT * FROM tbEvento ORDER BY EventoDtaInicio DESC");
     if (!rows.length){ toast("Nenhum dado para exportar","error"); return; }
-    const cols = ['EventoId','EventoDesc','EventoDtaInicio','EventoDtaFim','TipoPagamento','Campo1'];
+    const cols = ['EventoId','EventoDesc','EventoDtaInicio','EventoDtaFim','Campo1'];
     let csv = cols.join(';') + '\n';
     rows.forEach(r => {
       csv += cols.map(c => { const v = r[c]; return v != null ? String(v).replace(/;/g,',').replace(/\n/g,' ') : ''; }).join(';') + '\n';
@@ -3786,16 +3079,14 @@ const Evento = {
           const iDesc = idx("EventoDesc")??idx("descrição")??idx("descricao");
           const iIni = idx("EventoDtaInicio")??idx("início")??idx("inicio")??idx("data início")??idx("datainicio");
           const iFim = idx("EventoDtaFim")??idx("fim")??idx("data fim")??idx("datafim");
-          const iTp = idx("TipoPagamento")??idx("tipo pagamento")??idx("tipopagamento")??idx("tipo")??idx("pagamento");
           const iObs = idx("Campo1")??idx("observações")??idx("observacoes")??idx("obs");
           if (iDesc==null) { toast("CSV precisa da coluna EventoDesc/Descrição","error"); return; }
           let imported = 0;
           for (let i = 1; i < lines.length; i++) {
             const cols = lines[i].split(";");
             const desc = (cols[iDesc]||"").trim(); if (!desc) continue;
-            const tp = iTp!=null ? cols[iTp].trim() : 'HE';
-            run("INSERT INTO tbEvento (EventoDesc,EventoDtaInicio,EventoDtaFim,TipoPagamento,Campo1) VALUES (?,?,?,?,?)",
-              [desc, iIni!=null?cols[iIni].trim():null, iFim!=null?cols[iFim].trim():null, tp, iObs!=null?cols[iObs].trim():null]);
+            run("INSERT INTO tbEvento (EventoDesc,EventoDtaInicio,EventoDtaFim,Campo1) VALUES (?,?,?,?)",
+              [desc, iIni!=null?cols[iIni].trim():null, iFim!=null?cols[iFim].trim():null, iObs!=null?cols[iObs].trim():null]);
             imported++;
           }
           toast(`Importados ${imported} eventos`); this.render();
@@ -4221,170 +3512,6 @@ const Municipio = {
   }
 };
 
-/* ===================== NOVA OCORRÊNCIA ===================== */
-const NovaOcorrencia = {
-  editingId: null, _map: null, _marker: null, pendingCoords: null,
-  tipos: ["Homicídio","Feminicídio","Latrocínio","Tentativa de Homicídio","Estupro","Estupro de Vulnerável","Violência Doméstica - LMP","Lesão Corporal","Roubo","Roubo a Banco","Roubo de Veículo","Furto","Furto de Veículo","Tráfico de Drogas","Porte de Drogas","Porte Ilegal de Arma","Sequestro","Extorsão","Dano ao Patrimônio","Ameaça","Direção Perigosa","Perturbação do Sossego","Receptação","Estelionato","Desaparecimento","Suicídio","Incêndio Criminoso","Violação de Domicílio","Atentado ao Pudor","Corrupção de Menores","Crime Cibernético","Acidente de Trânsito","Atropelamento","Achado de Cadáver","Outros"],
-  init(){
-    this.editingId = null;
-    this._popularCidades();
-    this.renderTabela();
-    this.limpar();
-    const coords = this.pendingCoords;
-    this.pendingCoords = null;
-    setTimeout(() => {
-      this._initMap();
-      if(coords){
-        $("noc-datahora").value = new Date().toISOString().slice(0,16);
-        if(this._map) this._map.setView([coords.lat, coords.lng], 16);
-        setTimeout(() => {
-          if(this._marker) this._map.removeLayer(this._marker);
-          this._marker = L.marker([coords.lat, coords.lng], { draggable: true }).addTo(this._map);
-        }, 200);
-      }
-    }, 100);
-  },
-  _popularCidades(){
-    const sel = $("noc-cidade");
-    if(!sel) return;
-    const cids = exec("SELECT Nome FROM tbMunicipio ORDER BY Nome");
-    sel.innerHTML = '<option value="">Selecione...</option>' + cids.map(c => `<option value="${c.Nome}">${c.Nome}</option>`).join('');
-  },
-  _initMap(){
-    if(typeof L === 'undefined') return;
-    const el = $("noc-map");
-    if(!el) return;
-    if(this._map){ this._map.invalidateSize(); return; }
-    this._map = L.map('noc-map', { zoomControl: true, attributionControl: false, center: [-11.3, -41.9], zoom: 8 });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(this._map);
-    this._map.on('click', (e) => {
-      if(this._marker) this._map.removeLayer(this._marker);
-      this._marker = L.marker(e.latlng, { draggable: true }).addTo(this._map);
-    });
-  },
-  _onCidadeChange(){
-    const nome = $("noc-cidade").value;
-    if(!nome || !this._map) return;
-    const cid = exec("SELECT Latitude, Longitude FROM tbMunicipio WHERE Nome=?",[nome])[0];
-    if(cid && cid.Latitude && cid.Longitude){
-      this._map.setView([cid.Latitude, cid.Longitude], 13);
-    } else {
-      this._map.setView([-11.3, -41.9], 8);
-    }
-    if(this._marker){ this._map.removeLayer(this._marker); this._marker = null; }
-  },
-  salvar(){
-    const tipo = $("noc-tipo").value;
-    const datahora = $("noc-datahora").value;
-    const cidade = $("noc-cidade").value;
-    const vtr = $("noc-vtr").value.trim();
-    const descricao = $("noc-descricao").value.trim();
-    const dados = $("noc-dados").value.trim();
-    if(!tipo){ toast("Selecione o tipo de ocorrência","error"); return; }
-    if(!datahora){ toast("Informe a data e hora","error"); return; }
-    let lat=null, lng=null;
-    if(this._marker){ lat=this._marker.getLatLng().lat; lng=this._marker.getLatLng().lng; }
-    if(this.editingId){
-      run("UPDATE tbOcorrencia SET Tipo=?,DataHora=?,Cidade=?,Latitude=?,Longitude=?,VTR=?,Descricao=?,DadosRelevantes=? WHERE Id=?",
-        [tipo,datahora,cidade,lat,lng,vtr,descricao,dados,this.editingId]);
-      toast("Ocorrência atualizada!");
-    } else {
-      run("INSERT INTO tbOcorrencia (Tipo,DataHora,Cidade,Latitude,Longitude,VTR,Descricao,DadosRelevantes) VALUES (?,?,?,?,?,?,?,?)",
-        [tipo,datahora,cidade,lat,lng,vtr,descricao,dados]);
-      toast("Ocorrência registrada!");
-    }
-    this.editingId = null; this.limpar(); this.renderTabela();
-  },
-  editar(id){
-    const r = exec("SELECT * FROM tbOcorrencia WHERE Id=?",[id])[0];
-    if(!r) return;
-    this.editingId = r.Id;
-    $("noc-tipo").value = r.Tipo;
-    $("noc-datahora").value = r.DataHora;
-    $("noc-cidade").value = r.Cidade||"";
-    $("noc-vtr").value = r.VTR||"";
-    $("noc-descricao").value = r.Descricao||"";
-    $("noc-dados").value = r.DadosRelevantes||"";
-    if(r.Latitude && r.Longitude && this._map){
-      this._map.setView([r.Latitude, r.Longitude], 14);
-      if(this._marker) this._map.removeLayer(this._marker);
-      this._marker = L.marker([r.Latitude, r.Longitude], { draggable: true }).addTo(this._map);
-    } else {
-      this._onCidadeChange();
-    }
-  },
-  excluir(id){
-    if(!confirm("Excluir esta ocorrência?")) return;
-    run("DELETE FROM tbOcorrencia WHERE Id=?",[id]);
-    toast("Excluída!"); this.renderTabela();
-  },
-  limpar(){
-    this.editingId = null;
-    $("noc-tipo").value = "";
-    $("noc-datahora").value = "";
-    $("noc-cidade").value = "";
-    $("noc-vtr").value = "";
-    $("noc-descricao").value = "";
-    $("noc-dados").value = "";
-    if(this._marker){ this._map.removeLayer(this._marker); this._marker = null; }
-  },
-  renderTabela(){
-    const q = ($("noc-search")?.value||"").toLowerCase();
-    let rows = exec("SELECT * FROM tbOcorrencia ORDER BY DataHora DESC");
-    if(q) rows = rows.filter(r => (r.Tipo+';'+r.Cidade+';'+r.VTR+';'+r.Descricao).toLowerCase().includes(q));
-    $("noc-table-count").textContent = rows.length+" registro(s)";
-    $("noc-count").textContent = "Total: "+rows.length+" ocorrência(s)";
-    $("noc-tbody").innerHTML = rows.map(r => {
-      const data = (r.DataHora||'').replace('T',' ');
-      const coord = r.Latitude ? r.Latitude.toFixed(4)+', '+r.Longitude.toFixed(4) : '';
-      return `<tr>
-        <td>${r.Id}</td>
-        <td><strong>${r.Tipo}</strong></td>
-        <td>${data}</td>
-        <td>${r.Cidade||'-'}</td>
-        <td>${r.VTR||'-'}</td>
-        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(r.Descricao||'')}</td>
-        <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(r.DadosRelevantes||'')}</td>
-        <td style="font-size:9px">${coord}</td>
-        <td><button class="btn btn-sm" onclick="NovaOcorrencia.editar(${r.Id})">✏️</button> <button class="btn btn-sm btn-danger" onclick="NovaOcorrencia.excluir(${r.Id})">🗑</button></td>
-      </tr>`;
-    }).join('');
-  },
-  publicarLink(){
-    const url = window.location.href.split('?')[0].split('#')[0];
-    const full = url + '?registrar';
-    navigator.clipboard.writeText(full).then(() => toast("Link copiado! "+full)).catch(() => toast("Link: "+full));
-  },
-  _renderFormExterno(){
-    const div = $("ext-form");
-    if(!div) return;
-    const tipos = this.tipos;
-    const cids = exec("SELECT Nome FROM tbMunicipio ORDER BY Nome").map(c => `<option value="${c.Nome}">${c.Nome}</option>`).join('');
-    div.innerHTML = `
-      <div class="field"><label>Tipo de Ocorrência *</label><select id="noc-tipo" style="width:100%;padding:6px;border-radius:4px;border:1px solid #ccc;font-size:13px"><option value="">Selecione...</option>${tipos.map(t=>'<option value="'+t+'">'+t+'</option>').join('')}</select></div>
-      <div class="field"><label>Data e Hora *</label><input type="datetime-local" id="noc-datahora" style="width:100%;padding:6px;border-radius:4px;border:1px solid #ccc;font-size:13px" /></div>
-      <div class="field"><label>Cidade</label><select id="noc-cidade" style="width:100%;padding:6px;border-radius:4px;border:1px solid #ccc;font-size:13px"><option value="">Selecione...</option>${cids}</select></div>
-      <div class="field"><label>VTR Que Atendeu</label><input id="noc-vtr" style="width:100%;padding:6px;border-radius:4px;border:1px solid #ccc;font-size:13px" /></div>
-      <div class="field" style="grid-column:1/-1"><label>Descrição dos Fatos</label><textarea id="noc-descricao" rows="3" style="width:100%;padding:6px;border-radius:4px;border:1px solid #ccc;font-size:13px;font-family:inherit;resize:vertical"></textarea></div>
-      <div class="field" style="grid-column:1/-1"><label>Dados Relevantes</label><textarea id="noc-dados" rows="2" style="width:100%;padding:6px;border-radius:4px;border:1px solid #ccc;font-size:13px;font-family:inherit;resize:vertical"></textarea></div>
-    `;
-  },
-  salvarExterno(){
-    const tipo = $("noc-tipo")?.value;
-    const datahora = $("noc-datahora")?.value;
-    const cidade = $("noc-cidade")?.value;
-    const vtr = $("noc-vtr")?.value.trim();
-    const descricao = $("noc-descricao")?.value.trim();
-    const dados = $("noc-dados")?.value.trim();
-    if(!tipo){ alert("Selecione o tipo de ocorrência"); return; }
-    if(!datahora){ alert("Informe a data e hora"); return; }
-    run("INSERT INTO tbOcorrencia (Tipo,DataHora,Cidade,VTR,Descricao,DadosRelevantes) VALUES (?,?,?,?,?,?)",
-      [tipo,datahora,cidade,vtr||null,descricao||null,dados||null]);
-    const msg = $("ext-msg");
-    if(msg){ msg.style.display="block"; msg.textContent="✅ Ocorrência registrada com sucesso!"; }
-  }
-};
-
 /* ===================== ESCALA ===================== */
 const Escala = {
   currentEvento:null, currentOpmEvento:null,
@@ -4486,26 +3613,17 @@ const Escala = {
       const oldData = r.EscalaData || "";
       const matEsc = escapeHtml(r.Matricula);
       const dataEsc = escapeHtml(oldData);
-      const oldIni = r.HoraInicio||"";
-      const oldFim = r.HoraFim||"";
-      const tp = r.TipoPagamento||'HE';
       return `<tr>
         <td><b>${matEsc}</b></td>
         <td>${escapeHtml(r.Nome)}</td>
         <td><span class="badge">${escapeHtml(r.PostoGrad||"-")}</span></td>
-        <td><select onchange="Escala.updTipoPagamento('${matEsc}','${dataEsc}',this.value)" style="padding:3px 4px;border-radius:4px;background:#0b1224;color:var(--text);border:1px solid var(--line);font-size:11px">
-          <option value="HE"${tp==='HE'?' selected':''}>HE</option>
-          <option value="VD"${tp==='VD'?' selected':''}>VD</option>
-        </select></td>
         <td><input type="date" value="${oldData}" style="padding:5px;border-radius:6px;border:1px solid var(--line);background:#0b1224;color:var(--text);font-size:12px" onchange="Escala.updData('${matEsc}','${dataEsc}',this.value)" /></td>
-        <td><input type="time" value="${oldIni}" style="width:80px;padding:5px;border-radius:6px;border:1px solid var(--line);background:#0b1224;color:var(--text);font-size:12px" onchange="Escala.updHorario('${matEsc}','${dataEsc}','HoraInicio','HoraFim',this.value,'${oldFim}')" /></td>
-        <td><input type="time" value="${oldFim}" style="width:80px;padding:5px;border-radius:6px;border:1px solid var(--line);background:#0b1224;color:var(--text);font-size:12px" onchange="Escala.updHorario('${matEsc}','${dataEsc}','HoraFim','HoraInicio',this.value,'${oldIni}')" /></td>
-        <td style="color:#94a3b8;font-size:13px">${r.EscalaCHDiurna||0}</td>
-        <td style="color:#94a3b8;font-size:13px">${r.EscalaCHNoturna||0}</td>
+        <td><input type="number" step="0.5" min="0" value="${r.EscalaCHDiurna||0}" style="width:70px;padding:5px;border-radius:6px;border:1px solid var(--line);background:#0b1224;color:var(--text)" onchange="Escala.updHora('${matEsc}','${dataEsc}','d',this.value)" /></td>
+        <td><input type="number" step="0.5" min="0" value="${r.EscalaCHNoturna||0}" style="width:70px;padding:5px;border-radius:6px;border:1px solid var(--line);background:#0b1224;color:var(--text)" onchange="Escala.updHora('${matEsc}','${dataEsc}','n',this.value)" /></td>
         <td><b>${tot} h</b></td>
         <td><button class="btn btn-sm btn-danger" onclick="Escala.delPolicial('${matEsc}','${dataEsc}')">🗑</button></td>
       </tr>`;
-    }).join("") : `<tr><td colspan="11" class="empty">Nenhum policial escalado. Busque acima e adicione.</td></tr>`;
+    }).join("") : `<tr><td colspan="8" class="empty">Nenhum policial escalado. Busque acima e adicione.</td></tr>`;
     $("esc-pol-summary").innerHTML = `
       <div class="summary-pill">👮 Policiais: <b>${rows.length}</b></div>
       <div class="summary-pill">☀️ Diurnas: <b>${totD} h</b></div>
@@ -4534,46 +3652,16 @@ const Escala = {
     $("esc-pol-search").value = `${mat} — ${nome}`;
     $("esc-pol-results").style.display = "none";
   },
-  calcularCH(inicio, fim){
-    if(!inicio || !fim) return { diurna: 0, noturna: 0 };
-    const toMin = s => { const [h,m]=s.split(':').map(Number); return h*60+m; };
-    let s = toMin(inicio), e = toMin(fim);
-    if(e <= s) e += 1440;
-    const D1=300, D2=1320;
-    let diurna = 0, cur = s;
-    while(cur < e){
-      const ds = Math.floor(cur/1440)*1440;
-      const dS = Math.max(cur, ds+D1);
-      const dE = Math.min(e, ds+D2);
-      if(dS < dE) diurna += dE - dS;
-      cur = ds + 1440;
-    }
-    const total = e - s;
-    return {
-      diurna: parseFloat((diurna/60).toFixed(1)),
-      noturna: parseFloat(((total-diurna)/60).toFixed(1))
-    };
-  },
-  calcularCHForm(){
-    const ch = this.calcularCH($("esc-hora-inicio").value, $("esc-hora-fim").value);
-    $("esc-ch-d").value = ch.diurna;
-    $("esc-ch-n").value = ch.noturna;
-  },
   addPolicial(){
     const mat = $("esc-pol-mat").value;
     if (!mat){ toast("Selecione um policial primeiro","error"); return; }
-    const inicio = $("esc-hora-inicio").value;
-    const fim = $("esc-hora-fim").value;
-    const ch = this.calcularCH(inicio, fim);
+    const d = +$("esc-ch-d").value||0;
+    const n = +$("esc-ch-n").value||0;
     const data = $("esc-data").value || "";
     try{
-      const tp = $("esc-tipo-pagamento").value;
-      run("INSERT INTO tbEscala (OpmEventoId,Matricula,EscalaCHDiurna,EscalaCHNoturna,EscalaData,HoraInicio,HoraFim,TipoPagamento) VALUES (?,?,?,?,?,?,?,?)",
-        [this.currentOpmEvento, mat, ch.diurna, ch.noturna, data, inicio, fim, tp]);
+      run("INSERT INTO tbEscala (OpmEventoId,Matricula,EscalaCHDiurna,EscalaCHNoturna,EscalaData) VALUES (?,?,?,?,?)",[this.currentOpmEvento,mat,d,n,data]);
       toast("Lançado!");
-      $("esc-pol-mat").value=""; $("esc-pol-nome").value=""; $("esc-pol-search").value="";
-      $("esc-hora-inicio").value=""; $("esc-hora-fim").value="";
-      $("esc-ch-d").value=0; $("esc-ch-n").value=0;
+      $("esc-pol-mat").value=""; $("esc-pol-nome").value=""; $("esc-pol-search").value=""; $("esc-ch-d").value=0; $("esc-ch-n").value=0;
       this.renderPolicial(); this.renderOpmEvento(); this.onEventoChange();
     }catch(e){ toast("Erro ao lançar (talvez já exista o mesmo policial nessa data): "+e.message,"error"); }
   },
@@ -4588,26 +3676,10 @@ const Escala = {
   updHora(mat, data, tipo, val){
     const col = tipo==="d" ? "EscalaCHDiurna" : "EscalaCHNoturna";
     try{
-      run(`UPDATE tbEscala SET ${col}=?, HoraInicio='', HoraFim='' WHERE OpmEventoId=? AND Matricula=? AND COALESCE(EscalaData,'')=?`,
+      run(`UPDATE tbEscala SET ${col}=? WHERE OpmEventoId=? AND Matricula=? AND COALESCE(EscalaData,'')=?`,
         [+val||0, this.currentOpmEvento, mat, data||""]);
       toast("Atualizado!");
       this.renderPolicial(); this.renderOpmEvento(); this.onEventoChange();
-    }catch(e){ toast("Erro: "+e.message,"error"); }
-  },
-  updHorario(mat, data, meuCampo, outroCampo, meuValor, outroValor){
-    const ch = this.calcularCH(meuCampo==='HoraInicio' ? meuValor : outroValor, meuCampo==='HoraFim' ? meuValor : outroValor);
-    try{
-      run(`UPDATE tbEscala SET ${meuCampo}=?, EscalaCHDiurna=?, EscalaCHNoturna=? WHERE OpmEventoId=? AND Matricula=? AND COALESCE(EscalaData,'')=?`,
-        [meuValor, ch.diurna, ch.noturna, this.currentOpmEvento, mat, data||""]);
-      toast("Atualizado!");
-      this.renderPolicial(); this.renderOpmEvento(); this.onEventoChange();
-    }catch(e){ toast("Erro: "+e.message,"error"); }
-  },
-  updTipoPagamento(mat, data, val){
-    try{
-      run("UPDATE tbEscala SET TipoPagamento=? WHERE OpmEventoId=? AND Matricula=? AND COALESCE(EscalaData,'')=?",
-        [val, this.currentOpmEvento, mat, data||""]);
-      toast("Tipo atualizado!"); this.renderPolicial();
     }catch(e){ toast("Erro: "+e.message,"error"); }
   },
   delPolicial(mat, data){
@@ -5280,40 +4352,13 @@ const GerarEscala = {
 /* ===================== GERAR ESCALA P2 ===================== */
 const GerarEscalaP2 = {
   CODIGOS: [
-    {cod:"C1", desc:"Das: 7h ÀS 19h",       horas:12, hD:12, hN:0, cor:"#3b82f644", label:"C1"},
-    {cod:"C2", desc:"Das: 19h ÀS 7h",       horas:12, hD:5,  hN:7, cor:"#22c55e44", label:"C2"},
-    {cod:"F",  desc:"Férias",               horas:0,  hD:0,  hN:0, cor:"#f59e0b44", label:"F"},
-    {cod:"A1", desc:"Das: 8h-12h • 14h-18h", horas:8,  hD:8,  hN:0, cor:"#a855f744", label:"A1"},
-    {cod:"A2", desc:"Das: 7h-13h",          horas:6,  hD:6,  hN:0, cor:"#14b8a644", label:"A2"},
-    {cod:"B1", desc:"Das: 13h-19h",         horas:6,  hD:6,  hN:0, cor:"#ec489944", label:"B1"},
+    {cod:"C1", desc:"Das: 7h ÀS 19h",       horas:12, cor:"#3b82f644", label:"C1"},
+    {cod:"C2", desc:"Das: 19h ÀS 7h",       horas:12, cor:"#22c55e44", label:"C2"},
+    {cod:"F",  desc:"Férias",               horas:0,  cor:"#f59e0b44", label:"F"},
+    {cod:"A1", desc:"Das: 8h-12h • 14h-18h", horas:8,  cor:"#a855f744", label:"A1"},
+    {cod:"A2", desc:"Das: 7h-13h",          horas:6,  cor:"#14b8a644", label:"A2"},
+    {cod:"B1", desc:"Das: 13h-19h",         horas:6,  cor:"#ec489944", label:"B1"},
   ],
-  // Parse description like "7h-19h", "19h-7h", "8h-12h • 14h-18h" → {hD, hN}
-  _extrairHoras(desc){
-    if(!desc) return {hD:0, hN:0};
-    let s = desc.replace(/^das\s*:?\s*/i, '').replace(/\s*[àa]\s*s\s*/gi, '-').replace(/\s*-\s*/g, '-');
-    const partes = s.split(/[•\/,;]/).map(p=>p.trim()).filter(p=>p);
-    if(!partes.length) return {hD:0, hN:0};
-    let hD=0, hN=0;
-    partes.forEach(p => {
-      const m = p.match(/(\d{1,2})h\s*-?\s*(\d{1,2})h?/);
-      if(m){
-        let inicio = parseInt(m[1]), fim = parseInt(m[2]);
-        if(fim <= inicio) fim += 24;
-        for(let h = inicio; h < fim; h++){
-          const hh = h % 24;
-          if(hh >= 5 && hh < 22) hD++; else hN++;
-        }
-      }
-    });
-    return {hD, hN};
-  },
-  // Retorna {hD, hN} para um código (hardcoded ou legenda dinâmica)
-  _calcDiaHoras(cod){
-    const hc = this.CODIGOS.find(x => x.cod === cod);
-    if(hc) return {hD: hc.hD, hN: hc.hN};
-    const leg = exec("SELECT Descricao FROM tbEscalaP2Legenda WHERE Codigo=?",[cod])[0];
-    return leg ? this._extrairHoras(leg.Descricao) : {hD:0, hN:0};
-  },
   FERIADOS: {
     "01-01":"Confraternização Universal","21-04":"Tiradentes","01-05":"Dia do Trabalho",
     "07-09":"Independência","12-10":"Nossa Srª Aparecida","02-11":"Finados",
@@ -5332,8 +4377,6 @@ const GerarEscalaP2 = {
       if(el){ el.value = this.meta[f]||""; el.oninput = () => { this.meta[f]=el.value; }; }
     });
     this.carregarMeta();
-    this._popularSelectCodigos();
-    this.renderLegendas();
     // Migrate rows with Ordem=0
     const ma = this.mesAno();
     const mig = exec("SELECT COUNT(*) c FROM tbEscalaP2 WHERE Mes=? AND Ano=? AND Ordem=0",[ma.mes,ma.ano])[0].c;
@@ -5363,12 +4406,12 @@ const GerarEscalaP2 = {
     return d;
   },
   _calcHoras(dias){
-    let hD=0, hN=0;
+    let total = 0;
     for(const dia in dias){
-      const ch = this._calcDiaHoras(dias[dia]);
-      hD += ch.hD; hN += ch.hN;
+      const c = this.CODIGOS.find(x => x.cod === dias[dia]);
+      if(c) total += c.horas;
     }
-    return {hD, hN, total: hD + hN};
+    return total;
   },
   _eDiaUtil(d, mes, ano, padrao){
     const dow = new Date(ano, mes-1, d).getDay();
@@ -5387,59 +4430,39 @@ const GerarEscalaP2 = {
     let r = { Id:null, Funcao:"", OPM:"", GH:"", Nome:"", Matricula:"", Telefone:"", Dias:"{}", IsSeparador:0, SeparadorTexto:"" };
     if(isEdit) r = exec("SELECT * FROM tbEscalaP2 WHERE Id=?",[id])[0] || r;
     const funcs = ["CSO","NUGAF/C.L.C.","COMANDANTE","CMD. DE UOP","CAAF","CH. CPO","CH. NUGAF","ASS. ESPECIAL","MOTORISTA","PATRULHEIRO"];
-    const ghs = ["CEL PM","TEN CEL PM","MAJ PM","CAP PM","TEN PM","ASP OF PM","AL OF PM 1 ANO","AL OF PM 2 ANO","AL OF PM 3 ANO","SUB TEN PM","SGT PM","CB PM","SD PM","AL SD PM","ALUNO OFICIAL - CFOA PM - SGT","ALUNO OFICIAL - CFOA PM - ST","ALUNO OFICIAL - CFTA PM - ST"];
+    const ghs = ["Cel PM","Ten Cel PM","Maj PM","Cap PM","1º Ten PM","Subten PM","Sgt PM","Cb PM","Sd PM"];
     openModal(isEdit?"Editar Militar":"Adicionar Militar", `
       <div class="form-grid">
-        <div class="field" style="grid-column:span 2;position:relative"><label>Buscar Policial (matrícula ou nome)</label><input id="mp2-busca" value="${escapeHtml(r.Matricula||r.Nome)}" oninput="GerarEscalaP2.buscarEfetivo(this.value)" onblur="setTimeout(function(){var s=$('mp2-suggest');if(s)s.style.display='none'},200)" placeholder="Digite a matrícula ou nome..." autocomplete="off" /><div id="mp2-suggest" style="position:absolute;top:100%;left:0;right:0;z-index:100;background:#0b1224;border:1px solid var(--line);border-radius:0 0 6px 6px;max-height:200px;overflow-y:auto;display:none"></div></div>
-        <div class="field"><label>Matricula</label><input id="mp2-mat" value="${escapeHtml(r.Matricula)}" placeholder="Preenchido pela busca ou digite manualmente" /></div>
-        <div class="field"><label>Nome</label><input id="mp2-nome" value="${escapeHtml(r.Nome)}" style="text-transform:uppercase" /></div>
+        <div class="field"><label>Matricula *</label><input id="mp2-mat" value="${escapeHtml(r.Matricula)}" oninput="GerarEscalaP2.buscarEfetivo(this.value)" ${isEdit?'readonly':''} /></div>
+        <div class="field"><label>Nome *</label><input id="mp2-nome" value="${escapeHtml(r.Nome)}" style="text-transform:uppercase" /></div>
         <div class="field"><label>Funcao *</label><select id="mp2-funcao">${funcs.map(f => '<option value="'+f+'"'+(r.Funcao===f?' selected':'')+'>'+f+'</option>').join('')}</select></div>
         <div class="field"><label>OPM *</label><select id="mp2-opm"><option value="">--</option>${exec("SELECT DISTINCT OpmSigla FROM tbOPM WHERE OpmSigla IS NOT NULL AND OpmSigla!='' ORDER BY OpmSigla").map(o => '<option value="'+escapeHtml(o.OpmSigla)+'"'+(r.OPM===o.OpmSigla?' selected':'')+'>'+escapeHtml(o.OpmSigla)+'</option>').join('')}</select></div>
         <div class="field"><label>GH *</label><select id="mp2-gh">${ghs.map(g => '<option value="'+g+'"'+(r.GH===g?' selected':'')+'>'+g+'</option>').join('')}</select></div>
         <div class="field"><label>Telefone</label><input id="mp2-tel" value="${escapeHtml(r.Telefone||'')}" /></div>
-        <div class="field"><label>Tipo Pagamento</label><select id="mp2-tp"><option value="HE" ${r.TipoPagamento==='HE'||!r.TipoPagamento?'selected':''}>HE (Hora Extra)</option><option value="VD" ${r.TipoPagamento==='VD'?'selected':''}>VD (Valor Diferencial)</option><option value="SO" ${r.TipoPagamento==='SO'?'selected':''}>SO (Serviço Ordinário)</option></select></div>
       </div>`, () => {
       const v=id=>$(id).value.trim();
       if(!v("mp2-nome")||!v("mp2-mat")||!v("mp2-funcao")){toast("Preencha Nome, Matricula e Funcao","error");return;}
-      $("mp2-suggest").style.display="none";
       const {mes,ano}=this.mesAno();
-      const tp = $("mp2-tp").value;
       if(isEdit){
-        run(`UPDATE tbEscalaP2 SET Funcao=?,OPM=?,GH=?,Nome=?,Matricula=?,Telefone=?,TipoPagamento=? WHERE Id=?`,[v("mp2-funcao"),v("mp2-opm"),v("mp2-gh"),v("mp2-nome"),v("mp2-mat"),v("mp2-tel"),tp,id]);
+        run(`UPDATE tbEscalaP2 SET Funcao=?,OPM=?,GH=?,Nome=?,Matricula=?,Telefone=? WHERE Id=?`,[v("mp2-funcao"),v("mp2-opm"),v("mp2-gh"),v("mp2-nome"),v("mp2-mat"),v("mp2-tel"),id]);
       } else {
         const max = exec("SELECT COALESCE(MAX(Ordem),0) m FROM tbEscalaP2 WHERE Mes=? AND Ano=?",[mes,ano])[0].m;
-        run(`INSERT INTO tbEscalaP2 (Mes,Ano,Funcao,OPM,GH,Nome,Matricula,Telefone,Dias,Ordem,TipoPagamento) VALUES (?,?,?,?,?,?,?,?,'{}',?,?)`,[mes,ano,v("mp2-funcao"),v("mp2-opm"),v("mp2-gh"),v("mp2-nome"),v("mp2-mat"),v("mp2-tel"),max+1,tp]);
+        run(`INSERT INTO tbEscalaP2 (Mes,Ano,Funcao,OPM,GH,Nome,Matricula,Telefone,Dias,Ordem) VALUES (?,?,?,?,?,?,?,?,'{}',?)`,[mes,ano,v("mp2-funcao"),v("mp2-opm"),v("mp2-gh"),v("mp2-nome"),v("mp2-mat"),v("mp2-tel"),max+1]);
       }
       closeModal(); toast(isEdit?"Atualizado!":"Adicionado!"); this.render();
     });
   },
-  buscarEfetivo(q){
-    const sug=$("mp2-suggest"); if(!sug) return;
-    if(!q || q.length < 2){ sug.style.display="none"; return; }
-    const rows = exec(`SELECT e.Matricula, e.Nome, e.Funcao, e.Telefone, e.OpmId, e.Cargo, COALESCE(o.OpmSigla,o.OpmDesc) opm, c.PostoGrad
-      FROM tbEfetivoPM e LEFT JOIN tbOPM o ON o.OpmId=e.OpmId LEFT JOIN tbCargo c ON c.CargoId=e.Cargo
-      WHERE e.Matricula LIKE ? OR e.Nome LIKE ? ORDER BY e.Nome LIMIT 10`,[`%${q}%`,`%${q}%`]);
-    if(!rows.length){ sug.style.display="none"; return; }
-    if(rows.length===1){ this._preencherEfetivo(rows[0]); sug.style.display="none"; return; }
-    sug.innerHTML=rows.map(r=>`<div style="padding:6px 10px;cursor:pointer;border-bottom:1px solid var(--line);display:flex;justify-content:space-between" onmousedown="GerarEscalaP2._selecionarEfetivo('${escapeHtml(r.Matricula)}')" onmouseover="this.style.background='#1a1f2e'" onmouseout="this.style.background=''"><span>${escapeHtml(r.Matricula)}</span><span style="color:var(--muted)">${escapeHtml(r.Nome)}</span></div>`).join('');
-    sug.style.display="block";
-  },
-  _selecionarEfetivo(mat){
-    const ef=exec(`SELECT e.Matricula, e.Nome, e.Funcao, e.Telefone, e.OpmId, e.Cargo, COALESCE(o.OpmSigla,o.OpmDesc) opm, c.PostoGrad
+  buscarEfetivo(mat){
+    if(!mat || mat.length < 2) return;
+    const ef = exec(`SELECT e.Matricula, e.Nome, e.Funcao, e.Telefone, e.OpmId, e.Cargo, COALESCE(o.OpmSigla,o.OpmDesc) opm, c.PostoGrad
       FROM tbEfetivoPM e LEFT JOIN tbOPM o ON o.OpmId=e.OpmId LEFT JOIN tbCargo c ON c.CargoId=e.Cargo
       WHERE e.Matricula=?`,[mat])[0];
     if(!ef) return;
-    this._preencherEfetivo(ef);
-    $("mp2-suggest").style.display="none";
-  },
-  _preencherEfetivo(ef){
-    const b=$("mp2-busca"); if(b) b.value=ef.Matricula+" - "+ef.Nome;
-    const m=$("mp2-mat"); if(m) m.value=ef.Matricula||"";
-    const n=$("mp2-nome"); if(n) n.value=ef.Nome||"";
-    const tl=$("mp2-tel"); if(tl) tl.value=ef.Telefone||"";
-    const fn=$("mp2-funcao"); if(fn&&ef.Funcao){ for(let o of fn.options){ if(o.value===ef.Funcao){ o.selected=true; break; } } }
-    const opm=$("mp2-opm"); if(opm&&ef.opm){ for(let o of opm.options){ if(o.value===ef.opm){ o.selected=true; break; } } }
-    const gh=$("mp2-gh"); if(gh&&ef.PostoGrad){ for(let o of gh.options){ if(o.value===ef.PostoGrad){ o.selected=true; break; } } }
+    const n = $("mp2-nome"); if(n) n.value = ef.Nome||"";
+    const tl = $("mp2-tel"); if(tl) tl.value = ef.Telefone||"";
+    const fn = $("mp2-funcao"); if(fn && ef.Funcao){ for(let o of fn.options){ if(o.value===ef.Funcao){ o.selected=true; break; } } }
+    const opm = $("mp2-opm"); if(opm && ef.opm){ for(let o of opm.options){ if(o.value===ef.opm){ o.selected=true; break; } } }
+    const gh = $("mp2-gh"); if(gh && ef.PostoGrad){ for(let o of gh.options){ if(o.value===ef.PostoGrad){ o.selected=true; break; } } }
   },
   abrirModalSeparador(){
     openModal("Inserir Separador", `
@@ -5459,8 +4482,7 @@ const GerarEscalaP2 = {
     const nome = escapeHtml(r.Nome);
     let btns = this.CODIGOS.map(c => {
       const sel = atual === c.cod ? ' btn-primary' : '';
-      const hStr = c.hD||c.hN ? `D:${c.hD} N:${c.hN}` : '';
-      return `<button class="btn btn-sm${sel}" style="margin:3px;min-width:60px" onclick="GerarEscalaP2.setCellCode(${id},${dia},'${c.cod}')">${c.cod}<br><small style="font-weight:400;font-size:9px">${c.desc}</small>${hStr?`<br><small style="font-size:8px;color:var(--muted)">${hStr}</small>`:''}</button>`;
+      return `<button class="btn btn-sm${sel}" style="margin:3px;min-width:60px" onclick="GerarEscalaP2.setCellCode(${id},${dia},'${c.cod}')">${c.cod}<br><small style="font-weight:400;font-size:9px">${c.desc}</small></button>`;
     }).join('');
     btns += `<button class="btn btn-sm btn-danger" style="margin:3px" onclick="GerarEscalaP2.setCellCode(${id},${dia},'')">Limpar</button>`;
     openModal(`${nome} — Dia ${dia}`, `<div style="text-align:center">${btns}</div>`);
@@ -5516,34 +4538,6 @@ const GerarEscalaP2 = {
     if(!confirm(`Limpar todos os registros de ${mes}/${ano}?`)) return;
     run("DELETE FROM tbEscalaP2 WHERE Mes=? AND Ano=?",[mes,ano]); toast("Mês limpo!"); this.render();
   },
-  _popularSelectCodigos(){
-    const sel = $("gep2-bulk-code");
-    if(!sel) return;
-    const leg = exec("SELECT * FROM tbEscalaP2Legenda ORDER BY Id");
-    sel.innerHTML = leg.map(l => `<option value="${l.Codigo}">${l.Codigo} (${l.Descricao})</option>`).join('');
-    if(!sel.value && sel.options.length) sel.selectedIndex = 0;
-  },
-  renderLegendas(){
-    const div = $("gep2-legenda-list");
-    if(!div) return;
-    const leg = exec("SELECT * FROM tbEscalaP2Legenda ORDER BY Id");
-    div.innerHTML = leg.length
-      ? leg.map(l => `<div style="display:flex;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line)"><span style="font-weight:700;color:var(--accent);width:40px">${l.Codigo}</span><span style="flex:1;color:var(--text)">${l.Descricao}</span><button class="btn btn-sm btn-danger" onclick="GerarEscalaP2.removerLegenda(${l.Id})">🗑</button></div>`).join('')
-        + '<div style="display:flex;gap:6px;align-items:center;padding:6px 0"><input id="gep2-leg-cod" placeholder="Código" style="width:50px;padding:4px;border-radius:4px;background:#101a30;color:var(--text);border:1px solid var(--line);font-size:11px"><input id="gep2-leg-desc" placeholder="Descrição (ex: 7h-19h)" style="flex:1;padding:4px;border-radius:4px;background:#101a30;color:var(--text);border:1px solid var(--line);font-size:11px"><button class="btn btn-sm btn-primary" onclick="GerarEscalaP2.adicionarLegenda()">➕</button></div>'
-      : '<div style="padding:8px 0;color:var(--muted)">Nenhum código cadastrado.</div>'
-        + '<div style="display:flex;gap:6px;align-items:center;padding:6px 0"><input id="gep2-leg-cod" placeholder="Código" style="width:50px;padding:4px;border-radius:4px;background:#101a30;color:var(--text);border:1px solid var(--line);font-size:11px"><input id="gep2-leg-desc" placeholder="Descrição (ex: 7h-19h)" style="flex:1;padding:4px;border-radius:4px;background:#101a30;color:var(--text);border:1px solid var(--line);font-size:11px"><button class="btn btn-sm btn-primary" onclick="GerarEscalaP2.adicionarLegenda()">➕</button></div>';
-  },
-  adicionarLegenda(){
-    const cod = $("gep2-leg-cod"); const desc = $("gep2-leg-desc");
-    if(!cod || !desc || !cod.value.trim() || !desc.value.trim()){ toast("Preencha código e descrição","error"); return; }
-    run("INSERT INTO tbEscalaP2Legenda (Codigo,Descricao) VALUES (?,?)",[cod.value.trim(),desc.value.trim()]);
-    cod.value=""; desc.value=""; this._popularSelectCodigos(); this.renderLegendas(); toast("Legenda adicionada!");
-  },
-  removerLegenda(id){
-    if(!confirm("Remover este código?")) return;
-    run("DELETE FROM tbEscalaP2Legenda WHERE Id=?",[id]);
-    this._popularSelectCodigos(); this.renderLegendas(); toast("Código removido!");
-  },
   render(){
     const {mes,ano}=this.mesAno();
     const rows = exec("SELECT * FROM tbEscalaP2 WHERE Mes=? AND Ano=? ORDER BY Ordem",[mes,ano]);
@@ -5556,38 +4550,31 @@ const GerarEscalaP2 = {
     if(!grid) return;
     if(!rows.length){ grid.innerHTML = `<div class="empty" style="margin:20px 0">Nenhum registro para este mês. Clique em <b>+ Adicionar Militar</b>.</div>`; return; }
     const n = rows.length;
-    let html = `<table class="compact" style="font-size:10px"><thead><tr><th>FUNÇÃO</th><th>OPM</th><th>GH</th><th>NOME</th><th>MATRÍCULA</th><th>TEL.</th><th>TIPO</th>`;
+    let html = `<table class="compact" style="font-size:10px"><thead><tr><th>FUNÇÃO</th><th>OPM</th><th>GH</th><th>NOME</th><th>MATRÍCULA</th><th>TEL.</th>`;
     for(let d=1;d<=diasNoMes;d++){
       const fer = this._eFeriado(d,mes);
       const dow = diaSem(d);
       const isFds = dow==='SÁB'||dow==='DOM';
       html += `<th style="text-align:center;padding:4px 2px;min-width:22px;background:${fer?'#f59e0b22':isFds?'#3b82f622':'transparent'}">${String(d).padStart(2,'0')}<br><span style="font-weight:400;font-size:8px;color:var(--muted)">${dow.slice(0,3)}</span></th>`;
     }
-    html += `<th style="padding:4px">D</th><th style="padding:4px">N</th><th style="padding:4px">HORAS</th><th style="padding:4px">✏️</th></tr></thead><tbody>`;
+    html += `<th style="padding:4px">HORAS</th><th style="padding:4px">✏️</th></tr></thead><tbody>`;
     rows.forEach((r,i) => {
       if(r.IsSeparador){
-        html += `<tr style="background:#1e293b"><td colspan="${7+diasNoMes+4}" style="text-align:center;padding:6px;font-weight:700;color:#94a3b8;font-size:11px">`;
+        html += `<tr style="background:#1e293b"><td colspan="${6+diasNoMes+2}" style="text-align:center;padding:6px;font-weight:700;color:#94a3b8;font-size:11px">`;
         html += `<div style="display:flex;justify-content:space-between;align-items:center">`;
         html += `<span>≡ ${escapeHtml(r.SeparadorTexto||'')}</span>`;
         html += `<span>${i>0?`<button class="btn btn-sm" onclick="GerarEscalaP2.mover(${r.Id},-1)">⬆</button>`:''} ${i<n-1?`<button class="btn btn-sm" onclick="GerarEscalaP2.mover(${r.Id},1)">⬇</button>`:''} <button class="btn btn-sm btn-danger" onclick="GerarEscalaP2.excluir(${r.Id})">🗑</button></span>`;
         html += `</div></td></tr>`;
       } else {
         const dias = this._getDias(r.Dias);
-        const ch = this._calcHoras(dias);
-        const tp = r.TipoPagamento||'HE';
+        const totalHoras = this._calcHoras(dias);
         html += `<tr><td style="font-weight:600">${escapeHtml(r.Funcao)}</td><td>${escapeHtml(r.OPM)}</td><td>${escapeHtml(r.GH)}</td><td style="white-space:nowrap">${escapeHtml(r.Nome)}</td><td>${escapeHtml(r.Matricula)}</td><td>${escapeHtml(r.Telefone||'-')}</td>`;
-        html += `<td style="text-align:center;font-size:10px"><span class="badge ${tp==='VD'?'badge-purple':''}">${tp}</span></td>`;
         for(let d=1;d<=diasNoMes;d++){
           const cod = dias[d] || "";
           const c = this.CODIGOS.find(x => x.cod === cod);
-          const leg = !c ? exec("SELECT Descricao, Codigo FROM tbEscalaP2Legenda WHERE Codigo=?",[cod])[0] : null;
-          const title = c ? c.desc : (leg ? leg.Descricao : '');
-          const diaRef = `${String(d).padStart(2,'0')} - ${diaSem(d)}`;
-          html += `<td style="text-align:center;padding:2px;cursor:pointer;background:${c?c.cor:'transparent'}" onclick="GerarEscalaP2.pickCell(${r.Id},${d})" title="${diaRef}${title?' | '+escapeHtml(title):''}">${cod?`<b>${cod}</b>`:''}</td>`;
+          html += `<td style="text-align:center;padding:2px;cursor:pointer;background:${c?c.cor:'transparent'}" onclick="GerarEscalaP2.pickCell(${r.Id},${d})" title="${cod?c.desc:''}">${cod?`<b>${cod}</b>`:''}</td>`;
         }
-        html += `<td style="text-align:center;font-weight:700;color:${ch.hD>0?'#22c55e':'var(--muted)'}">${ch.hD||'-'}</td>`;
-        html += `<td style="text-align:center;font-weight:700;color:${ch.hN>0?'#22c55e':'var(--muted)'}">${ch.hN||'-'}</td>`;
-        html += `<td style="text-align:center;font-weight:700;color:${ch.total>0?'#22c55e':'var(--muted)'}">${ch.total}h</td>`;
+        html += `<td style="text-align:center;font-weight:700;color:${totalHoras>0?'#22c55e':'var(--muted)'}">${totalHoras}h</td>`;
         html += `<td class="actions-col" style="padding:2px;white-space:nowrap">`;
         if(i>0) html += `<button class="btn btn-sm" onclick="GerarEscalaP2.mover(${r.Id},-1)" title="Mover para cima">⬆</button>`;
         if(i<n-1) html += `<button class="btn btn-sm" onclick="GerarEscalaP2.mover(${r.Id},1)" title="Mover para baixo">⬇</button>`;
@@ -5689,111 +4676,74 @@ const GerarEscalaP2 = {
     const titulo = meta.Titulo || `ESCALA DE COORDENADOR REGIONAL DO CPR-CN - ${(mesesNome[mes-1]||'').toUpperCase()} DE ${ano}`;
     const n = dias.length;
     let csv = `POLÍCIA MILITAR DA BAHIA${';'.repeat(18)}\nCOPPM CPR-CN${';'.repeat(18)}\n${';'.repeat(18)}\nCENTRO DE PLANEJAMENTO OPERACIONAL E DECISÕES ESTRATÉGICAS${';'.repeat(18)}\n${';'.repeat(18)}${titulo}${';'.repeat(18)}\n`;
-    csv += "FUNÇÃO;OPM;GH;NOME;MATRÍCULA;TELEFONE;TIPO";
+    csv += "FUNÇÃO;OPM;GH;NOME;MATRÍCULA;TELEFONE";
     dias.forEach(d=>csv+=`;${String(d).padStart(2,'0')}`);
-    csv+=';D;N;HORAS';
-    csv+='\n'+';'.repeat(6);
+    csv+='\n'+';'.repeat(5);
     dias.forEach((d,i)=>csv+=(i?';':'')+diaSem(d).slice(0,3));
     csv+='\n';
     rows.forEach(r => {
       const dd = this._getDias(r.Dias);
-      const ch = this._calcHoras(dd);
-      let line = `${r.Funcao};${r.OPM};${r.GH};${r.Nome};${r.Matricula};${r.Telefone||''};${r.TipoPagamento||'HE'}`;
+      let line = `${r.Funcao};${r.OPM};${r.GH};${r.Nome};${r.Matricula};${r.Telefone||''}`;
       dias.forEach(d => line += `;${dd[d]||''}`);
-      csv += line + `;${ch.hD};${ch.hN};${ch.total}\n`;
+      csv += line + '\n';
     });
-    csv += `${';'.repeat(18)}\n${meta.Local||'IRECÊ'}, ${new Date().getDate()} DE ${(mesesNome[new Date().getMonth()]).toUpperCase()} DE ${ano}${';'.repeat(18)}\n${';'.repeat(18)}\n${meta.Responsavel||'CARLOS AUGUSTO FERREIRA DIAS - Ten Cel PM'}${';'.repeat(18)}\n${meta.Cargo||'CHEFE DO CPODE'}${';'.repeat(18)}\nNota: ${meta.Nota||'Última alteração em '+new Date().toLocaleString('pt-BR')}${';'.repeat(18)}\n`;
-    // Legend
-    const leg = exec("SELECT * FROM tbEscalaP2Legenda ORDER BY Id");
-    if(leg.length) csv += `Legenda: ${leg.map(l=>l.Codigo+' ('+l.Descricao+')').join(' | ')}${';'.repeat(18)}\n`;
+    csv += `${';'.repeat(18)}\n${meta.Local||'IRECÊ'}, ${new Date().getDate()} DE ${(mesesNome[new Date().getMonth()]).toUpperCase()} DE ${ano}${';'.repeat(18)}\n${';'.repeat(18)}\n${meta.Responsavel||'CARLOS AUGUSTO FERREIRA DIAS - Ten Cel PM'}${';'.repeat(18)}\n${meta.Cargo||'CHEFE DO CPODE'}${';'.repeat(18)}\nNota: ${meta.Nota||'Última alteração em '+new Date().toLocaleString('pt-BR')}${';'.repeat(18)}`;
     downloadFile(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}),`escala_p2_${ano}_${String(mes).padStart(2,'0')}.csv`);
     toast('CSV exportado!');
   },
   exportarExcel(){
     const {mes,ano}=this.mesAno();
-    const allRows = exec("SELECT * FROM tbEscalaP2 WHERE Mes=? AND Ano=? ORDER BY Ordem",[mes,ano]); // include separators
-    if(!allRows.length){toast("Nenhum dado para exportar","error");return;}
-    const rows = allRows.filter(r => !r.IsSeparador);
+    const rows = exec("SELECT * FROM tbEscalaP2 WHERE Mes=? AND Ano=? AND IsSeparador=0 ORDER BY Ordem",[mes,ano]);
+    if(!rows.length){toast("Nenhum dado para exportar","error");return;}
+    if(typeof XLSX === 'undefined'){toast("XLSX não disponível","error");return;}
     const dias = this._diasComDados(rows);
     const diaSem = (d)=>["DOM","SEG","TER","QUA","QUI","SEX","SÁB"][new Date(ano,mes-1,d).getDay()];
     const mesesNome = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
     const meta = exec("SELECT * FROM tbEscalaP2Meta WHERE Id=1")[0]||{};
     const titulo = meta.Titulo || `ESCALA DE COORDENADOR REGIONAL DO CPR-CN - ${(mesesNome[mes-1]||'').toUpperCase()} DE ${ano}`;
-    const n = dias.length, totalCols = 7 + n + 3;
-    const esc = (s) => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    let h = '<html><head><meta charset="UTF-8"></head><body>';
-    h += '<table style="width:100%;border-collapse:collapse;font-family:Calibri,Arial;font-size:10pt">';
-    // Header rows — left stamp, center title, right badge
-    const hoje = new Date();
-    const dataStamp = String(hoje.getDate()).padStart(2,'0')+'/'+String(hoje.getMonth()+1).padStart(2,'0')+'/'+hoje.getFullYear();
-    h += '<tr>'
-      + '<td style="border:1px solid #2B488B;background:#FFF8E8;text-align:center;vertical-align:middle;padding:1px 3px;font-weight:700;color:#2B488B;font-size:6pt;width:24mm">VISTO<br><span style="font-weight:400;font-size:5pt">EM '+dataStamp+'</span><br><span style="font-size:5pt">________________</span><br>COMANDANTE<br>CPR-CN</td>'
-      + '<td colspan="'+(totalCols-1)+'" style="text-align:center;font-size:12pt;font-weight:700;border:none;padding:2px 0">POLÍCIA MILITAR DA BAHIA</td></tr>';
-    h += '<tr><td colspan="'+totalCols+'" style="text-align:center;font-size:9pt;border:none;padding:1px 0">COPPM CPR-CN</td></tr>';
-    h += '<tr><td colspan="'+totalCols+'" style="text-align:center;font-size:9pt;border:none;padding:1px 0;color:#666">CENTRO DE PLANEJAMENTO OPERACIONAL E DECISÕES ESTRATÉGICAS</td></tr>';
-    h += '<tr><td colspan="'+totalCols+'" style="text-align:center;font-size:12pt;font-weight:700;border:none;padding:8px 0 6px 0">'+esc(titulo)+'</td></tr>';
-    // Blue separator row — explicit row height + non-breaking space so Excel doesn't collapse it
-    h += '<tr style="height:6pt"><td colspan="'+totalCols+'" style="background:#2B488B;border:none;padding:0;line-height:6pt;font-size:6pt">&nbsp;</td></tr>';
-    // Column header row
-    h += '<tr style="height:18pt">';
-    ['FUNÇÃO','OPM','GH','NOME','MATRÍCULA','TEL.','TIPO'].forEach(c => { h += '<th style="background:#2B488B;color:#fff;font-weight:700;border:1px solid #2B488B;padding:2px 4px">'+c+'</th>'; });
-    dias.forEach(d => {
-      h += '<th style="background:#2B488B;color:#fff;font-weight:700;border:1px solid #2B488B;padding:2px 4px;font-size:8pt">'+String(d).padStart(2,'0')+'<br><span style="font-weight:400;font-size:6pt;color:#C8D7FF">'+diaSem(d).slice(0,3)+'</span></th>';
+    const n = dias.length, totalCols = 6+n;
+    const wb = XLSX.utils.book_new();
+    const wsData = [["POLÍCIA MILITAR DA BAHIA"],["COPPM CPR-CN"],[],["CENTRO DE PLANEJAMENTO OPERACIONAL E DECISÕES ESTRATÉGICAS"],[],[titulo],[],[]];
+    const dataStart = wsData.length;
+    const cabecalho = ["FUNÇÃO","OPM","GH","NOME","MATRÍCULA","TELEFONE"];
+    dias.forEach(d => cabecalho.push(String(d).padStart(2,'0')));
+    wsData.push(cabecalho);
+    const subCab = ["","","","","",""];
+    dias.forEach(d => subCab.push(diaSem(d).slice(0,3)));
+    wsData.push(subCab);
+    rows.forEach(r => {
+      const dd = this._getDias(r.Dias);
+      const line = [r.Funcao,r.OPM,r.GH,r.Nome,r.Matricula,r.Telefone||''];
+      dias.forEach(d => line.push(dd[d]||""));
+      wsData.push(line);
     });
-    h += '<th style="background:#2B488B;color:#fff;font-weight:700;border:1px solid #2B488B;padding:2px 4px;font-size:7pt">D</th>';
-    h += '<th style="background:#2B488B;color:#fff;font-weight:700;border:1px solid #2B488B;padding:2px 4px;font-size:7pt">N</th>';
-    h += '<th style="background:#2B488B;color:#fff;font-weight:700;border:1px solid #2B488B;padding:2px 4px;font-size:7pt">HORAS</th>';
-    h += '</tr>';
-    // Interleave separators with data rows
-    let dataIdx = 0;
-    for(const r of allRows){
-      if(r.IsSeparador){
-        h += '<tr><td colspan="'+totalCols+'" style="text-align:center;font-weight:600;font-size:8pt;color:#666;border:1px solid #ddd;background:#F5F0E8;padding:3px 4px">'+esc(r.SeparadorTexto)+'</td></tr>';
-      } else {
-        const rr = rows[dataIdx++];
-        const dd = this._getDias(rr.Dias);
-        const bg = dataIdx%2===0 ? 'background:#F5F5FA' : '';
-        h += '<tr style="'+bg+'">'
-          + '<td style="text-align:center;vertical-align:middle;font-weight:600;border:1px solid #bbb;padding:2px 4px">'+esc(rr.Funcao)+'</td>'
-          + '<td style="text-align:center;vertical-align:middle;border:1px solid #bbb;padding:2px 4px">'+esc(rr.OPM)+'</td>'
-          + '<td style="text-align:center;vertical-align:middle;border:1px solid #bbb;padding:2px 4px">'+esc(rr.GH)+'</td>'
-          + '<td style="text-align:left;vertical-align:middle;border:1px solid #bbb;padding:2px 4px">'+esc(rr.Nome)+'</td>'
-          + '<td style="text-align:center;vertical-align:middle;border:1px solid #bbb;padding:2px 4px">'+esc(rr.Matricula)+'</td>'
-          + '<td style="text-align:center;vertical-align:middle;border:1px solid #bbb;padding:2px 4px">'+esc(rr.Telefone||'')+'</td>'
-          + '<td style="text-align:center;vertical-align:middle;border:1px solid #bbb;padding:2px 4px;font-weight:700">'+esc(rr.TipoPagamento||'HE')+'</td>';
-        dias.forEach(d => {
-          const cod = dd[d]||"";
-          h += '<td style="text-align:center;vertical-align:middle;font-weight:'+(cod?'700':'400')+';border:1px solid #bbb;padding:2px 4px">'+esc(cod)+'</td>';
-        });
-        const ch = this._calcHoras(dd);
-        h += '<td style="text-align:center;vertical-align:middle;font-weight:700;border:1px solid #bbb;padding:2px 4px">'+(ch.hD||'')+'</td>';
-        h += '<td style="text-align:center;vertical-align:middle;font-weight:700;border:1px solid #bbb;padding:2px 4px">'+(ch.hN||'')+'</td>';
-        h += '<td style="text-align:center;vertical-align:middle;font-weight:700;border:1px solid #bbb;padding:2px 4px">'+(ch.total||'')+'</td>';
-        h += '</tr>';
-      }
-    }
-    // Footer separator
-    h += '<tr style="height:4pt"><td colspan="'+totalCols+'" style="background:#2B488B;border:none;padding:0;line-height:4pt;font-size:4pt">&nbsp;</td></tr>';
-    // Footer rows
-    h += '<tr><td colspan="'+totalCols+'" style="text-align:center;font-size:9pt;border:none;padding-top:8px">'
-      + esc(meta.Local||'IRECÊ')+', '+new Date().getDate()+' DE '+esc((mesesNome[new Date().getMonth()]).toUpperCase())+' DE '+ano+'</td></tr>';
-    h += '<tr><td colspan="'+totalCols+'" style="text-align:center;font-size:9pt;font-weight:700;border:none;padding-top:6px">'
-      + esc(meta.Responsavel||'CARLOS AUGUSTO FERREIRA DIAS - Ten Cel PM')+'</td></tr>';
-    h += '<tr><td colspan="'+totalCols+'" style="text-align:center;font-size:8pt;border:none;color:#555">'
-      + esc(meta.Cargo||'CHEFE DO CPODE')+'</td></tr>';
-    h += '<tr><td colspan="'+totalCols+'" style="text-align:center;font-size:7pt;border:none;color:#888;padding-top:4px">Nota: '
-      + esc(meta.Nota||'Última alteração em '+new Date().toLocaleString('pt-BR'))+'</td></tr>';
-    // Legend
-    const leg_ = exec("SELECT * FROM tbEscalaP2Legenda ORDER BY Id");
-    if(leg_.length) h += '<tr><td colspan="'+totalCols+'" style="text-align:center;font-size:7pt;border:none;color:#888;padding-top:2px">Legenda: '+esc(leg_.map(l=>l.Codigo+' ('+l.Descricao+')').join(' | '))+'</td></tr>';
-    h += '</table></body></html>';
-    downloadFile(new Blob([h],{type:'application/vnd.ms-excel;charset=utf-8'}),`escala_p2_${ano}_${String(mes).padStart(2,'0')}.xls`);
+    const footerRow = wsData.length;
+    wsData.push([],[],[`${meta.Local||'IRECÊ'}, ${new Date().getDate()} DE ${(mesesNome[new Date().getMonth()]).toUpperCase()} DE ${ano}`],[],[meta.Responsavel||'CARLOS AUGUSTO FERREIRA DIAS - Ten Cel PM'],[meta.Cargo||'CHEFE DO CPODE'],[`Nota: ${meta.Nota||'Última alteração em '+new Date().toLocaleString('pt-BR')}`]);
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!merges'] = [
+      {s:{r:0,c:0},e:{r:0,c:totalCols-1}},
+      {s:{r:1,c:0},e:{r:1,c:totalCols-1}},
+      {s:{r:3,c:0},e:{r:3,c:totalCols-1}},
+      {s:{r:5,c:0},e:{r:5,c:totalCols-1}},
+      {s:{r:dataStart-2,c:0},e:{r:dataStart-2,c:1}},
+      {s:{r:footerRow,c:0},e:{r:footerRow,c:1}},
+      {s:{r:footerRow+2,c:0},e:{r:footerRow+2,c:totalCols-1}},
+      {s:{r:footerRow+4,c:0},e:{r:footerRow+4,c:totalCols-1}},
+      {s:{r:footerRow+5,c:0},e:{r:footerRow+5,c:totalCols-1}},
+    ];
+    ws['!cols'] = [{wch:18},{wch:12},{wch:10},{wch:38},{wch:12},{wch:14}];
+    dias.forEach(() => ws['!cols'].push({wch:4}));
+    ws['!rows'] = [{hpt:22},{hpt:18},{hpt:6},{hpt:18},{hpt:6},{hpt:22},{hpt:6},{hpt:6},{hpt:18},{hpt:14}];
+    for(let i=0;i<rows.length;i++) ws['!rows'].push({hpt:16});
+    ws['!rows'].push({hpt:6},{hpt:6},{hpt:18},{hpt:6},{hpt:22},{hpt:16},{hpt:16});
+    XLSX.utils.book_append_sheet(wb, ws, 'Escala P2');
+    XLSX.writeFile(wb, `escala_p2_${ano}_${String(mes).padStart(2,'0')}.xlsx`);
     toast('Excel exportado!');
   },
   exportarPdf(){
     try {
     const {mes,ano}=this.mesAno();
-    const rows = exec("SELECT * FROM tbEscalaP2 WHERE Mes=? AND Ano=? ORDER BY Ordem",[mes,ano]);
+    const rows = exec("SELECT * FROM tbEscalaP2 WHERE Mes=? AND Ano=? AND IsSeparador=0 ORDER BY Ordem",[mes,ano]);
     if(!rows.length){toast("Nenhum dado para exportar","error");return;}
     if(typeof jspdf === 'undefined'){toast("jsPDF não disponível","error");return;}
     const dias = this._diasComDados(rows);
@@ -5805,34 +4755,18 @@ const GerarEscalaP2 = {
     const doc = new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
     const pw=297, ph=210, ml=6, mr=6, mt=6;
     const n = dias.length;
-    // Logo CPR-CN
-    try { doc.addImage(LOGO_CPRCN_B64,'PNG',pw-mr-28,mt,28,26); } catch(e){
-      const lW=28,lH=28,lX=pw-mr-lW,lY=mt;
-      doc.setDrawColor(42,72,139); doc.setFillColor(240,245,255);
-      doc.rect(lX,lY,lW,lH,'FD');
-      doc.setFont("helvetica","bold"); doc.setFontSize(4); doc.setTextColor(42,72,139);
-      doc.text("CPR-CN",lX+lW/2,lY+lH/2,{align:"center",baseline:"middle"});
-    }
-    // Stamp on the left
-    { const stX=ml, stY=mt, stW=28, stH=26;
-      const hoje=new Date();
-      const dataStamp=String(hoje.getDate()).padStart(2,'0')+'/'+String(hoje.getMonth()+1).padStart(2,'0')+'/'+hoje.getFullYear();
-      doc.setDrawColor(42,72,139); doc.setFillColor(255,248,232);
-      doc.rect(stX,stY,stW,stH,'FD');
-      doc.setFont("helvetica","bold"); doc.setFontSize(5); doc.setTextColor(42,72,139);
-      doc.text("VISTO",stX+stW/2,stY+3.5,{align:"center",baseline:"top"});
-      doc.setFont("helvetica","normal"); doc.setFontSize(4);
-      doc.text("EM "+dataStamp,stX+stW/2,stY+8,{align:"center",baseline:"top"});
-      doc.text("________________",stX+stW/2,stY+12.5,{align:"center",baseline:"top"});
-      doc.setFont("helvetica","bold"); doc.setFontSize(4.5);
-      doc.text("COMANDANTE",stX+stW/2,stY+17.5,{align:"center",baseline:"top"});
-      doc.text("CPR-CN",stX+stW/2,stY+22,{align:"center",baseline:"top"});
-    }
+    // Logo / Brasão
+    const lW=28, lH=28, lX=pw-mr-lW, lY=mt, lCx=lX+lW/2;
+    doc.setDrawColor(42,72,139); doc.setFillColor(240,245,255);
+    doc.rect(lX,lY,lW,lH,'FD');
+    doc.setFont("helvetica","bold"); doc.setFontSize(5.5); doc.setTextColor(42,72,139);
+    doc.text(["POLÍCIA","MILITAR"],lCx,lY+lH/2-1,{align:"center"});
+    doc.setFont("helvetica","normal"); doc.setFontSize(5); doc.setTextColor(80,80,120);
+    doc.text("BAHIA",lCx,lY+lH/2+5.5,{align:"center"});
     doc.setTextColor(0);
     // Fixed columns (more compact)
-    const colFix=[22,14,8,54,14,14,6]; // sum=132mm
-    const colFixExtra=[6,6,8]; // D, N, HORAS = 20mm
-    const sumFix = colFix.reduce((a,b)=>a+b,0) + colFixExtra.reduce((a,b)=>a+b,0);
+    const colFix=[22,14,8,54,14,14]; // sum=126mm
+    const sumFix = colFix.reduce((a,b)=>a+b,0);
     const capDay = Math.max(pw-ml-mr-sumFix,20);
     const minCw = Math.max(Math.min(capDay/Math.max(n,1),14),4.5);
     const cw = Math.max(minCw,4.5);
@@ -5848,14 +4782,14 @@ const GerarEscalaP2 = {
     doc.text("CENTRO DE PLANEJAMENTO OPERACIONAL E DECISÕES ESTRATÉGICAS",pw/2,y+13,{align:"center"});
     doc.setFont("helvetica","bold"); doc.setFontSize(9.5);
     doc.text(titulo,pw/2,y+19,{align:"center"});
-    y += 34;
-    // Separator (filled rect)
+    y += 24;
+    // Separator (filled rect, more reliable than line)
     doc.setFillColor(42,72,139);
-    doc.rect(ml-2,y-0.4,pw-ml-mr+4,0.8,'F');
+    doc.rect(ml-2,y-0.5,pw-ml-mr+4,1.4,'F');
     y += 4;
     // Table header
     let x = ml;
-    const hcols = ["FUNÇÃO","OPM","GH","NOME","MATRÍCULA","TEL.","TIPO"];
+    const hcols = ["FUNÇÃO","OPM","GH","NOME","MATRÍCULA","TEL."];
     hcols.forEach((c,i)=>{ azul(42,72,139); doc.rect(x,y,colFix[i],rowH,'F'); doc.setFont("helvetica","bold"); doc.setFontSize(5.5); doc.setTextColor(255); doc.text(c,x+colFix[i]/2,y+rowH/2+0.8,{align:"center",baseline:"middle"}); x+=colFix[i]; });
     dias.forEach(d => {
       azul(42,72,139); doc.rect(x,y,cw,rowH,'F');
@@ -5865,57 +4799,31 @@ const GerarEscalaP2 = {
       doc.text(diaSem(d).slice(0,3),x+cw/2,y+rowH/2+1.8,{align:"center",baseline:"middle"});
       x+=cw+gap;
     });
-    // D, N, HORAS headers
-    const extraLabels=["D","N","HORAS"];
-    extraLabels.forEach((lb,i)=>{
-      azul(42,72,139); doc.rect(x,y,colFixExtra[i],rowH,'F');
-      doc.setFont("helvetica","bold"); doc.setFontSize(5); doc.setTextColor(255);
-      doc.text(lb,x+colFixExtra[i]/2,y+rowH/2+0.8,{align:"center",baseline:"middle"});
-      x+=colFixExtra[i];
-    });
     doc.setTextColor(0);
     y += rowH;
     // Data rows
     for(let ri=0; ri<rows.length; ri++){
       const r = rows[ri];
       if(y+rowH+1 > ph-mt-14){ doc.addPage(); y=mt; }
-      if(r.IsSeparador){
-        x = ml;
-        const sepW = sumFix + dias.length*(cw+gap);
-        doc.setDrawColor(180,160,120); doc.setLineWidth(0.8);
-        doc.line(x,y+rowH/2,x+sepW,y+rowH/2);
-        doc.setLineWidth(0.2);
-        doc.setFont("helvetica","bold"); doc.setFontSize(4.8); doc.setTextColor(100,90,70);
-        doc.text(r.SeparadorTexto||'',x+sepW/2,y+rowH/2+1,{align:"center",baseline:"middle"});
-        doc.setTextColor(0);
-        y += rowH+0.5;
-        continue;
-      }
       const dd = this._getDias(r.Dias);
       x = ml;
-      const vals=[r.Funcao,r.OPM,r.GH,r.Nome,r.Matricula,r.Telefone||'',r.TipoPagamento||'HE'];
+      const vals=[r.Funcao,r.OPM,r.GH,r.Nome,r.Matricula,r.Telefone||''];
       if(ri%2===1){ azul(248,248,252); vals.forEach((v,i)=>{ doc.rect(x,y,colFix[i],rowH,'F'); x+=colFix[i]; }); x=ml; }
-      vals.forEach((v,i)=>{ doc.rect(x,y,colFix[i],rowH,'S'); doc.setFont("helvetica","normal"); doc.setFontSize(4.8); doc.text(v,x+colFix[i]/2,y+rowH/2+1,{align:"center",baseline:"middle"}); x+=colFix[i]; });
+      vals.forEach((v,i)=>{ doc.rect(x,y,colFix[i],rowH,'S'); doc.setFont("helvetica","normal"); doc.setFontSize(4.8); doc.text(v,x+0.6,y+rowH/2+1,{align:"left",baseline:"middle"}); x+=colFix[i]; });
       dias.forEach(d => {
         doc.rect(x,y,cw,rowH,'S');
         const cod = dd[d]||"";
         if(cod){ doc.setFont("helvetica","bold"); doc.setFontSize(4.8); doc.text(cod,x+cw/2,y+rowH/2+1,{align:"center",baseline:"middle"}); }
         x+=cw+gap;
       });
-      const ch = this._calcHoras(dd);
-      const extras=[ch.hD||'',ch.hN||'',ch.total||''];
-      extras.forEach((v,i)=>{
-        doc.rect(x,y,colFixExtra[i],rowH,'S');
-        if(v){ doc.setFont("helvetica","bold"); doc.setFontSize(4.8); doc.text(String(v),x+colFixExtra[i]/2,y+rowH/2+1,{align:"center",baseline:"middle"}); }
-        x+=colFixExtra[i];
-      });
       y += rowH+0.5;
     }
     // Footer
     y += 2;
     if(y+18>ph-mt){ doc.addPage(); y=mt; }
-    doc.setFillColor(42,72,139);
-    doc.rect(ml,y-0.2,pw-ml-mr,0.4,'F');
+    doc.setDrawColor(42,72,139); doc.setLineWidth(0.5);
+    doc.line(ml,y,pw-mr,y);
+    doc.setLineWidth(0.2);
     y+=3.5;
     doc.setFont("helvetica","normal"); doc.setFontSize(7);
     doc.text(`${meta.Local||'IRECÊ'}, ${new Date().getDate()} DE ${(mesesNome[new Date().getMonth()]).toUpperCase()} DE ${ano}`,pw/2,y,{align:"center"});
@@ -5928,126 +4836,9 @@ const GerarEscalaP2 = {
     y+=5;
     doc.setFont("helvetica","italic"); doc.setFontSize(5.5);
     doc.text(`Nota: ${meta.Nota||'Última alteração em '+new Date().toLocaleString('pt-BR')}`,pw/2,y,{align:"center"});
-    // Legend
-    y+=3.5;
-    const leg_ = exec("SELECT * FROM tbEscalaP2Legenda ORDER BY Id");
-    if(leg_.length) doc.text("Legenda: "+leg_.map(l=>l.Codigo+' ('+l.Descricao+')').join(' | '),pw/2,y,{align:"center"});
     doc.save(`escala_p2_${ano}_${String(mes).padStart(2,'0')}.pdf`);
     toast('PDF exportado!');
     } catch(err){ toast("Erro PDF: "+err.message,"error"); }
-  },
-  salvarEscala(){
-    const {mes,ano}=this.mesAno();
-    const rows=exec("SELECT * FROM tbEscalaP2 WHERE Mes=? AND Ano=? AND IsSeparador=0 ORDER BY Ordem",[mes,ano]);
-    if(!rows.length){ toast("Nenhum militar na escala para salvar","error"); return; }
-    const meta=exec("SELECT * FROM tbEscalaP2Meta WHERE Id=1")[0] || {};
-    const meses=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-    const agora=new Date();
-    const nome=`ESCALA GERAL - ${meses[mes-1].toUpperCase()} ${ano} - ${String(agora.getDate()).padStart(2,'0')}/${String(agora.getMonth()+1).padStart(2,'0')}/${agora.getFullYear()} ${String(agora.getHours()).padStart(2,'0')}:${String(agora.getMinutes()).padStart(2,'0')}`;
-    try{
-      run("INSERT INTO tbEscalaSalva (Nome,Mes,Ano,DataSalva) VALUES (?,?,?,datetime('now','localtime'))",[nome,mes,ano]);
-      const salvaId=exec("SELECT MAX(Id) Id FROM tbEscalaSalva")[0].Id;
-      rows.forEach(r=>{
-        run("INSERT INTO tbEscalaSalvaItem (EscalaSalvaId,Funcao,OPM,GH,Nome,Matricula,Telefone,Dias,TipoPagamento,IsSeparador,SeparadorTexto,Ordem) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-          [salvaId,r.Funcao,r.OPM,r.GH,r.Nome,r.Matricula,r.Telefone||'',r.Dias,r.TipoPagamento||'HE',0,'',r.Ordem]);
-      });
-      run("INSERT INTO tbEscalaSalvaMeta (EscalaSalvaId,Local,Responsavel,Cargo,Emissao,Nota,Titulo) VALUES (?,?,?,?,?,?,?)",
-        [salvaId,meta.Local||'IRECÊ',meta.Responsavel||'',meta.Cargo||'',meta.Emissao||'',meta.Nota||'',meta.Titulo||'']);
-      toast(`Escala salva! ID ${salvaId} — ${nome}`);
-    } catch(e){ toast("Erro ao salvar: "+e.message,"error"); }
-  }
-};
-
-/* ===================== ESCALAS SALVAS ===================== */
-const EscalasSalvas = {
-  init(){ this.render(); },
-  render(){
-    const rows=exec("SELECT es.*,(SELECT COUNT(*) FROM tbEscalaSalvaItem ei WHERE ei.EscalaSalvaId=es.Id) militares FROM tbEscalaSalva es ORDER BY es.Id DESC");
-    $("es-salvas-count").textContent=`${rows.length} escalas salvas`;
-    const meses=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-    $("es-salvas-body").innerHTML=rows.length?rows.map(r=>`
-      <tr>
-        <td>${r.Id}</td>
-        <td><b>${escapeHtml(r.Nome)}</b></td>
-        <td>${meses[(r.Mes-1)]||r.Mes}</td>
-        <td>${r.Ano}</td>
-        <td>${r.DataSalva}</td>
-        <td><span class="badge badge-purple">${r.militares}</span></td>
-        <td>${r.Ativa?'<span class="badge badge-green" style="font-size:12px">✓</span>':''}</td>
-        <td class="actions-col" style="white-space:nowrap">
-          <button class="btn btn-sm" onclick="EscalasSalvas.visualizar(${r.Id})">👁️</button>
-          <button class="btn btn-sm" onclick="EscalasSalvas.carregar(${r.Id})">📂 Carregar</button>
-          <button class="btn btn-sm ${r.Ativa?'btn-primary':'btn'}" onclick="EscalasSalvas.definirAtiva(${r.Id})">${r.Ativa?'★ Ativa':'☆ Ativar'}</button>
-          <button class="btn btn-sm btn-danger" onclick="EscalasSalvas.excluir(${r.Id})">🗑</button>
-        </td>
-      </tr>
-    `).join(''):'<tr><td colspan="8" class="empty">Nenhuma escala salva. Vá em <b>ESCALA GERAL - MENSAL</b> e salve uma escala.</td></tr>';
-  },
-  visualizar(id){
-    const r=exec("SELECT * FROM tbEscalaSalva WHERE Id=?",[id])[0];
-    if(!r){ toast("Escala não encontrada","error"); return; }
-    const itens=exec("SELECT * FROM tbEscalaSalvaItem WHERE EscalaSalvaId=? ORDER BY Ordem",[id]);
-    const meses=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-    const meta=exec("SELECT * FROM tbEscalaSalvaMeta WHERE EscalaSalvaId=?",[id])[0]||{};
-    let html=`<div style="margin-bottom:12px;font-size:12px;color:var(--muted)"><b>${escapeHtml(r.Nome)}</b> — ${itens.length} militares | Salva em ${r.DataSalva}</div>`;
-    const leg=exec("SELECT * FROM tbEscalaP2Legenda ORDER BY Id");
-    if(leg.length) html+=`<div style="margin-bottom:12px;font-size:11px;color:var(--muted)">Legenda: ${leg.map(l=>'<b>'+escapeHtml(l.Codigo)+'</b> ('+escapeHtml(l.Descricao)+')').join(' | ')}</div>`;
-    html+=`<table class="compact" style="font-size:10px"><thead><tr><th>#</th><th>FUNÇÃO</th><th>OPM</th><th>GH</th><th>NOME</th><th>MATRÍCULA</th><th>TIPO</th><th>DIAS</th></tr></thead><tbody>`;
-    itens.forEach((item,i)=>{
-      const dias=GerarEscalaP2._getDias(item.Dias);
-      const diasStr=Object.keys(dias).sort((a,b)=>+a-(+b)).map(d=>d+':'+dias[d]).join(', ');
-      html+=`<tr><td>${i+1}</td><td>${escapeHtml(item.Funcao)}</td><td>${escapeHtml(item.OPM)}</td><td>${escapeHtml(item.GH)}</td><td>${escapeHtml(item.Nome)}</td><td>${escapeHtml(item.Matricula)}</td><td><span class="badge">${item.TipoPagamento||'HE'}</span></td><td style="font-size:9px;color:var(--muted)">${diasStr||'-'}</td></tr>`;
-    });
-    html+=`</tbody></table>`;
-    if(meta.Local||meta.Responsavel){
-      html+=`<div style="margin-top:12px;font-size:11px;color:var(--muted)">📍 ${escapeHtml(meta.Local||'')} | 👤 ${escapeHtml(meta.Responsavel||'')} | 🏷️ ${escapeHtml(meta.Cargo||'')}</div>`;
-    }
-    openModal(`💾 Escala Salva #${id}`,html);
-  },
-  carregar(id){
-    const r=exec("SELECT * FROM tbEscalaSalva WHERE Id=?",[id])[0];
-    if(!r){ toast("Escala não encontrada","error"); return; }
-    if(!confirm2(`Carregar "${r.Nome}" para o editor? Os dados atuais de ${r.Mes}/${r.Ano} serão substituídos.`)) return;
-    try{
-      const {mes,ano}=GerarEscalaP2.mesAno();
-      run("DELETE FROM tbEscalaP2 WHERE Mes=? AND Ano=?",[mes,ano]);
-      const itens=exec("SELECT * FROM tbEscalaSalvaItem WHERE EscalaSalvaId=? ORDER BY Ordem",[id]);
-      itens.forEach((item,i)=>{
-        run("INSERT INTO tbEscalaP2 (Mes,Ano,Funcao,OPM,GH,Nome,Matricula,Telefone,Dias,TipoPagamento,IsSeparador,SeparadorTexto,Ordem) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-          [mes,ano,item.Funcao,item.OPM,item.GH,item.Nome,item.Matricula,item.Telefone||'',item.Dias,item.TipoPagamento||'HE',item.IsSeparador||0,item.SeparadorTexto||'',item.Ordem]);
-      });
-      const meta=exec("SELECT * FROM tbEscalaSalvaMeta WHERE EscalaSalvaId=?",[id])[0];
-      if(meta) run("UPDATE tbEscalaP2Meta SET Local=?,Responsavel=?,Cargo=?,Emissao=?,Nota=?,Titulo=? WHERE Id=1",
-        [meta.Local||'IRECÊ',meta.Responsavel||'',meta.Cargo||'',meta.Emissao||'',meta.Nota||'',meta.Titulo||'']);
-      GerarEscalaP2.init();
-      const navEl=document.querySelector('.nav-item[data-page="gerarescalap2"]');
-      if(navEl) navEl.click();
-      toast("Escala carregada no editor!");
-    } catch(e){ toast("Erro ao carregar: "+e.message,"error"); }
-  },
-  excluir(id){
-    const r=exec("SELECT * FROM tbEscalaSalva WHERE Id=?",[id])[0];
-    if(!r){ toast("Escala não encontrada","error"); return; }
-    if(!confirm2(`Excluir "${r.Nome}"?`)) return;
-    try{
-      run("DELETE FROM tbEscalaSalvaItem WHERE EscalaSalvaId=?",[id]);
-      run("DELETE FROM tbEscalaSalvaMeta WHERE EscalaSalvaId=?",[id]);
-      run("DELETE FROM tbEscalaSalva WHERE Id=?",[id]);
-      toast("Excluída!"); this.render();
-    } catch(e){ toast("Erro: "+e.message,"error"); }
-  },
-  definirAtiva(id){
-    const r=exec("SELECT * FROM tbEscalaSalva WHERE Id=?",[id])[0];
-    if(!r){ toast("Escala não encontrada","error"); return; }
-    try{
-      const nova = r.Ativa ? 0 : 1;
-      run("UPDATE tbEscalaSalva SET Ativa=? WHERE Id=?",[nova,id]);
-      toast(`"${r.Nome}" ${nova?'ativada':'desativada'} para cálculos!`);
-      this.render();
-    } catch(e){ toast("Erro: "+e.message,"error"); }
-  },
-  getAtivas(){
-    return exec("SELECT * FROM tbEscalaSalva WHERE Ativa=1");
   }
 };
 
@@ -6096,7 +4887,6 @@ const Relatorio = {
     const tab = document.querySelector(`#page-relatorio .tab[data-rep="${id}"]`);
     if (tab) tab.classList.add("active");
     if (id === "rep-analitico") Relatorio.renderAnalitico();
-    if (id === "rep-horas") RelatorioHoras.init();
   },
   renderAnalitico(){
     const tot = exec("SELECT COUNT(*) c FROM tbEfetivoPM")[0].c;
@@ -6477,264 +5267,6 @@ const Relatorio = {
       : `valoresreltotal_${data.ini}_a_${data.fim}.xls`;
     XLSX.writeFile(wb, fname, { bookType:"xls" });
     toast("Excel gerado!");
-  }
-};
-
-/* ===================== RELATORIO DE HORAS (HE / VD) ===================== */
-const RelatorioHoras = {
-  init(){
-    this._popularMesAno("rh-he-mes","rh-he-ano");
-    this._popularMesAno("rh-vd-mes","rh-vd-ano");
-    this.carregarTabelaValores();
-  },
-  _popularMesAno(mesId,anoId){
-    const m=$(mesId), a=$(anoId); if(!m||!a) return;
-    if(!m.children.length){
-      const nomes=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-      for(let i=0;i<12;i++){ const o=document.createElement("option"); o.value=i; o.textContent=nomes[i]; m.appendChild(o); }
-    }
-    if(!a.children.length){
-      const y=new Date().getFullYear();
-      for(let i=y-2;i<=y+2;i++){ const o=document.createElement("option"); o.value=i; o.textContent=i; if(i===y)o.selected=true; a.appendChild(o); }
-    }
-    m.value=new Date().getMonth();
-  },
-  carregarTabelaValores(){
-    const tbody=$("rh-tabela-valores-body"); if(!tbody) return;
-    const rows=exec("SELECT * FROM tbTabelaValores ORDER BY Id");
-    tbody.innerHTML=rows.map(r => `<tr>
-      <td style="font-weight:600">${escapeHtml(r.PostoGrad)}</td>
-      <td><input type="number" step="0.01" value="${r.HEDiurna}" onchange="RelatorioHoras.salvarValor(${r.Id},'HEDiurna',this.value)" style="width:90px;padding:4px;border-radius:4px;background:#0b1224;color:var(--text);border:1px solid var(--line)" /></td>
-      <td><input type="number" step="0.01" value="${r.AdHENoturna}" onchange="RelatorioHoras.salvarValor(${r.Id},'AdHENoturna',this.value)" style="width:90px;padding:4px;border-radius:4px;background:#0b1224;color:var(--text);border:1px solid var(--line)" /></td>
-      <td><input type="number" step="0.01" value="${r.VDDiurno}" onchange="RelatorioHoras.salvarValor(${r.Id},'VDDiurno',this.value)" style="width:90px;padding:4px;border-radius:4px;background:#0b1224;color:var(--text);border:1px solid var(--line)" /></td>
-      <td><input type="number" step="0.01" value="${r.VDNoturno}" onchange="RelatorioHoras.salvarValor(${r.Id},'VDNoturno',this.value)" style="width:90px;padding:4px;border-radius:4px;background:#0b1224;color:var(--text);border:1px solid var(--line)" /></td>
-    </tr>`).join('');
-  },
-  salvarValor(id,campo,val){
-    try{ run(`UPDATE tbTabelaValores SET ${campo}=? WHERE Id=?`,[parseFloat(val)||0,id]); toast("Valor salvo!"); }catch(e){ toast("Erro: "+e.message,"error"); }
-  },
-  exportarCsvValores(){
-    const rows=exec("SELECT * FROM tbTabelaValores ORDER BY Id");
-    if(!rows.length){toast("Nenhum valor para exportar","error");return;}
-    let csv="POSTO/GRAD;HE Diurna;Ad. HE Noturna;VD Diurno;VD Noturno\n";
-    rows.forEach(r=>{csv+=`${r.PostoGrad};${r.HEDiurna};${r.AdHENoturna};${r.VDDiurno};${r.VDNoturno}\n`;});
-    downloadFile(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}),`tabela_valores.csv`);
-    toast("CSV exportado!");
-  },
-  importarCsvValores(ev){
-    const f=ev.target.files[0]; if(!f)return;
-    const r=new FileReader();
-    r.onload=e=>{
-      try{
-        const text=(e.target.result+'').replace(/^\uFEFF/,'');
-        const lines=text.split(/\r?\n/).filter(l=>l.trim());
-        if(lines.length<2){toast("CSV vazio","error");return;}
-        const header=lines[0].split(";").map(h=>h.trim().toLowerCase().normalize('NFD').replace(/[^a-z]/g,''));
-        const pi=header.findIndex(h=>h.includes('posto')||h.includes('grad'));
-        const heD=header.findIndex(h=>h.includes('he')&&h.includes('diurna'));
-        const heN=header.findIndex(h=>h.includes('he')&&h.includes('noturna'));
-        const vdD=header.findIndex(h=>h.includes('vd')&&h.includes('diurno'));
-        const vdN=header.findIndex(h=>h.includes('vd')&&h.includes('noturna'));
-        if(pi<0){toast("Coluna POSTO/GRAD não encontrada","error");return;}
-        let imp=0;
-        for(let i=1;i<lines.length;i++){
-          const cols=lines[i].split(";");
-          const pg=cols[pi]?.trim(); if(!pg)continue;
-          const tv=exec("SELECT Id FROM tbTabelaValores WHERE PostoGrad=?",[pg])[0];
-          if(tv){
-            run("UPDATE tbTabelaValores SET HEDiurna=?,AdHENoturna=?,VDDiurno=?,VDNoturno=? WHERE Id=?",[
-              heD>=0?parseFloat(cols[heD])||0:0, heN>=0?parseFloat(cols[heN])||0:0,
-              vdD>=0?parseFloat(cols[vdD])||0:0, vdN>=0?parseFloat(cols[vdN])||0:0, tv.Id]);
-          } else {
-            run("INSERT INTO tbTabelaValores (PostoGrad,HEDiurna,AdHENoturna,VDDiurno,VDNoturno) VALUES (?,?,?,?,?)",[
-              pg, heD>=0?parseFloat(cols[heD])||0:0, heN>=0?parseFloat(cols[heN])||0:0,
-              vdD>=0?parseFloat(cols[vdD])||0:0, vdN>=0?parseFloat(cols[vdN])||0:0]);
-          }
-          imp++;
-        }
-        toast(`Importados ${imp} registros!`); this.carregarTabelaValores();
-      }catch(err){toast("Erro: "+err.message,"error");}
-    };
-    r.readAsText(f); ev.target.value="";
-  },
-  _agregarHoras(mes,ano,tipo){
-    const h={};
-    const add=(mat,nome,pg,chd,chn)=>{ if(!h[mat]) h[mat]={Nome:nome,PostoGrad:pg,CHD:0,CHN:0}; h[mat].CHD+=chd; h[mat].CHN+=chn; };
-    const mesStr=String(ano)+'-'+String(mes+1).padStart(2,'0');
-    const tipoWhere = tipo ? " AND es.TipoPagamento=?" : "";
-    const tipoParam = tipo ? [tipo] : [];
-    // tbEscala (Escala de Eventos)
-    const esc=exec(`SELECT e.Matricula,e.Nome,c.PostoGrad,es.EscalaCHDiurna,es.EscalaCHNoturna FROM tbEscala es JOIN tbEfetivoPM e ON e.Matricula=es.Matricula LEFT JOIN tbCargo c ON c.CargoId=e.Cargo WHERE es.EscalaData LIKE ?${tipoWhere}`,[mesStr+'%'].concat(tipoParam));
-    esc.forEach(r=>add(r.Matricula,r.Nome,r.PostoGrad,+r.EscalaCHDiurna||0,+r.EscalaCHNoturna||0));
-    // Origem: escalas salvas ativas ou tbEscalaP2 diretamente
-    const ativas=EscalasSalvas.getAtivas();
-    const tipoWhere2 = tipo ? " AND TipoPagamento=?" : "";
-    const tipoParam2 = tipo ? [tipo] : [];
-    let usouAtiva = false;
-    ativas.forEach(ativa => {
-      if(ativa.Mes===mes+1 && ativa.Ano===ano){
-        usouAtiva = true;
-        const p2=exec(`SELECT * FROM tbEscalaSalvaItem WHERE EscalaSalvaId=? AND IsSeparador=0${tipoWhere2}`,[ativa.Id].concat(tipoParam2));
-        p2.forEach(r=>{
-          const dias=GerarEscalaP2._getDias(r.Dias);
-          let chd=0,chn=0;
-          for(const dia in dias){ const ch=GerarEscalaP2._calcDiaHoras(dias[dia]); chd+=ch.hD; chn+=ch.hN; }
-          add(r.Matricula,r.Nome,r.GH,chd,chn);
-        });
-      }
-    });
-    if(!usouAtiva){
-      const p2=exec(`SELECT * FROM tbEscalaP2 WHERE Mes=? AND Ano=? AND IsSeparador=0${tipoWhere2}`,[mes+1,ano].concat(tipoParam2));
-      p2.forEach(r=>{
-        const dias=GerarEscalaP2._getDias(r.Dias);
-        let chd=0,chn=0;
-        for(const dia in dias){ const ch=GerarEscalaP2._calcDiaHoras(dias[dia]); chd+=ch.hD; chn+=ch.hN; }
-        add(r.Matricula,r.Nome,r.GH,chd,chn);
-      });
-    }
-    return Object.entries(h).map(([mat,x])=>({Matricula:mat,...x}));
-  },
-  _getValor(pg,campo){ const r=exec("SELECT * FROM tbTabelaValores WHERE PostoGrad=?",[pg])[0]; return r?+r[campo]||0:0; },
-  gerarHE(){
-    const mes=+$("rh-he-mes").value, ano=+$("rh-he-ano").value;
-    const dados=this._agregarHoras(mes,ano,'HE');
-    const tb=$("rh-he-body"); if(!tb) return;
-    let tD=0,tN=0,tTH=0,tvD=0,tvN=0,tG=0;
-    tb.innerHTML=dados.map(d=>{
-      const vD=this._getValor(d.PostoGrad,'HEDiurna'), vN=this._getValor(d.PostoGrad,'AdHENoturna');
-      const tH=d.CHD+d.CHN, valD=tH*vD, valN=d.CHN*vN, total=valD+valN;
-      tD+=d.CHD; tN+=d.CHN; tTH+=tH; tvD+=valD; tvN+=valN; tG+=total;
-      return `<tr><td>${escapeHtml(d.PostoGrad||'-')}</td><td>${escapeHtml(d.Nome)}</td><td>${escapeHtml(d.Matricula)}</td><td style="text-align:center;font-weight:700">${d.CHD}</td><td style="text-align:center;font-weight:700">${d.CHN}</td><td style="text-align:center;font-weight:700">${tH}</td><td style="text-align:right;font-weight:700">R$ ${valD.toFixed(2)}</td><td style="text-align:right;font-weight:700">R$ ${valN.toFixed(2)}</td><td style="text-align:right;font-weight:700">R$ ${total.toFixed(2)}</td></tr>`;
-    }).join('');
-    tb.innerHTML+=`<tr style="background:#1c2541;font-weight:700"><td colspan="3" style="text-align:right">TOTAIS</td><td style="text-align:center">${tD}</td><td style="text-align:center">${tN}</td><td style="text-align:center">${tTH}</td><td style="text-align:right">R$ ${tvD.toFixed(2)}</td><td style="text-align:right">R$ ${tvN.toFixed(2)}</td><td style="text-align:right">R$ ${tG.toFixed(2)}</td></tr>`;
-    toast(`HE: ${dados.length} militares`);
-  },
-  gerarVD(){
-    const mes=+$("rh-vd-mes").value, ano=+$("rh-vd-ano").value;
-    const dados=this._agregarHoras(mes,ano,'VD');
-    const tb=$("rh-vd-body"); if(!tb) return;
-    let tD=0,tN=0,tvD=0,tvN=0,tG=0;
-    tb.innerHTML=dados.map(d=>{
-      const vD=this._getValor(d.PostoGrad,'VDDiurno'), vN=this._getValor(d.PostoGrad,'VDNoturno');
-      const valD=d.CHD*vD, valN=d.CHN*vN, total=valD+valN;
-      tD+=d.CHD; tN+=d.CHN; tvD+=valD; tvN+=valN; tG+=total;
-      return `<tr><td>${escapeHtml(d.PostoGrad||'-')}</td><td>${escapeHtml(d.Nome)}</td><td>${escapeHtml(d.Matricula)}</td><td style="text-align:center;font-weight:700">${d.CHD}</td><td style="text-align:center;font-weight:700">${d.CHN}</td><td style="text-align:right;font-weight:700">R$ ${valD.toFixed(2)}</td><td style="text-align:right;font-weight:700">R$ ${valN.toFixed(2)}</td><td style="text-align:right;font-weight:700">R$ ${total.toFixed(2)}</td></tr>`;
-    }).join('');
-    tb.innerHTML+=`<tr style="background:#1c2541;font-weight:700"><td colspan="3" style="text-align:right">TOTAIS</td><td style="text-align:center">${tD}</td><td style="text-align:center">${tN}</td><td style="text-align:right">R$ ${tvD.toFixed(2)}</td><td style="text-align:right">R$ ${tvN.toFixed(2)}</td><td style="text-align:right">R$ ${tG.toFixed(2)}</td></tr>`;
-    toast(`VD: ${dados.length} militares`);
-  },
-  _buildPlanilhaData(tipo){
-    const isHE=tipo==='HE';
-    const mes=+$(isHE?"rh-he-mes":"rh-vd-mes").value, ano=+$(isHE?"rh-he-ano":"rh-vd-ano").value;
-    const dados=this._agregarHoras(mes,ano,isHE?'HE':'VD');
-    const mesesNome=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-    return { dados, mes, ano, label:`${mesesNome[mes]} ${ano}` };
-  },
-  exportarExcelHE(){
-    const {dados,label}=this._buildPlanilhaData('HE');
-    if(!dados.length){toast("Gere a planilha primeiro","error");return;}
-    const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    const hd=['GH','NOME','MATRÍCULA','CH D','CH N','T. Horas','Valor Diurno','Ad. HE Noturna','Total'];
-    let h='<html><head><meta charset="UTF-8"></head><body><table style="border-collapse:collapse;font-family:Calibri,Arial;font-size:10pt">';
-    h+=`<tr><td colspan="9" style="text-align:center;font-size:14pt;font-weight:700;padding:8px">PLANILHA HE (HORA EXTRA) — ${esc(label)}</td></tr>`;
-    h+='<tr style="height:4pt"><td colspan="9" style="background:#2B488B;padding:0"></td></tr>';
-    h+='<tr>'+hd.map(c=>`<th style="background:#2B488B;color:#fff;font-weight:700;border:1px solid #2B488B;padding:4px 8px">${c}</th>`).join('')+'</tr>';
-    let tD=0,tN=0,tTH=0,tvD=0,tvN=0,tG=0;
-    dados.forEach(d=>{
-      const vD=this._getValor(d.PostoGrad,'HEDiurna'), vN=this._getValor(d.PostoGrad,'AdHENoturna');
-      const tH=d.CHD+d.CHN, valD=tH*vD, valN=d.CHN*vN, total=valD+valN;
-      tD+=d.CHD; tN+=d.CHN; tTH+=tH; tvD+=valD; tvN+=valN; tG+=total;
-      h+=`<tr>${[d.PostoGrad||'-',d.Nome,d.Matricula,d.CHD,d.CHN,tH,'R$ '+valD.toFixed(2),'R$ '+valN.toFixed(2),'R$ '+total.toFixed(2)].map((v,i)=>`<td style="text-align:${i<3?'left':'center'};border:1px solid #bbb;padding:3px 6px;${i>4?'font-weight:700':''}">${esc(v)}</td>`).join('')}</tr>`;
-    });
-    h+=`<tr style="background:#F5F5FA;font-weight:700"><td colspan="3" style="text-align:right;border:1px solid #bbb;padding:3px 6px">TOTAIS</td>${[tD,tN,tTH,'R$ '+tvD.toFixed(2),'R$ '+tvN.toFixed(2),'R$ '+tG.toFixed(2)].map(v=>`<td style="text-align:center;border:1px solid #bbb;padding:3px 6px">${esc(v)}</td>`).join('')}</tr>`;
-    h+='</table></body></html>';
-    downloadFile(new Blob([h],{type:'application/vnd.ms-excel;charset=utf-8'}),`planilha_he_${label.replace(/ /g,'_')}.xls`);
-    toast("Excel HE exportado!");
-  },
-  exportarPdfHE(){
-    const {dados,label}=this._buildPlanilhaData('HE');
-    if(!dados.length){toast("Gere a planilha primeiro","error");return;}
-    if(typeof jspdf==='undefined'){toast("jsPDF não disponível","error");return;}
-    const {jsPDF}=window.jspdf;
-    const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-    const pw=297, ml=10, mr=10;
-    doc.setFont("helvetica","bold"); doc.setFontSize(14);
-    doc.text(`PLANILHA HE (HORA EXTRA) — ${label}`,pw/2,15,{align:"center"});
-    doc.setDrawColor(42,72,139); doc.setLineWidth(0.6);
-    doc.line(ml,18,pw-mr,18);
-    const head=[['GH','NOME','MATRÍCULA','CH D','CH N','T. Horas','Valor Diurno','Ad. HE Noturna','Total']];
-    const body=[];
-    let tD=0,tN=0,tTH=0,tvD=0,tvN=0,tG=0;
-    dados.forEach(d=>{
-      const vD=this._getValor(d.PostoGrad,'HEDiurna'), vN=this._getValor(d.PostoGrad,'AdHENoturna');
-      const tH=d.CHD+d.CHN, valD=tH*vD, valN=d.CHN*vN, total=valD+valN;
-      tD+=d.CHD; tN+=d.CHN; tTH+=tH; tvD+=valD; tvN+=valN; tG+=total;
-      body.push([d.PostoGrad||'-',d.Nome,d.Matricula,String(d.CHD),String(d.CHN),String(tH),'R$ '+valD.toFixed(2),'R$ '+valN.toFixed(2),'R$ '+total.toFixed(2)]);
-    });
-    body.push(['','','TOTAIS',String(tD),String(tN),String(tTH),'R$ '+tvD.toFixed(2),'R$ '+tvN.toFixed(2),'R$ '+tG.toFixed(2)]);
-    doc.autoTable({
-      head, body, startY:22,
-      styles:{font:"helvetica",fontSize:8,cellPadding:3,lineColor:[180,180,180],lineWidth:0.3,textColor:[20,20,20]},
-      headStyles:{fillColor:[42,72,139],textColor:[255,255,255],fontStyle:"bold",fontSize:8,halign:"center"},
-      columnStyles:{0:{cellWidth:22},1:{cellWidth:50},2:{cellWidth:28},3:{cellWidth:14,halign:"center"},4:{cellWidth:14,halign:"center"},5:{cellWidth:16,halign:"center"},6:{cellWidth:28,halign:"right"},7:{cellWidth:28,halign:"right"},8:{cellWidth:28,halign:"right"}},
-      margin:{left:ml,right:mr},
-      didParseCell:(d)=>{if(d.section==='body'&&d.row.index===body.length-1){d.cell.styles.fontStyle='bold';d.cell.styles.fillColor=[245,245,250];}}
-    });
-    doc.save(`planilha_he_${label.replace(/ /g,'_')}.pdf`);
-    toast("PDF HE exportado!");
-  },
-  exportarExcelVD(){
-    const {dados,label}=this._buildPlanilhaData('VD');
-    if(!dados.length){toast("Gere a planilha primeiro","error");return;}
-    const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    const hd=['GH','NOME','MATRÍCULA','CH D','CH N','Valor Diurno','Valor Noturno','Total'];
-    let h='<html><head><meta charset="UTF-8"></head><body><table style="border-collapse:collapse;font-family:Calibri,Arial;font-size:10pt">';
-    h+=`<tr><td colspan="8" style="text-align:center;font-size:14pt;font-weight:700;padding:8px">PLANILHA VD (VALOR DIFERENCIAL) — ${esc(label)}</td></tr>`;
-    h+='<tr style="height:4pt"><td colspan="8" style="background:#2B488B;padding:0"></td></tr>';
-    h+='<tr>'+hd.map(c=>`<th style="background:#2B488B;color:#fff;font-weight:700;border:1px solid #2B488B;padding:4px 8px">${c}</th>`).join('')+'</tr>';
-    let tD=0,tN=0,tvD=0,tvN=0,tG=0;
-    dados.forEach(d=>{
-      const vD=this._getValor(d.PostoGrad,'VDDiurno'), vN=this._getValor(d.PostoGrad,'VDNoturno');
-      const valD=d.CHD*vD, valN=d.CHN*vN, total=valD+valN;
-      tD+=d.CHD; tN+=d.CHN; tvD+=valD; tvN+=valN; tG+=total;
-      h+=`<tr>${[d.PostoGrad||'-',d.Nome,d.Matricula,d.CHD,d.CHN,'R$ '+valD.toFixed(2),'R$ '+valN.toFixed(2),'R$ '+total.toFixed(2)].map((v,i)=>`<td style="text-align:${i<3?'left':'center'};border:1px solid #bbb;padding:3px 6px;${i>4?'font-weight:700':''}">${esc(v)}</td>`).join('')}</tr>`;
-    });
-    h+=`<tr style="background:#F5F5FA;font-weight:700"><td colspan="3" style="text-align:right;border:1px solid #bbb;padding:3px 6px">TOTAIS</td>${[tD,tN,'R$ '+tvD.toFixed(2),'R$ '+tvN.toFixed(2),'R$ '+tG.toFixed(2)].map(v=>`<td style="text-align:center;border:1px solid #bbb;padding:3px 6px">${esc(v)}</td>`).join('')}</tr>`;
-    h+='</table></body></html>';
-    downloadFile(new Blob([h],{type:'application/vnd.ms-excel;charset=utf-8'}),`planilha_vd_${label.replace(/ /g,'_')}.xls`);
-    toast("Excel VD exportado!");
-  },
-  exportarPdfVD(){
-    const {dados,label}=this._buildPlanilhaData('VD');
-    if(!dados.length){toast("Gere a planilha primeiro","error");return;}
-    if(typeof jspdf==='undefined'){toast("jsPDF não disponível","error");return;}
-    const {jsPDF}=window.jspdf;
-    const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-    const pw=297, ml=10, mr=10;
-    doc.setFont("helvetica","bold"); doc.setFontSize(14);
-    doc.text(`PLANILHA VD (VALOR DIFERENCIAL) — ${label}`,pw/2,15,{align:"center"});
-    doc.setDrawColor(42,72,139); doc.setLineWidth(0.6);
-    doc.line(ml,18,pw-mr,18);
-    const head=[['GH','NOME','MATRÍCULA','CH D','CH N','Valor Diurno','Valor Noturno','Total']];
-    const body=[];
-    let tD=0,tN=0,tvD=0,tvN=0,tG=0;
-    dados.forEach(d=>{
-      const vD=this._getValor(d.PostoGrad,'VDDiurno'), vN=this._getValor(d.PostoGrad,'VDNoturno');
-      const valD=d.CHD*vD, valN=d.CHN*vN, total=valD+valN;
-      tD+=d.CHD; tN+=d.CHN; tvD+=valD; tvN+=valN; tG+=total;
-      body.push([d.PostoGrad||'-',d.Nome,d.Matricula,String(d.CHD),String(d.CHN),'R$ '+valD.toFixed(2),'R$ '+valN.toFixed(2),'R$ '+total.toFixed(2)]);
-    });
-    body.push(['','','TOTAIS',String(tD),String(tN),'R$ '+tvD.toFixed(2),'R$ '+tvN.toFixed(2),'R$ '+tG.toFixed(2)]);
-    doc.autoTable({
-      head, body, startY:22,
-      styles:{font:"helvetica",fontSize:9,cellPadding:3,lineColor:[180,180,180],lineWidth:0.3,textColor:[20,20,20]},
-      headStyles:{fillColor:[42,72,139],textColor:[255,255,255],fontStyle:"bold",fontSize:9,halign:"center"},
-      columnStyles:{0:{cellWidth:22},1:{cellWidth:55},2:{cellWidth:28},3:{cellWidth:16,halign:"center"},4:{cellWidth:16,halign:"center"},5:{cellWidth:30,halign:"right"},6:{cellWidth:30,halign:"right"},7:{cellWidth:30,halign:"right"}},
-      margin:{left:ml,right:mr},
-      didParseCell:(d)=>{if(d.section==='body'&&d.row.index===body.length-1){d.cell.styles.fontStyle='bold';d.cell.styles.fillColor=[245,245,250];}}
-    });
-    doc.save(`planilha_vd_${label.replace(/ /g,'_')}.pdf`);
-    toast("PDF VD exportado!");
   }
 };
 
@@ -15224,76 +13756,6 @@ const Backup = {
       }catch(e){ toast("Erro: "+e.message,"error"); }
     };
     r.readAsArrayBuffer(f);
-  }
-};
-
-/* ===================== USUÁRIOS ===================== */
-const Usuarios = {
-  editingId: null,
-  init(){
-    this.editingId = null;
-    this.limpar();
-    this.renderTabela();
-  },
-  salvar(){
-    const mat = $("usr-matricula").value.trim();
-    const nome = $("usr-nome").value.trim();
-    const senha = $("usr-senha").value;
-    const tipo = $("usr-tipo").value;
-    if(!mat || !nome || !senha){ toast("Preencha todos os campos obrigatórios","error"); return; }
-    if(this.editingId){
-      run("UPDATE tbUsuario SET Matricula=?, Nome=?, Senha=?, Tipo=? WHERE Id=?",[mat, nome, senha, tipo, this.editingId]);
-      toast("Usuário atualizado!");
-    } else {
-      try {
-        run("INSERT INTO tbUsuario (Matricula,Nome,Senha,Tipo) VALUES (?,?,?,?)",[mat, nome, senha, tipo]);
-        toast("Usuário cadastrado!");
-      } catch(e) {
-        toast("Erro: matrícula já existe","error"); return;
-      }
-    }
-    this.editingId = null; this.limpar(); this.renderTabela();
-  },
-  editar(id){
-    const r = exec("SELECT * FROM tbUsuario WHERE Id=?",[id])[0];
-    if(!r) return;
-    this.editingId = r.Id;
-    $("usr-matricula").value = r.Matricula;
-    $("usr-nome").value = r.Nome;
-    $("usr-senha").value = r.Senha;
-    $("usr-tipo").value = r.Tipo;
-  },
-  excluir(id){
-    const r = exec("SELECT * FROM tbUsuario WHERE Id=?",[id])[0];
-    if(!r) return;
-    if(r.Matricula === Auth.getMatricula()){ toast("Você não pode excluir seu próprio usuário","error"); return; }
-    if(!confirm(`Excluir usuário ${escapeHtml(r.Nome)}?`)) return;
-    run("DELETE FROM tbUsuario WHERE Id=?",[id]);
-    toast("Excluído!"); this.renderTabela();
-  },
-  limpar(){
-    this.editingId = null;
-    $("usr-matricula").value = "";
-    $("usr-nome").value = "";
-    $("usr-senha").value = "";
-    $("usr-tipo").value = "USER";
-  },
-  renderTabela(){
-    const rows = exec("SELECT * FROM tbUsuario ORDER BY Nome");
-    $("usr-count").textContent = rows.length+" registro(s)";
-    $("usr-tbody").innerHTML = rows.map(r => {
-      const podeExcluir = r.Matricula !== Auth.getMatricula();
-      return `<tr>
-        <td>${escapeHtml(r.Matricula)}</td>
-        <td>${escapeHtml(r.Nome)}</td>
-        <td>${r.Tipo === 'ADMIN' ? '👑 Administrador' : '👤 Usuário'}</td>
-        <td>${r.CriadoEm||'-'}</td>
-        <td>
-          <button class="btn btn-sm" onclick="Usuarios.editar(${r.Id})">✏️</button>
-          ${podeExcluir ? `<button class="btn btn-sm btn-danger" onclick="Usuarios.excluir(${r.Id})">🗑</button>` : ''}
-        </td>
-      </tr>`;
-    }).join('');
   }
 };
 
