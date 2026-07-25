@@ -244,35 +244,68 @@ def p2_legenda():
     return render_template('escala/p2_legenda.html', legendas=legendas, form=form)
 
 
-
-@escala_bp.route('/p2/salvar', methods=['POST'])
+@escala_bp.route('/p2/buscar-militar')
 @login_required
-def p2_salvar():
-    if not current_user.is_supervisor:
-        flash('Acesso negado.', 'danger')
-        return redirect(url_for('escala.p2'))
+def p2_buscar_militar():
+    termo = request.args.get('q', '').strip()
+    if len(termo) < 2:
+        return jsonify([])
+    militares = EfetivoPM.query.filter(
+        db.or_(
+            EfetivoPM.matricula.ilike(f'%{termo}%'),
+            EfetivoPM.nome.ilike(f'%{termo}%')
+        )
+    ).order_by(EfetivoPM.nome).limit(10).all()
+    return jsonify([{
+        'matricula': m.matricula,
+        'nome': m.nome,
+        'funcao': m.funcao or '',
+        'telefone': m.telefone or '',
+        'opm': m.opm_sigla or '',
+        'cargo': m.posto_grad or '',
+    } for m in militares])
 
-    mes = request.form.get('mes', type=int)
-    ano = request.form.get('ano', type=int)
+
+
+def _get_p2_items(mes, ano):
+    query = db.select(EscalaP2).order_by(EscalaP2.ordem)
+    if mes and ano:
+        query = query.where(db.and_(EscalaP2.mes == mes, EscalaP2.ano == ano))
+    return db.session.execute(query).scalars().all()
+
+
+def _resolve_p2_mes_ano(form_mes, form_ano):
+    mes = form_mes
+    ano = form_ano
     if not mes or not ano:
         meta = EscalaP2Meta.query.first()
         mes = mes or (meta.mes if meta else None)
         ano = ano or (meta.ano if meta else None)
+    if mes and ano:
+        items = _get_p2_items(mes, ano)
+        if items:
+            return mes, ano, items
+    all_items = _get_p2_items(None, None)
+    if all_items:
+        return None, None, all_items
+    return mes, ano, []
 
-    if not mes or not ano:
-        flash('Defina mes e ano nas configuracoes da P2.', 'danger')
-        return redirect(url_for('escala.p2'))
 
-    query = db.select(EscalaP2).where(
-        db.and_(EscalaP2.mes == mes, EscalaP2.ano == ano)
-    ).order_by(EscalaP2.ordem)
-    escalas = db.session.execute(query).scalars().all()
+def _get_p2_meta_dict():
+    meta_p2 = EscalaP2Meta.query.first()
+    if not meta_p2:
+        return {}
+    return {
+        'local': meta_p2.local,
+        'responsavel': meta_p2.responsavel,
+        'cargo': meta_p2.cargo,
+        'emissao': meta_p2.emissao,
+        'nota': meta_p2.nota,
+        'titulo': meta_p2.titulo,
+    }
 
-    if not escalas:
-        flash('Nenhum item para salvar.', 'danger')
-        return redirect(url_for('escala.p2'))
 
-    nome = f'Escala P2 - {mes:02d}/{ano}'
+def _build_itens_from_p2(escalas):
     itens = []
     for e in escalas:
         itens.append({
@@ -288,30 +321,38 @@ def p2_salvar():
             'separador_texto': e.separador_texto,
             'ordem': e.ordem,
         })
+    return itens
 
-    meta_p2 = EscalaP2Meta.query.first()
-    meta_dict = {}
-    if meta_p2:
-        meta_dict = {
-            'local': meta_p2.local,
-            'responsavel': meta_p2.responsavel,
-            'cargo': meta_p2.cargo,
-            'emissao': meta_p2.emissao,
-            'nota': meta_p2.nota,
-            'titulo': meta_p2.titulo,
-        }
 
-    escala_salva = EscalaSalva(nome=nome, mes=mes, ano=ano, ativa=1)
+@escala_bp.route('/p2/salvar', methods=['POST'])
+@login_required
+def p2_salvar():
+    if not current_user.is_supervisor:
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('escala.p2'))
+
+    form_mes = request.form.get('mes', type=int)
+    form_ano = request.form.get('ano', type=int)
+    mes, ano, escalas = _resolve_p2_mes_ano(form_mes, form_ano)
+
+    if not escalas:
+        flash('Nenhum item para salvar.', 'danger')
+        return redirect(url_for('escala.p2'))
+
+    label = f'{mes:02d}/{ano}' if mes and ano else 'Geral'
+    nome = f'Escala P2 - {label}'
+    itens = _build_itens_from_p2(escalas)
+    meta_dict = _get_p2_meta_dict()
+
+    escala_salva = EscalaSalva(nome=nome, mes=mes or 0, ano=ano or 0, ativa=1)
     db.session.add(escala_salva)
     db.session.flush()
 
     for item_data in itens:
-        item = EscalaSalvaItem(escala_salva_id=escala_salva.id, **item_data)
-        db.session.add(item)
+        db.session.add(EscalaSalvaItem(escala_salva_id=escala_salva.id, **item_data))
 
     if meta_dict:
-        meta_obj = EscalaSalvaMeta(escala_salva_id=escala_salva.id, **meta_dict)
-        db.session.add(meta_obj)
+        db.session.add(EscalaSalvaMeta(escala_salva_id=escala_salva.id, **meta_dict))
 
     db.session.commit()
     flash(f'Escala salva como "{nome}"!', 'success')
@@ -325,66 +366,28 @@ def p2_rascunho():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('escala.p2'))
 
-    mes = request.form.get('mes', type=int)
-    ano = request.form.get('ano', type=int)
-    if not mes or not ano:
-        meta = EscalaP2Meta.query.first()
-        mes = mes or (meta.mes if meta else None)
-        ano = ano or (meta.ano if meta else None)
-
-    if not mes or not ano:
-        flash('Defina mes e ano nas configuracoes da P2.', 'danger')
-        return redirect(url_for('escala.p2'))
-
-    query = db.select(EscalaP2).where(
-        db.and_(EscalaP2.mes == mes, EscalaP2.ano == ano)
-    ).order_by(EscalaP2.ordem)
-    escalas = db.session.execute(query).scalars().all()
+    form_mes = request.form.get('mes', type=int)
+    form_ano = request.form.get('ano', type=int)
+    mes, ano, escalas = _resolve_p2_mes_ano(form_mes, form_ano)
 
     if not escalas:
         flash('Nenhum item para salvar.', 'danger')
         return redirect(url_for('escala.p2'))
 
-    nome = f'Rascunho P2 - {mes:02d}/{ano}'
-    itens = []
-    for e in escalas:
-        itens.append({
-            'funcao': e.funcao,
-            'opm': e.opm,
-            'gh': e.gh,
-            'nome': e.nome,
-            'matricula': e.matricula,
-            'telefone': e.telefone,
-            'dias': e.dias,
-            'tipo_pagamento': e.tipo_pagamento,
-            'is_separador': e.is_separador,
-            'separador_texto': e.separador_texto,
-            'ordem': e.ordem,
-        })
+    label = f'{mes:02d}/{ano}' if mes and ano else 'Geral'
+    nome = f'Rascunho P2 - {label}'
+    itens = _build_itens_from_p2(escalas)
+    meta_dict = _get_p2_meta_dict()
 
-    meta_p2 = EscalaP2Meta.query.first()
-    meta_dict = {}
-    if meta_p2:
-        meta_dict = {
-            'local': meta_p2.local,
-            'responsavel': meta_p2.responsavel,
-            'cargo': meta_p2.cargo,
-            'emissao': meta_p2.emissao,
-            'nota': meta_p2.nota,
-            'titulo': meta_p2.titulo,
-        }
-
-    escala_salva = EscalaSalva(nome=nome, mes=mes, ano=ano, ativa=0)
+    escala_salva = EscalaSalva(nome=nome, mes=mes or 0, ano=ano or 0, ativa=0)
     db.session.add(escala_salva)
     db.session.flush()
 
     for item_data in itens:
-        item = EscalaSalvaItem(escala_salva_id=escala_salva.id, **item_data)
-        db.session.add(item)
+        db.session.add(EscalaSalvaItem(escala_salva_id=escala_salva.id, **item_data))
 
     if meta_dict:
-        meta_obj = EscalaSalvaMeta(escala_salva_id=escala_salva.id, **meta_dict)
-        db.session.add(meta_obj)
+        db.session.add(EscalaSalvaMeta(escala_salva_id=escala_salva.id, **meta_dict))
 
     db.session.commit()
     flash(f'Rascunho salvo como "{nome}"!', 'success')

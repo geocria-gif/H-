@@ -41,24 +41,46 @@
                                 <label class="form-label">{{ form.tipo_pagamento.label }}</label>
                                 {{ form.tipo_pagamento(class="form-select") }}
                             </div>
+                        </div>
+
+                        <hr>
+                        <h6 class="text-muted mb-3"><i class="bi bi-person me-1"></i>Dados do Militar</h6>
+
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Buscar Militar</label>
+                                <div class="input-group">
+                                    <input type="text" id="busca_militar" class="form-control"
+                                           placeholder="Matricula ou nome..." autocomplete="off">
+                                    <button type="button" class="btn btn-outline-primary" id="btn_buscar" title="Buscar">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                </div>
+                                <div id="resultados_busca" class="list-group mt-1" style="display:none; max-height:200px; overflow-y:auto;"></div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">{{ form.matricula.label }}</label>
+                                {{ form.matricula(class="form-control", id="field_matricula") }}
+                                {% if form.matricula.errors %}<div class="text-danger small">{{ form.matricula.errors[0] }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.nome.label }}</label>
+                                {{ form.nome(class="form-control", id="field_nome") }}
+                                {% if form.nome.errors %}<div class="text-danger small">{{ form.nome.errors[0] }}</div>{% endif %}
+                            </div>
                             <div class="col-md-4">
                                 <label class="form-label">{{ form.funcao.label }}</label>
-                                {{ form.funcao(class="form-control") }}
+                                {{ form.funcao(class="form-control", id="field_funcao") }}
                                 {% if form.funcao.errors %}<div class="text-danger small">{{ form.funcao.errors[0] }}</div>{% endif %}
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">{{ form.nome.label }}</label>
-                                {{ form.nome(class="form-control") }}
-                                {% if form.nome.errors %}<div class="text-danger small">{{ form.nome.errors[0] }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label">{{ form.matricula.label }}</label>
-                                {{ form.matricula(class="form-control") }}
-                                {% if form.matricula.errors %}<div class="text-danger small">{{ form.matricula.errors[0] }}</div>{% endif %}
+                                <label class="form-label">OPM (Posto/Grad)</label>
+                                {{ form.opm(class="form-control", id="field_opm") }}
+                                {% if form.opm.errors %}<div class="text-danger small">{{ form.opm.errors[0] }}</div>{% endif %}
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">{{ form.telefone.label }}</label>
-                                {{ form.telefone(class="form-control") }}
+                                {{ form.telefone(class="form-control", id="field_telefone") }}
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">{{ form.ordem.label }}</label>
@@ -70,14 +92,14 @@
                                     <label class="form-check-label">{{ form.is_separador.label }}</label>
                                 </div>
                             </div>
-                            <div class="col-md-8">
+                            <div class="col-md-10">
                                 <label class="form-label">{{ form.separador_texto.label }}</label>
                                 {{ form.separador_texto(class="form-control") }}
                             </div>
                         </div>
 
                         <hr>
-                        <h6 class="text-muted mb-3"><i class="bi bi-calendar-week me-1"></i>Dias de Serviço</h6>
+                        <h6 class="text-muted mb-3"><i class="bi bi-calendar-week me-1"></i>Dias de Servico</h6>
 
                         {% if legendas %}
                         <div class="mb-2">
@@ -132,4 +154,94 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    const input = document.getElementById('busca_militar');
+    const btn = document.getElementById('btn_buscar');
+    const resultados = document.getElementById('resultados_busca');
+    const fieldMatricula = document.getElementById('field_matricula');
+    const fieldNome = document.getElementById('field_nome');
+    const fieldFuncao = document.getElementById('field_funcao');
+    const fieldOpm = document.getElementById('field_opm');
+    const fieldTelefone = document.getElementById('field_telefone');
+
+    let debounceTimer;
+
+    function buscar() {
+        const termo = input.value.trim();
+        if (termo.length < 2) {
+            resultados.style.display = 'none';
+            return;
+        }
+        fetch('{{ url_for("escala.p2_buscar_militar") }}?q=' + encodeURIComponent(termo))
+            .then(r => r.json())
+            .then(data => {
+                resultados.innerHTML = '';
+                if (data.length === 0) {
+                    resultados.innerHTML = '<div class="list-group-item text-muted">Nenhum encontrado</div>';
+                    resultados.style.display = 'block';
+                    return;
+                }
+                data.forEach(m => {
+                    const item = document.createElement('button');
+                    item.type = 'button';
+                    item.className = 'list-group-item list-group-item-action';
+                    item.innerHTML = '<strong>' + m.matricula + '</strong> - ' + m.nome +
+                        (m.cargo ? ' <small class="text-muted">(' + m.cargo + ')</small>' : '') +
+                        (m.opm ? ' <small class="text-muted">' + m.opm + '</small>' : '');
+                    item.addEventListener('click', function() {
+                        fieldMatricula.value = m.matricula;
+                        fieldNome.value = m.nome;
+                        fieldFuncao.value = m.funcao || '';
+                        fieldOpm.value = m.opm || '';
+                        fieldTelefone.value = m.telefone || '';
+                        resultados.style.display = 'none';
+                        input.value = '';
+                    });
+                    resultados.appendChild(item);
+                });
+                resultados.style.display = 'block';
+            });
+    }
+
+    input.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(buscar, 300);
+    });
+
+    btn.addEventListener('click', buscar);
+
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            buscar();
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!resultados.contains(e.target) && e.target !== input && e.target !== btn) {
+            resultados.style.display = 'none';
+        }
+    });
+
+    fieldMatricula.addEventListener('blur', function() {
+        const mat = fieldMatricula.value.trim();
+        if (!mat || fieldNome.value) return;
+        fetch('{{ url_for("escala.p2_buscar_militar") }}?q=' + encodeURIComponent(mat))
+            .then(r => r.json())
+            .then(data => {
+                if (data.length === 1) {
+                    const m = data[0];
+                    fieldNome.value = m.nome;
+                    fieldFuncao.value = m.funcao || '';
+                    fieldOpm.value = m.opm || '';
+                    fieldTelefone.value = m.telefone || '';
+                }
+            });
+    });
+})();
+</script>
 {% endblock %}
