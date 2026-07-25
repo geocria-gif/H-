@@ -6,7 +6,12 @@
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0"><i class="bi bi-people me-2"></i>Efetivo PM</h4>
-        <span class="badge bg-primary fs-6">{{ pagination.total }} militares</span>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ url_for('admin.novo_efetivo') }}" class="btn btn-success">
+                <i class="bi bi-plus-circle me-1"></i>Adicionar
+            </a>
+            <span class="badge bg-primary fs-6">{{ pagination.total }} militares</span>
+        </div>
     </div>
 
     <div class="card shadow mb-4">
@@ -44,6 +49,7 @@
                         <th>Função</th>
                         <th>Telefone</th>
                         <th>Situação</th>
+                        <th class="text-center">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -62,10 +68,21 @@
                                 <span class="badge bg-secondary">{{ m.sit or '-' }}</span>
                             {% endif %}
                         </td>
+                        <td class="text-center text-nowrap">
+                            <a href="{{ url_for('admin.editar_efetivo', matricula=m.matricula) }}" class="btn btn-sm btn-outline-primary" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form method="POST" action="{{ url_for('admin.excluir_efetivo', matricula=m.matricula) }}" class="d-inline" onsubmit="return confirm('Excluir {{ m.nome }}?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Excluir">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-4">
+                        <td colspan="8" class="text-center text-muted py-4">
                             <i class="bi bi-inbox" style="font-size: 2rem;"></i>
                             <p class="mt-2 mb-0">Nenhum militar encontrado.</p>
                         </td>

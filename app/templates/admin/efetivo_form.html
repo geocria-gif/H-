@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title or 'Militar' }} - SISPM{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <h1 class="h3 mb-4"><i class="bi bi-person me-2"></i>{{ title or 'Militar' }}</h1>
+
+            <form method="POST" novalidate>
+                {{ form.hidden_tag() }}
+
+                <div class="card shadow mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <i class="bi bi-person-badge me-1"></i>Dados Pessoais
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Matrícula</label>
+                                {{ form.matricula(class='form-control' + (' is-invalid' if form.matricula.errors else ''), readonly=efetivo is defined) }}
+                                {% for error in form.matricula.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">Nome</label>
+                                {{ form.nome(class='form-control' + (' is-invalid' if form.nome.errors else '')) }}
+                                {% for error in form.nome.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">CPF</label>
+                                {{ form.cpf(class='form-control') }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">RG</label>
+                                {{ form.rg(class='form-control') }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Título</label>
+                                {{ form.titulo(class='form-control') }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Data Nascimento</label>
+                                {{ form.data_nascimento(class='form-control', placeholder='DD/MM/AAAA') }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Tipo Sanguíneo</label>
+                                {{ form.tipo_sanguineo(class='form-select') }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <i class="bi bi-building me-1"></i>Dados Profissionais
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Posto/Grad</label>
+                                {{ form.cargo(class='form-select' + (' is-invalid' if form.cargo.errors else '')) }}
+                                {% for error in form.cargo.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">OPM</label>
+                                {{ form.opm_id(class='form-select' + (' is-invalid' if form.opm_id.errors else '')) }}
+                                {% for error in form.opm_id.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Função</label>
+                                {{ form.funcao(class='form-control') }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Situação</label>
+                                {{ form.sit(class='form-select') }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">F6</label>
+                                {{ form.f6(class='form-select') }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Admissão</label>
+                                {{ form.admissao(class='form-control', placeholder='DD/MM/AAAA') }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Comportamento</label>
+                                {{ form.comportamento(class='form-select') }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Local Trabalho</label>
+                                {{ form.local_trabalho(class='form-control') }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <i class="bi bi-telephone me-1"></i>Contato e CNH
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Telefone</label>
+                                {{ form.telefone(class='form-control') }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">CNH</label>
+                                {{ form.cnh(class='form-control') }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Categoria CNH</label>
+                                {{ form.categoria(class='form-control') }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mb-4">
+                    {{ form.submit(class='btn btn-primary') }}
+                    <a href="{{ url_for('admin.efetivo') }}" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

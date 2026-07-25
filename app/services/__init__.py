@@ -93,28 +93,120 @@ class EfetivoService(BaseService):
     
     def importar_csv(self, filepath: str) -> Dict[str, int]:
         import csv
+        import unicodedata
+
         stats = {'criados': 0, 'atualizados': 0, 'erros': 0}
-        with open(filepath, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
+
+        COLUMN_MAP = {
+            'matricula': 'matricula',
+            'nome': 'nome',
+            'funcao': 'funcao',
+            'telefone': 'telefone',
+            'posto/grad': '_cargo_posto',
+            'opm': '_opm_texto',
+            'situacao': 'sit',
+            'cpf': 'cpf',
+            'rg': 'rg',
+            'titulo': 'titulo',
+            'cnh': 'cnh',
+            'categoria': 'categoria',
+            'tipo sanguineo': 'tipo_sanguineo',
+            'admissao': 'admissao',
+            'data nascimento': 'data_nascimento',
+            'local trabalho': 'local_trabalho',
+            'comportamento': 'comportamento',
+        }
+
+        def normalize(s):
+            return unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode().lower().strip()
+
+        cargo_cache = {}
+        for c in Cargo.query.all():
+            cargo_cache[normalize(c.posto_grad)] = c.cargo_id
+
+        opm_cache = {}
+        for o in OPM.query.all():
+            opm_cache[normalize(o.opm_desc)] = o.opm_id
+            opm_cache[normalize(o.opm_sigla)] = o.opm_id
+
+        def resolve_cargo(posto_text):
+            if not posto_text:
+                return None
+            key = normalize(posto_text)
+            if key in cargo_cache:
+                return cargo_cache[key]
+            for norm, cid in cargo_cache.items():
+                if key in norm or norm in key:
+                    return cid
+            return None
+
+        def resolve_opm(opm_text):
+            if not opm_text:
+                return None
+            key = normalize(opm_text)
+            if key in opm_cache:
+                return opm_cache[key]
+            for norm, oid in opm_cache.items():
+                if key in norm or norm in key:
+                    return oid
+            return None
+
+        with open(filepath, 'r', encoding='utf-8-sig') as f:
+            reader = csv.DictReader(f, delimiter=';')
             for row in reader:
                 try:
-                    matricula = row.get('Matricula', '').strip()
-                    if not matricula:
+                    raw_matricula = row.get('Matrícula', row.get('Matricula', '')).strip()
+                    if not raw_matricula:
                         stats['erros'] += 1
                         continue
-                    efetivo = efetivo_repo.get_by_matricula(matricula)
+
+                    mapped = {}
+                    for csv_header, value in row.items():
+                        norm_key = normalize(csv_header)
+                        attr = COLUMN_MAP.get(norm_key)
+                        if attr and not attr.startswith('_'):
+                            mapped[attr] = value.strip() if value else ''
+
+                    cargo_id = resolve_cargo(row.get('Posto/Grad', ''))
+                    if cargo_id:
+                        mapped['cargo'] = cargo_id
+
+                    opm_id = resolve_opm(row.get('OPM', ''))
+                    if opm_id:
+                        mapped['opm_id'] = opm_id
+
+                    sit_raw = mapped.pop('sit', '')
+                    if sit_raw:
+                        sit_norm = normalize(sit_raw)
+                        if 'ativo' in sit_norm or 'ativa' in sit_norm:
+                            mapped['sit'] = 'AT'
+                        elif 'reserva' in sit_norm:
+                            mapped['sit'] = 'RS'
+                        elif 'licen' in sit_norm:
+                            mapped['sit'] = 'LC'
+                        elif 'afast' in sit_norm:
+                            mapped['sit'] = 'AF'
+                        else:
+                            mapped['sit'] = sit_raw[:10]
+
+                    efetivo = efetivo_repo.get_by_matricula(raw_matricula)
                     if efetivo:
-                        for key, value in row.items():
-                            attr = key.lower().replace(' ', '_')
+                        for attr, value in mapped.items():
                             if hasattr(efetivo, attr):
-                                setattr(efetivo, attr, value)
+                                setattr(efetivo, attr, value or None)
                         stats['atualizados'] += 1
                     else:
-                        efetivo = EfetivoPM(**{k.lower().replace(' ', '_'): v for k, v in row.items()})
+                        mapped['matricula'] = raw_matricula
+                        mapped['nome'] = row.get('Nome', '').strip()
+                        efetivo = EfetivoPM(**{k: v or None for k, v in mapped.items() if hasattr(EfetivoPM, k)})
                         db.session.add(efetivo)
                         stats['criados'] += 1
+
+                    if (stats['criados'] + stats['atualizados']) % 500 == 0:
+                        db.session.flush()
                 except Exception as e:
                     stats['erros'] += 1
+
         db.session.commit()
         return stats
 

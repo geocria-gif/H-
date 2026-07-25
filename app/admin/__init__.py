@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user
 from app import db
 from app.models import Usuario, Cargo, OPM, TabelaValores, EfetivoPM
-from app.forms import UsuarioForm, CargoForm, OPMForm, TabelaValoresForm
+from app.forms import UsuarioForm, CargoForm, OPMForm, TabelaValoresForm, EfetivoPMForm
 from app.services import backup_service
 import os
 
@@ -258,3 +258,101 @@ def efetivo():
     pagination = query.order_by(EfetivoPM.nome).paginate(page=page, per_page=30, error_out=False)
     opms = OPM.query.order_by(OPM.opm_sigla).all()
     return render_template('admin/efetivo.html', pagination=pagination, search=search, opm_filter=opm_filter, opms=opms)
+
+
+@admin_bp.route('/efetivo/novo', methods=['GET', 'POST'])
+@login_required
+def novo_efetivo():
+    if not current_user.is_supervisor:
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('dashboard.index'))
+
+    form = EfetivoPMForm()
+
+    if form.validate_on_submit():
+        try:
+            efetivo = EfetivoPM(
+                matricula=form.matricula.data,
+                nome=form.nome.data,
+                cargo=form.cargo.data,
+                opm_id=form.opm_id.data,
+                sit=form.sit.data,
+                f6=form.f6.data,
+                cpf=form.cpf.data or None,
+                rg=form.rg.data or None,
+                titulo=form.titulo.data or None,
+                cnh=form.cnh.data or None,
+                categoria=form.categoria.data or None,
+                tipo_sanguineo=form.tipo_sanguineo.data or None,
+                funcao=form.funcao.data or None,
+                telefone=form.telefone.data or None,
+                admissao=form.admissao.data or None,
+                data_nascimento=form.data_nascimento.data or None,
+                local_trabalho=form.local_trabalho.data or None,
+                comportamento=form.comportamento.data,
+            )
+            db.session.add(efetivo)
+            db.session.commit()
+            flash('Militar adicionado!', 'success')
+            return redirect(url_for('admin.efetivo'))
+        except Exception as e:
+            flash(f'Erro: {str(e)}', 'danger')
+
+    return render_template('admin/efetivo_form.html', form=form, title='Adicionar Militar')
+
+
+@admin_bp.route('/efetivo/<matricula>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_efetivo(matricula):
+    if not current_user.is_supervisor:
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('dashboard.index'))
+
+    efetivo = db.session.get(EfetivoPM, matricula)
+    if not efetivo:
+        flash('Militar não encontrado.', 'danger')
+        return redirect(url_for('admin.efetivo'))
+
+    form = EfetivoPMForm(obj=efetivo)
+
+    if form.validate_on_submit():
+        try:
+            efetivo.nome = form.nome.data
+            efetivo.cargo = form.cargo.data
+            efetivo.opm_id = form.opm_id.data
+            efetivo.sit = form.sit.data
+            efetivo.f6 = form.f6.data
+            efetivo.cpf = form.cpf.data or None
+            efetivo.rg = form.rg.data or None
+            efetivo.titulo = form.titulo.data or None
+            efetivo.cnh = form.cnh.data or None
+            efetivo.categoria = form.categoria.data or None
+            efetivo.tipo_sanguineo = form.tipo_sanguineo.data or None
+            efetivo.funcao = form.funcao.data or None
+            efetivo.telefone = form.telefone.data or None
+            efetivo.admissao = form.admissao.data or None
+            efetivo.data_nascimento = form.data_nascimento.data or None
+            efetivo.local_trabalho = form.local_trabalho.data or None
+            efetivo.comportamento = form.comportamento.data
+            db.session.commit()
+            flash('Militar atualizado!', 'success')
+            return redirect(url_for('admin.efetivo'))
+        except Exception as e:
+            flash(f'Erro: {str(e)}', 'danger')
+
+    return render_template('admin/efetivo_form.html', form=form, title='Editar Militar', efetivo=efetivo)
+
+
+@admin_bp.route('/efetivo/<matricula>/excluir', methods=['POST'])
+@login_required
+def excluir_efetivo(matricula):
+    if not current_user.is_supervisor:
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('dashboard.index'))
+
+    efetivo = db.session.get(EfetivoPM, matricula)
+    if efetivo:
+        db.session.delete(efetivo)
+        db.session.commit()
+        flash('Militar excluído.', 'success')
+    return redirect(url_for('admin.efetivo'))
