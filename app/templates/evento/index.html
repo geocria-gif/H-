@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}Eventos - SISPM{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0"><i class="bi bi-calendar-event me-2"></i>Eventos</h4>
+        <a href="{{ url_for('evento.novo') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Novo Evento
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('evento.index') }}" class="row g-2">
+                <div class="col">
+                    <input type="text" name="search" class="form-control" placeholder="Buscar por descrição..." value="{{ search }}">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    {% if search %}
+                        <a href="{{ url_for('evento.index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg"></i>
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Descrição</th>
+                        <th>Início</th>
+                        <th>Fim</th>
+                        <th>Pagamento</th>
+                        <th>Observações</th>
+                        <th class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for evento in pagination.items %}
+                    <tr>
+                        <td>{{ evento.evento_id }}</td>
+                        <td>{{ evento.evento_desc }}</td>
+                        <td>{{ evento.evento_dta_inicio or '-' }}</td>
+                        <td>{{ evento.evento_dta_fim or '-' }}</td>
+                        <td>
+                            {% if evento.tipo_pagamento == 'HE' %}
+                                <span class="badge bg-warning text-dark">Hora Extra</span>
+                            {% elif evento.tipo_pagamento == 'VD' %}
+                                <span class="badge bg-info">Vale Transporte</span>
+                            {% elif evento.tipo_pagamento == 'SO' %}
+                                <span class="badge bg-secondary">Serviço Ordinário</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark">{{ evento.tipo_pagamento }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-truncate" style="max-width: 200px;" title="{{ evento.campo1 or '' }}">{{ evento.campo1 or '-' }}</td>
+                        <td class="text-center">
+                            <a href="{{ url_for('evento.editar', id=evento.evento_id) }}" class="btn btn-sm btn-outline-primary" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            {% if current_user.is_admin %}
+                            <form method="POST" action="{{ url_for('evento.excluir', id=evento.evento_id) }}" class="d-inline" onsubmit="return confirm('Excluir este evento?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Excluir">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                            <p class="mt-2 mb-0">Nenhum evento encontrado.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if pagination.pages > 1 %}
+        <div class="card-footer bg-white">
+            <nav>
+                <ul class="pagination justify-content-center mb-0">
+                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('evento.index', page=pagination.prev_num, search=search) }}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if p %}
+                            <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('evento.index', page=p, search=search) }}">{{ p }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('evento.index', page=pagination.next_num, search=search) }}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <small class="text-muted d-block text-center mt-2">
+                Página {{ pagination.page }} de {{ pagination.pages }} ({{ pagination.total }} registro{{ 's' if pagination.total != 1 }})
+            </small>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Escalas Salvas - SISPM{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><i class="bi bi-bookmark-check me-2"></i>Escalas Salvas</h1>
+        <a href="{{ url_for('escala.salvas_nova') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Nova Escala
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nome</th>
+                            <th>Mês/Ano</th>
+                            <th>Data Salva</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for escala in pagination.items %}
+                        <tr>
+                            <td>{{ escala.nome }}</td>
+                            <td>{{ escala.mes }}/{{ escala.ano }}</td>
+                            <td>{{ escala.data_salva.strftime('%d/%m/%Y %H:%M') if escala.data_salva else '-' }}</td>
+                            <td>
+                                {% if escala.ativa %}
+                                <span class="badge bg-success">Ativa</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inativa</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('escala.salvas_editar', id=escala.id) }}" class="btn btn-sm btn-outline-primary" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{{ url_for('escala.salvas_meta', id=escala.id) }}" class="btn btn-sm btn-outline-secondary" title="Configurações">
+                                    <i class="bi bi-gear"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('escala.salvas_ativar', id=escala.id) }}" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Ativar">
+                                        <i class="bi bi-check-circle"></i>
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ url_for('escala.salvas_excluir', id=escala.id) }}" class="d-inline" onsubmit="return confirm('Tem certeza?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Excluir">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                <i class="bi bi-bookmark-x fs-1 d-block mb-2"></i>
+                                Nenhuma escala salva encontrada.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% if pagination.pages > 1 %}
+    <nav class="mt-3">
+        <ul class="pagination justify-content-center">
+            {% if pagination.has_prev %}
+            <li class="page-item"><a class="page-link" href="?page={{ pagination.prev_num }}">Anterior</a></li>
+            {% endif %}
+            {% for p in pagination.iter_pages() %}
+            {% if p %}
+            <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                <a class="page-link" href="?page={{ p }}">{{ p }}</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+            {% endfor %}
+            {% if pagination.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ pagination.next_num }}">Próximo</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

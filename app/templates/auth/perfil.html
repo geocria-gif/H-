@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Meu Perfil - SISPM{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-person-circle me-2"></i>Meu Perfil</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }}
+
+                        <h6 class="text-muted mb-3">Dados Pessoais</h6>
+
+                        <div class="mb-3">
+                            {{ form.nome.label(class="form-label") }}
+                            {{ form.nome(class="form-control") }}
+                            {% if form.nome.errors %}
+                                <div class="text-danger small mt-1">{{ form.nome.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+
+                        <hr>
+                        <h6 class="text-muted mb-3">Alterar Senha</h6>
+                        <small class="text-muted d-block mb-3">Deixe em branco para manter a senha atual.</small>
+
+                        <div class="mb-3">
+                            {{ form.senha_atual.label(class="form-label") }}
+                            {{ form.senha_atual(class="form-control", placeholder="Senha atual") }}
+                            {% if form.senha_atual.errors %}
+                                <div class="text-danger small mt-1">{{ form.senha_atual.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.nova_senha.label(class="form-label") }}
+                            {{ form.nova_senha(class="form-control", placeholder="Nova senha") }}
+                            {% if form.nova_senha.errors %}
+                                <div class="text-danger small mt-1">{{ form.nova_senha.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.confirmar_senha.label(class="form-label") }}
+                            {{ form.confirmar_senha(class="form-control", placeholder="Confirme a nova senha") }}
+                            {% if form.confirmar_senha.errors %}
+                                <div class="text-danger small mt-1">{{ form.confirmar_senha.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

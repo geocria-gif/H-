@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - SISPM{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-calendar-event me-2"></i>{{ title }}</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }}
+
+                        <div class="mb-3">
+                            {{ form.evento_desc.label(class="form-label") }}
+                            {{ form.evento_desc(class="form-control", placeholder="Descrição do evento") }}
+                            {% if form.evento_desc.errors %}
+                                <div class="text-danger small mt-1">{{ form.evento_desc.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.evento_dta_inicio.label(class="form-label") }}
+                                {{ form.evento_dta_inicio(class="form-control", type="date") }}
+                                {% if form.evento_dta_inicio.errors %}
+                                    <div class="text-danger small mt-1">{{ form.evento_dta_inicio.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.evento_dta_fim.label(class="form-label") }}
+                                {{ form.evento_dta_fim(class="form-control", type="date") }}
+                                {% if form.evento_dta_fim.errors %}
+                                    <div class="text-danger small mt-1">{{ form.evento_dta_fim.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.tipo_pagamento.label(class="form-label") }}
+                            {{ form.tipo_pagamento(class="form-select") }}
+                            {% if form.tipo_pagamento.errors %}
+                                <div class="text-danger small mt-1">{{ form.tipo_pagamento.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.campo1.label(class="form-label") }}
+                            {{ form.campo1(class="form-control", rows="3", placeholder="Observações") }}
+                            {% if form.campo1.errors %}
+                                <div class="text-danger small mt-1">{{ form.campo1.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+
+                        {% if opms %}
+                        <hr>
+                        <h6 class="text-muted mb-3">OPMs Vinculadas</h6>
+                        <div class="row">
+                            {% for opm in opms %}
+                            <div class="col-md-6 col-lg-4">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="opms" value="{{ opm.opm_id }}" id="opm_{{ opm.opm_id }}" {% if evento_opms and opm.opm_id in evento_opms %}checked{% endif %}>
+                                    <label class="form-check-label" for="opm_{{ opm.opm_id }}">
+                                        {{ opm.opm_sigla }} - {{ opm.opm_desc }}
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('evento.index') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

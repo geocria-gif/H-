@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title or 'Nova Viatura' }} - SISPM{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><i class="bi bi-truck me-2"></i>{{ title or 'Nova Viatura' }}</h1>
+        <a href="{{ url_for('viatura.index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Voltar
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" novalidate>
+                {{ form.hidden_tag() }}
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="prefixo" class="form-label">{{ form.prefixo.label }}</label>
+                        {{ form.prefixo(class="form-control" ~ (" is-invalid" if form.prefixo.errors else "")) }}
+                        {% for error in form.prefixo.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="placa" class="form-label">{{ form.placa.label }}</label>
+                        {{ form.placa(class="form-control") }}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="item" class="form-label">{{ form.item.label }}</label>
+                        {{ form.item(class="form-control") }}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="marca" class="form-label">{{ form.marca.label }}</label>
+                        {{ form.marca(class="form-control") }}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="modelo" class="form-label">{{ form.modelo.label }}</label>
+                        {{ form.modelo(class="form-control") }}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="cor" class="form-label">{{ form.cor.label }}</label>
+                        {{ form.cor(class="form-control") }}
+                    </div>
+                    <div class="col-md-3">
+                        <label for="ano_modelo" class="form-label">{{ form.ano_modelo.label }}</label>
+                        {{ form.ano_modelo(class="form-control") }}
+                    </div>
+                    <div class="col-md-3">
+                        <label for="ano_fabricacao" class="form-label">{{ form.ano_fabricacao.label }}</label>
+                        {{ form.ano_fabricacao(class="form-control") }}
+                    </div>
+                    <div class="col-md-3">
+                        <label for="situacao" class="form-label">{{ form.situacao.label }}</label>
+                        {{ form.situacao(class="form-control") }}
+                    </div>
+                    <div class="col-md-3">
+                        <label for="combustivel" class="form-label">{{ form.combustivel.label }}</label>
+                        {{ form.combustivel(class="form-control") }}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="chassi" class="form-label">{{ form.chassi.label }}</label>
+                        {{ form.chassi(class="form-control") }}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="renavam" class="form-label">{{ form.renavam.label }}</label>
+                        {{ form.renavam(class="form-control") }}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="patrimonio" class="form-label">{{ form.patrimonio.label }}</label>
+                        {{ form.patrimonio(class="form-control") }}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="municipio" class="form-label">{{ form.municipio.label }}</label>
+                        {{ form.municipio(class="form-control") }}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="unidade" class="form-label">{{ form.unidade.label }}</label>
+                        {{ form.unidade(class="form-control") }}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="propriedade" class="form-label">{{ form.propriedade.label }}</label>
+                        {{ form.propriedade(class="form-control") }}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="cod_secretaria" class="form-label">{{ form.cod_secretaria.label }}</label>
+                        {{ form.cod_secretaria(class="form-control") }}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="cod_unidade_gestora" class="form-label">{{ form.cod_unidade_gestora.label }}</label>
+                        {{ form.cod_unidade_gestora(class="form-control") }}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="telefone" class="form-label">{{ form.telefone.label }}</label>
+                        {{ form.telefone(class="form-control") }}
+                    </div>
+                    <div class="col-12">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

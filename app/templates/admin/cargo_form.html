@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title or 'Cargo' }} - SISPM{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="h3 mb-4"><i class="bi bi-briefcase me-2"></i>{{ title or 'Cargo' }}</h1>
+
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }}
+
+                        <div class="mb-3">
+                            {{ form.cargo_id.label(class='form-label') }}
+                            {{ form.cargo_id(class='form-control' + (' is-invalid' if form.cargo_id.errors else '')) }}
+                            {% for error in form.cargo_id.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.posto_grad.label(class='form-label') }}
+                            {{ form.posto_grad(class='form-control' + (' is-invalid' if form.posto_grad.errors else '')) }}
+                            {% for error in form.posto_grad.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.tipo_servidor.label(class='form-label') }}
+                                {{ form.tipo_servidor(class='form-select' + (' is-invalid' if form.tipo_servidor.errors else '')) }}
+                                {% for error in form.tipo_servidor.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.tipo_militar.label(class='form-label') }}
+                                {{ form.tipo_militar(class='form-select' + (' is-invalid' if form.tipo_militar.errors else '')) }}
+                                {% for error in form.tipo_militar.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.classif_of.label(class='form-label') }}
+                            {{ form.classif_of(class='form-control' + (' is-invalid' if form.classif_of.errors else '')) }}
+                            {% for error in form.classif_of.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            {{ form.submit(class='btn btn-primary') }}
+                            <a href="{{ url_for('admin.cargos') }}" class="btn btn-outline-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

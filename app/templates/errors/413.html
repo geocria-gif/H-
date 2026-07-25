@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}413 - Arquivo Muito Grande{% endblock %}
+
+{% block content %}
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 70vh;">
+    <div class="card shadow-sm border-0 text-center" style="max-width: 480px; width: 100%;">
+        <div class="card-body p-5">
+            <h1 class="display-1 fw-bold text-warning">413</h1>
+            <h3 class="fw-semibold mb-3">Arquivo Muito Grande</h3>
+            <p class="text-muted mb-4">O arquivo enviado excede o tamanho máximo permitido. Reduza o tamanho e tente novamente.</p>
+            <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+                <i class="bi bi-house-door me-1"></i>Voltar ao Início
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

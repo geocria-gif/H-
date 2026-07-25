@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Cadastrar Usuário - SISPM{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-person-plus me-2"></i>Cadastrar Usuário</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }}
+
+                        <div class="mb-3">
+                            {{ form.matricula.label(class="form-label") }}
+                            {{ form.matricula(class="form-control", placeholder="Ex: 30481332") }}
+                            {% if form.matricula.errors %}
+                                <div class="text-danger small mt-1">{{ form.matricula.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.nome.label(class="form-label") }}
+                            {{ form.nome(class="form-control", placeholder="Nome completo") }}
+                            {% if form.nome.errors %}
+                                <div class="text-danger small mt-1">{{ form.nome.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.tipo.label(class="form-label") }}
+                            {{ form.tipo(class="form-select") }}
+                            {% if form.tipo.errors %}
+                                <div class="text-danger small mt-1">{{ form.tipo.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.senha.label(class="form-label") }}
+                            {{ form.senha(class="form-control", placeholder="Mínimo 6 caracteres") }}
+                            {% if form.senha.errors %}
+                                <div class="text-danger small mt-1">{{ form.senha.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.confirmar_senha.label(class="form-label") }}
+                            {{ form.confirmar_senha(class="form-control", placeholder="Repita a senha") }}
+                            {% if form.confirmar_senha.errors %}
+                                <div class="text-danger small mt-1">{{ form.confirmar_senha.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

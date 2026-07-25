@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Nova Ocorrência - SISPM{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Nova Ocorrência</h1>
+        <a href="{{ url_for('ocorrencia.index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Voltar
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" novalidate>
+                {{ form.hidden_tag() }}
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="tipo" class="form-label">{{ form.tipo.label }}</label>
+                        {{ form.tipo(class="form-select" ~ (" is-invalid" if form.tipo.errors else "")) }}
+                        {% for error in form.tipo.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="data_hora" class="form-label">{{ form.data_hora.label }}</label>
+                        {{ form.data_hora(class="form-control" ~ (" is-invalid" if form.data_hora.errors else ""), placeholder="AAAA-MM-DD HH:MM:SS") }}
+                        {% for error in form.data_hora.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="cidade" class="form-label">{{ form.cidade.label }}</label>
+                        {{ form.cidade(class="form-control") }}
+                    </div>
+                    <div class="col-md-2">
+                        <label for="latitude" class="form-label">{{ form.latitude.label }}</label>
+                        {{ form.latitude(class="form-control", step="any") }}
+                    </div>
+                    <div class="col-md-2">
+                        <label for="longitude" class="form-label">{{ form.longitude.label }}</label>
+                        {{ form.longitude(class="form-control", step="any") }}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="vtr" class="form-label">{{ form.vtr.label }}</label>
+                        {{ form.vtr(class="form-control") }}
+                    </div>
+                    <div class="col-12">
+                        <label for="descricao" class="form-label">{{ form.descricao.label }}</label>
+                        {{ form.descricao(class="form-control", rows="3") }}
+                    </div>
+                    <div class="col-12">
+                        <label for="dados_relevantes" class="form-label">{{ form.dados_relevantes.label }}</label>
+                        {{ form.dados_relevantes(class="form-control", rows="3") }}
+                    </div>
+                    <div class="col-12">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

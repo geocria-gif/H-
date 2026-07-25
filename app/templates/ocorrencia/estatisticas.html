@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+
+{% block title %}Estatísticas de Ocorrências - SISPM{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><i class="bi bi-bar-chart me-2"></i>Estatísticas de Ocorrências</h1>
+        <a href="{{ url_for('ocorrencia.index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Voltar
+        </a>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Total de Ocorrências</p>
+                            <h3 class="mb-0 fw-bold">{{ stats.total if stats.total is defined else 0 }}</h3>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 rounded-circle p-3">
+                            <i class="bi bi-exclamation-triangle fs-2 text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Acidentes</p>
+                            <h3 class="mb-0 fw-bold">{{ stats.acidentes if stats.acidentes is defined else 0 }}</h3>
+                        </div>
+                        <div class="bg-danger bg-opacity-10 rounded-circle p-3">
+                            <i class="bi bi-car-front fs-2 text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Roubos/Furtos</p>
+                            <h3 class="mb-0 fw-bold">{{ stats.roubos if stats.roubos is defined else 0 }}</h3>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 rounded-circle p-3">
+                            <i class="bi bi-mask fs-2 text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Outros</p>
+                            <h3 class="mb-0 fw-bold">{{ stats.outros if stats.outros is defined else 0 }}</h3>
+                        </div>
+                        <div class="bg-info bg-opacity-10 rounded-circle p-3">
+                            <i class="bi bi-three-dots fs-2 text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>Por Tipo</h5>
+                </div>
+                <div class="card-body">
+                    {% if stats.por_tipo is defined and stats.por_tipo %}
+                    <canvas id="chartPorTipo" height="300"></canvas>
+                    {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <p>Sem dados disponíveis por tipo.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-calendar me-2"></i>Por Período</h5>
+                </div>
+                <div class="card-body">
+                    {% if stats.por_periodo is defined and stats.por_periodo %}
+                    <canvas id="chartPorPeriodo" height="300"></canvas>
+                    {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <p>Sem dados disponíveis por período.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-geo-alt me-2"></i>Por Cidade</h5>
+                </div>
+                <div class="card-body">
+                    {% if stats.por_cidade is defined and stats.por_cidade %}
+                    <canvas id="chartPorCidade" height="250"></canvas>
+                    {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <p>Sem dados disponíveis por cidade.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var colors = [
+        'rgba(220, 53, 69, 0.8)',
+        'rgba(255, 193, 7, 0.8)',
+        'rgba(13, 110, 253, 0.8)',
+        'rgba(25, 135, 84, 0.8)',
+        'rgba(111, 66, 193, 0.8)'
+    ];
+
+    {% if stats.por_tipo is defined and stats.por_tipo %}
+    var ctxTipo = document.getElementById('chartPorTipo');
+    if (ctxTipo) {
+        new Chart(ctxTipo, {
+            type: 'doughnut',
+            data: {
+                labels: {{ stats.por_tipo.keys()|list|tojson if stats.por_tipo is mapping else '[]' }},
+                datasets: [{
+                    data: {{ stats.por_tipo.values()|list|tojson if stats.por_tipo is mapping else '[]' }},
+                    backgroundColor: colors,
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+    {% endif %}
+
+    {% if stats.por_periodo is defined and stats.por_periodo %}
+    var ctxPeriodo = document.getElementById('chartPorPeriodo');
+    if (ctxPeriodo) {
+        new Chart(ctxPeriodo, {
+            type: 'bar',
+            data: {
+                labels: {{ stats.por_periodo.keys()|list|tojson if stats.por_periodo is mapping else '[]' }},
+                datasets: [{
+                    label: 'Ocorrências',
+                    data: {{ stats.por_periodo.values()|list|tojson if stats.por_periodo is mapping else '[]' }},
+                    backgroundColor: 'rgba(13, 110, 253, 0.8)',
+                    borderRadius: 4
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        });
+    }
+    {% endif %}
+
+    {% if stats.por_cidade is defined and stats.por_cidade %}
+    var ctxCidade = document.getElementById('chartPorCidade');
+    if (ctxCidade) {
+        new Chart(ctxCidade, {
+            type: 'bar',
+            data: {
+                labels: {{ stats.por_cidade.keys()|list|tojson if stats.por_cidade is mapping else '[]' }},
+                datasets: [{
+                    label: 'Ocorrências',
+                    data: {{ stats.por_cidade.values()|list|tojson if stats.por_cidade is mapping else '[]' }},
+                    backgroundColor: 'rgba(25, 135, 84, 0.8)',
+                    borderRadius: 4
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
+        });
+    }
+    {% endif %}
+});
+</script>
+{% endblock %}

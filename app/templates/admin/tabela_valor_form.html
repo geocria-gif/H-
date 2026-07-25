@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title or 'Tabela de Valores' }} - SISPM{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="h3 mb-4"><i class="bi bi-currency-dollar me-2"></i>{{ title or 'Tabela de Valores' }}</h1>
+
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }}
+
+                        <div class="mb-3">
+                            {{ form.posto_grad.label(class='form-label') }}
+                            {{ form.posto_grad(class='form-select' + (' is-invalid' if form.posto_grad.errors else '')) }}
+                            {% for error in form.posto_grad.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.he_diurna.label(class='form-label') }}
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    {{ form.he_diurna(class='form-control' + (' is-invalid' if form.he_diurna.errors else '')) }}
+                                </div>
+                                {% for error in form.he_diurna.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.ad_he_noturna.label(class='form-label') }}
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    {{ form.ad_he_noturna(class='form-control' + (' is-invalid' if form.ad_he_noturna.errors else '')) }}
+                                </div>
+                                {% for error in form.ad_he_noturna.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.vd_diurno.label(class='form-label') }}
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    {{ form.vd_diurno(class='form-control' + (' is-invalid' if form.vd_diurno.errors else '')) }}
+                                </div>
+                                {% for error in form.vd_diurno.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.vd_noturno.label(class='form-label') }}
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    {{ form.vd_noturno(class='form-control' + (' is-invalid' if form.vd_noturno.errors else '')) }}
+                                </div>
+                                {% for error in form.vd_noturno.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            {{ form.submit(class='btn btn-primary') }}
+                            <a href="{{ url_for('admin.tabela_valores') }}" class="btn btn-outline-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
