@@ -1,4 +1,4 @@
-from flask import Blueprint, redirect, url_for, send_file, Response
+from flask import Blueprint, redirect, url_for, send_file, send_from_directory, Response, abort, current_app
 from flask_login import current_user
 import os
 
@@ -29,3 +29,13 @@ def favicon():
     if os.path.exists(favicon_path):
         return send_file(favicon_path, mimetype='image/x-icon')
     return Response(FAVICON_SVG, mimetype='image/svg+xml')
+
+
+@main_bp.route('/media/instagram/<path:filename>')
+def instagram_media(filename):
+    """Serve publicamente as imagens de cards para a Meta Graph API baixar."""
+    insta_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'instagram')
+    allowed = {'png', 'jpg', 'jpeg'}
+    if not filename or '.' not in filename or filename.rsplit('.', 1)[1].lower() not in allowed:
+        abort(404)
+    return send_from_directory(insta_dir, filename)

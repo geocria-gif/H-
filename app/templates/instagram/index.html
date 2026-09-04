@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}Instagram - SISPM{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><i class="bi bi-instagram me-2"></i>Instagram - SEGMAF</h1>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-5 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-plug me-2"></i>Status da Integração</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Configurado</span>
+                            {% if status.configured %}
+                            <span class="badge bg-success">Sim</span>
+                            {% else %}
+                            <span class="badge bg-danger">Não</span>
+                            {% endif %}
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Access Token</span>
+                            {% if status.access_token %}
+                            <span class="badge bg-success">Definido</span>
+                            {% else %}
+                            <span class="badge bg-danger">Ausente</span>
+                            {% endif %}
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Instagram Business Account ID</span>
+                            {% if status.ig_user_id %}
+                            <span class="badge bg-success">{{ status.ig_user_id_value }}</span>
+                            {% else %}
+                            <span class="badge bg-danger">Ausente</span>
+                            {% endif %}
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>API Version</span>
+                            <span class="text-muted">{{ status.api_version }}</span>
+                        </li>
+                    </ul>
+
+                    {% if not status.configured %}
+                    <div class="alert alert-warning mt-3 mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Configure <code>INSTAGRAM_ACCESS_TOKEN</code> e
+                        <code>INSTAGRAM_IG_USER_ID</code> no arquivo <code>.env</code>.
+                        Veja <code>INSTAGRAM_API.md</code> para o passo a passo completo.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-upload me-2"></i>Publicar Card no Instagram</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Envie a imagem do card (PNG/JPG) e a legenda. A imagem é enviada
+                        para a Meta via <code>PUBLIC_BASE_URL</code>
+                        (<code>{{ public_base }}</code>).
+                    </p>
+                    <form method="POST" enctype="multipart/form-data" novalidate>
+                        {{ form.hidden_tag() }}
+                        <div class="mb-3">
+                            {{ form.imagem.label(class='form-label') }}
+                            {{ form.imagem(class='form-control', accept='.png,.jpg,.jpeg') }}
+                            {% for error in form.imagem.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.legenda.label(class='form-label') }}
+                            {{ form.legenda(class='form-control', rows=6, placeholder='Digite a legenda da publicação...') }}
+                            {% for error in form.legenda.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                            <div class="form-text">Máximo de 2.200 caracteres.</div>
+                        </div>
+                        {{ form.submit(class='btn btn-danger w-100') }}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

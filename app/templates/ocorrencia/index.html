@@ -51,6 +51,7 @@
                             <th>ID</th>
                             <th>Tipo</th>
                             <th>Data/Hora</th>
+                            <th>Logradouro</th>
                             <th>Cidade</th>
                             <th>VTR</th>
                             <th>Descrição</th>
@@ -67,6 +68,7 @@
                                 </span>
                             </td>
                             <td>{{ o.data_hora }}</td>
+                            <td>{{ o.logradouro or '-' }}</td>
                             <td>{{ o.cidade or '-' }}</td>
                             <td>{{ o.vtr or '-' }}</td>
                             <td>{{ o.descricao[:80] ~ '...' if o.descricao and o.descricao|length > 80 else o.descricao or '-' }}</td>

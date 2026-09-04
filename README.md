@@ -41,6 +41,15 @@ Sistema web profissional para gestão de escalas de hora extra (HE), vale-transp
 - ✅ Autenticação JWT (Access + Refresh tokens)
 - ✅ Paginação, filtros, ordenação, busca
 - ✅ Documentação OpenAPI/Swagger
+- ✅ Publicação de cards no Instagram (Meta Graph API)
+
+### Integração Instagram
+- ✅ Serviço de publicação via Meta Graph API (imagem + legenda)
+- ✅ Página administrativa (`/instagram`) com status e upload manual
+- ✅ Endpoint API `POST /api/v1/instagram/publish` (multipart: `image` + `caption`)
+- ✅ Endpoint API `GET /api/v1/instagram/status`
+- ✅ Botão "Publicar no Instagram" nos cards de Ocorrências (index.html, index2.html, NOVO/index2.html)
+- 📖 Guia de configuração das credenciais em [INSTAGRAM_API.md](INSTAGRAM_API.md)
 
 ## 🏗️ Estrutura do Projeto
 
@@ -213,6 +222,7 @@ curl -H "Authorization: Bearer <access_token>" \
 | **Cargos** | `GET /api/v1/cargos` |
 | **OPMs** | `GET /api/v1/opms` |
 | **Backup** | `POST /api/v1/backup`, `GET /api/v1/backups` |
+| **Instagram** | `POST /api/v1/instagram/publish`, `GET /api/v1/instagram/status` |
 | **Health** | `GET /api/v1/health` |
 
 ### Paginação e Filtros

@@ -2,14 +2,14 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SelectField, TextAreaField, IntegerField, FloatField, DateField, BooleanField, HiddenField, SubmitField, FileField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, Optional, NumberRange, ValidationError
 from wtforms.widgets import TextArea
-from app.models import Usuario, Cargo, OPM, EfetivoPM, Evento, TabelaValores, EscalaP2, EscalaP2Meta, EscalaP2Legenda, Ocorrencia, Viatura, Municipio, EscalaSalva
-from app import db
+from app import data as d
 
 
 class LoginForm(FlaskForm):
     matricula = StringField('Matrícula', validators=[DataRequired(), Length(min=1, max=20)])
     senha = PasswordField('Senha', validators=[DataRequired()])
     remember_me = BooleanField('Lembrar-me')
+    id_token = HiddenField('Token')
     submit = SubmitField('Entrar')
 
 
@@ -26,7 +26,7 @@ class RegisterForm(FlaskForm):
     submit = SubmitField('Cadastrar')
     
     def validate_matricula(self, field):
-        if db.session.get(Usuario, field.data):
+        if d.get_usuario(field.data):
             raise ValidationError('Matrícula já cadastrada.')
 
 
@@ -49,10 +49,8 @@ class UsuarioForm(FlaskForm):
         super().__init__(*args, **kwargs)
     
     def validate_matricula(self, field):
-        user = db.session.execute(
-            db.select(Usuario).where(Usuario.matricula == field.data)
-        ).scalar_one_or_none()
-        if user and user.id != self.user_id:
+        user = d.get_usuario(field.data)
+        if user and str(user.get('id', user.id)) != str(self.user_id):
             raise ValidationError('Matrícula já cadastrada.')
 
 
@@ -130,8 +128,8 @@ class EfetivoPMForm(FlaskForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.cargo.choices = [(c.cargo_id, f'{c.posto_grad} ({c.cargo_id})') for c in Cargo.query.order_by(Cargo.posto_grad).all()]
-        self.opm_id.choices = [(o.opm_id, f'{o.opm_sigla} - {o.opm_desc}') for o in OPM.query.order_by(OPM.opm_sigla).all()]
+        self.cargo.choices = [(c.cargo_id, f'{c.posto_grad} ({c.cargo_id})') for c in d.list_cargos()]
+        self.opm_id.choices = [(o.opm_id, f'{o.opm_sigla} - {o.opm_desc}') for o in d.list_opms()]
 
 
 class EventoForm(FlaskForm):
@@ -154,8 +152,8 @@ class OpmEventoForm(FlaskForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.evento_id.choices = [(e.evento_id, e.evento_desc) for e in Evento.query.order_by(Evento.evento_desc).all()]
-        self.opm_id.choices = [(o.opm_id, f'{o.opm_sigla} - {o.opm_desc}') for o in OPM.query.order_by(OPM.opm_sigla).all()]
+        self.evento_id.choices = [(e.evento_id, e.evento_desc) for e in d.list_eventos()]
+        self.opm_id.choices = [(o.opm_id, f'{o.opm_sigla} - {o.opm_desc}') for o in d.list_opms()]
 
 
 class EscalaForm(FlaskForm):
@@ -184,7 +182,7 @@ class TabelaValoresForm(FlaskForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.posto_grad.choices = [(c.posto_grad, c.posto_grad) for c in Cargo.query.order_by(Cargo.posto_grad).all()]
+        self.posto_grad.choices = [(c.posto_grad, c.posto_grad) for c in d.list_cargos()]
 
 
 class EscalaP2Form(FlaskForm):
@@ -236,6 +234,7 @@ class OcorrenciaForm(FlaskForm):
     ], validators=[DataRequired()])
     data_hora = StringField('Data/Hora', validators=[DataRequired()])
     cidade = StringField('Cidade', validators=[Optional(), Length(max=100)])
+    logradouro = StringField('Logradouro', validators=[Optional(), Length(max=200)])
     latitude = FloatField('Latitude', validators=[Optional()])
     longitude = FloatField('Longitude', validators=[Optional()])
     vtr = StringField('VTR', validators=[Optional(), Length(max=50)])
@@ -337,7 +336,7 @@ class RelatorioForm(FlaskForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.opm_id.choices = [('', 'Todas')] + [(o.opm_id, f'{o.opm_sigla} - {o.opm_desc}') for o in OPM.query.order_by(OPM.opm_sigla).all()]
+        self.opm_id.choices = [('', 'Todas')] + [(o.opm_id, f'{o.opm_sigla} - {o.opm_desc}') for o in d.list_opms()]
 
 
 class ImportForm(FlaskForm):
@@ -361,3 +360,9 @@ class BackupForm(FlaskForm):
 class RestoreForm(FlaskForm):
     arquivo = FileField('Arquivo de Backup (.sql)', validators=[DataRequired()])
     submit = SubmitField('Restaurar')
+
+
+class InstagramForm(FlaskForm):
+    imagem = FileField('Imagem (PNG/JPG)', validators=[DataRequired()])
+    legenda = TextAreaField('Legenda', validators=[Optional(), Length(max=2200)])
+    submit = SubmitField('Publicar')

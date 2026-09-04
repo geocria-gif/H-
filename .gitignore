@@ -14,6 +14,10 @@ ENV/
 .env.local
 .env.*.local
 
+# Firebase service account (secret - never commit)
+firebase-adminsdk-*.json
+*-firebase-adminsdk-*.json
+
 # Database
 *.sqlite
 *.sqlite3

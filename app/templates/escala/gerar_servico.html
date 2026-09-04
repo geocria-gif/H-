@@ -1,16 +1,16 @@
 {% extends 'base.html' %}
-{% block title %}Escala Geral Mensal - SISPM{% endblock %}
+{% block title %}Gerar Escala de Servico - SISPM{% endblock %}
 {% block content %}
 <div class="container-fluid px-4">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-      <h1 class="h3 mb-0"><i class="bi bi-calendar-week me-2"></i>Escala Geral - Mensal</h1>
-      <small class="text-muted" id="p2-sub">Selecione mes e ano</small>
+      <h1 class="h3 mb-0"><i class="bi bi-calendar-week me-2"></i>Gerar Escala de Servico</h1>
+      <small class="text-muted" id="gs-sub">Selecione mes e ano</small>
     </div>
     <div class="d-flex gap-2 flex-wrap justify-content-end">
-      <a href="{{ url_for('escala.p2_exportar_csv', mes=mes or '', ano=ano or '') }}" class="btn btn-outline-secondary btn-sm" id="btn-csv"><i class="bi bi-download me-1"></i>CSV</a>
-      <a href="{{ url_for('escala.p2_exportar_excel', mes=mes or '', ano=ano or '') }}" class="btn btn-outline-primary btn-sm" id="btn-excel"><i class="bi bi-file-earmark-excel me-1"></i>Excel</a>
-      <a href="{{ url_for('escala.p2_exportar_pdf', mes=mes or '', ano=ano or '') }}" class="btn btn-danger btn-sm" id="btn-pdf"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+      <a href="{{ url_for('escala.p2_exportar_csv', mes=mes or '', ano=ano or '') }}" class="btn btn-outline-secondary btn-sm" id="gs-btn-csv"><i class="bi bi-download me-1"></i>CSV</a>
+      <a href="{{ url_for('escala.p2_exportar_excel', mes=mes or '', ano=ano or '') }}" class="btn btn-outline-primary btn-sm" id="gs-btn-excel"><i class="bi bi-file-earmark-excel me-1"></i>Excel</a>
+      <a href="{{ url_for('escala.p2_exportar_pdf', mes=mes or '', ano=ano or '') }}" class="btn btn-danger btn-sm" id="gs-btn-pdf"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
     </div>
   </div>
 
@@ -18,15 +18,15 @@
     <div class="card-body py-2">
       <div class="d-flex align-items-center gap-2 flex-wrap">
         <strong>Mes de Referencia:</strong>
-        <button class="btn btn-sm btn-outline-secondary" onclick="P2.navegar(-1)"><i class="bi bi-chevron-left"></i></button>
-        <select id="p2-mes" class="form-select form-select-sm" style="width:auto" onchange="P2.render()">
+        <button class="btn btn-sm btn-outline-secondary" onclick="GS.navegar(-1)"><i class="bi bi-chevron-left"></i></button>
+        <select id="gs-mes" class="form-select form-select-sm" style="width:auto" onchange="GS.render()">
           <option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Marco</option>
           <option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option>
           <option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option>
           <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
         </select>
-        <select id="p2-ano" class="form-select form-select-sm" style="width:auto" onchange="P2.render()"></select>
-        <button class="btn btn-sm btn-outline-secondary" onclick="P2.navegar(1)"><i class="bi bi-chevron-right"></i></button>
+        <select id="gs-ano" class="form-select form-select-sm" style="width:auto" onchange="GS.render()"></select>
+        <button class="btn btn-sm btn-outline-secondary" onclick="GS.navegar(1)"><i class="bi bi-chevron-right"></i></button>
       </div>
     </div>
   </div>
@@ -34,16 +34,16 @@
   <div class="card mb-3">
     <div class="card-header d-flex justify-content-between align-items-center">
       <span><i class="bi bi-gear me-1"></i>Cabecalho do Relatorio</span>
-      <button class="btn btn-sm btn-primary" onclick="P2.salvarMeta()"><i class="bi bi-save me-1"></i>Salvar</button>
+      <button class="btn btn-sm btn-primary" onclick="GS.salvarMeta()"><i class="bi bi-save me-1"></i>Salvar</button>
     </div>
     <div class="card-body">
       <div class="row g-2">
-        <div class="col-md-3"><label class="form-label small">Local</label><input id="p2-local" class="form-control form-control-sm" value="IRECE"></div>
-        <div class="col-md-3"><label class="form-label small">Responsavel</label><input id="p2-resp" class="form-control form-control-sm"></div>
-        <div class="col-md-3"><label class="form-label small">Cargo</label><input id="p2-cargo" class="form-control form-control-sm"></div>
-        <div class="col-md-3"><label class="form-label small">Emissao</label><input id="p2-emissao" class="form-control form-control-sm" type="date"></div>
-        <div class="col-md-6"><label class="form-label small">Nota / Observacao</label><input id="p2-nota" class="form-control form-control-sm"></div>
-        <div class="col-md-6"><label class="form-label small">Titulo da Escala</label><input id="p2-titulo" class="form-control form-control-sm" placeholder="ESCALA DE COORDENADOR REGIONAL DO CPR-CN - JULHO DE 2026"></div>
+        <div class="col-md-3"><label class="form-label small">Local</label><input id="gs-local" class="form-control form-control-sm" value="IRECE"></div>
+        <div class="col-md-3"><label class="form-label small">Responsavel</label><input id="gs-resp" class="form-control form-control-sm"></div>
+        <div class="col-md-3"><label class="form-label small">Cargo</label><input id="gs-cargo" class="form-control form-control-sm"></div>
+        <div class="col-md-3"><label class="form-label small">Emissao</label><input id="gs-emissao" class="form-control form-control-sm" type="date"></div>
+        <div class="col-md-6"><label class="form-label small">Nota / Observacao</label><input id="gs-nota" class="form-control form-control-sm"></div>
+        <div class="col-md-6"><label class="form-label small">Titulo da Escala</label><input id="gs-titulo" class="form-control form-control-sm" placeholder="ESCALA DE SERVICO - CPR-CN - JULHO DE 2026"></div>
       </div>
     </div>
   </div>
@@ -52,15 +52,15 @@
     <div class="card-header d-flex justify-content-between align-items-center">
       <span><i class="bi bi-info-circle me-1"></i>Legenda dos Codigos</span>
     </div>
-    <div class="card-body" id="p2-legenda-area"></div>
+    <div class="card-body" id="gs-legenda-area"></div>
   </div>
 
   <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
     <h5 class="mb-0"><i class="bi bi-people me-1"></i>Efetivo da Escala</h5>
     <div class="d-flex gap-2 flex-wrap">
-      <button class="btn btn-primary btn-sm" onclick="P2.abrirModalMilitar()"><i class="bi bi-person-plus me-1"></i>Adicionar Militar</button>
-      <button class="btn btn-outline-secondary btn-sm" onclick="P2.importarCsv()"><i class="bi bi-upload me-1"></i>CSV</button>
-      <button class="btn btn-outline-secondary btn-sm" onclick="P2.abrirModalSeparador()"><i class="bi bi-dash-circle me-1"></i>Separador</button>
+      <button class="btn btn-primary btn-sm" onclick="GS.abrirModalMilitar()"><i class="bi bi-person-plus me-1"></i>Adicionar Militar</button>
+      <button class="btn btn-outline-secondary btn-sm" onclick="GS.importarCsv()"><i class="bi bi-upload me-1"></i>CSV</button>
+      <button class="btn btn-outline-secondary btn-sm" onclick="GS.abrirModalSeparador()"><i class="bi bi-dash-circle me-1"></i>Separador</button>
       <form method="POST" action="{{ url_for('escala.p2_salvar') }}" class="d-inline">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="mes" id="frm-mes" value="">
@@ -78,62 +78,62 @@
 
   <div class="d-flex align-items-center gap-2 mb-2 flex-wrap" style="font-size:0.85rem">
     <span class="text-muted">Inserir dias:</span>
-    <select id="p2-bulk-code" class="form-select form-select-sm" style="width:auto"></select>
-    <button class="btn btn-sm btn-outline-primary" onclick="P2.bulk('sex-sab-dom')">SEX-SAB-DOM</button>
-    <button class="btn btn-sm btn-outline-primary" onclick="P2.bulk('sab-dom')">SAB-DOM</button>
-    <button class="btn btn-sm btn-outline-primary" onclick="P2.bulk('sex')">SEX</button>
-    <button class="btn btn-sm btn-outline-warning" onclick="P2.clearDays('fds')"><i class="bi bi-trash me-1"></i>Limpar FDS</button>
-    <button class="btn btn-sm btn-outline-danger" onclick="P2.clearDays('todos')"><i class="bi bi-trash me-1"></i>Limpar TODOS</button>
+    <select id="gs-bulk-code" class="form-select form-select-sm" style="width:auto"></select>
+    <button class="btn btn-sm btn-outline-primary" onclick="GS.bulk('sex-sab-dom')">SEX-SAB-DOM</button>
+    <button class="btn btn-sm btn-outline-primary" onclick="GS.bulk('sab-dom')">SAB-DOM</button>
+    <button class="btn btn-sm btn-outline-primary" onclick="GS.bulk('sex')">SEX</button>
+    <button class="btn btn-sm btn-outline-warning" onclick="GS.clearDays('fds')"><i class="bi bi-trash me-1"></i>Limpar FDS</button>
+    <button class="btn btn-sm btn-outline-danger" onclick="GS.clearDays('todos')"><i class="bi bi-trash me-1"></i>Limpar TODOS</button>
   </div>
 
-  <div style="overflow-x:auto" id="p2-grid-wrap">
+  <div style="overflow-x:auto" id="gs-grid-wrap">
     <div class="text-center py-5 text-muted">
       <i class="bi bi-hourglass-split fs-3"></i><p>Carregando...</p>
     </div>
   </div>
 </div>
 
-<div class="modal fade" id="modalMilitar" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content">
-  <div class="modal-header"><h5 class="modal-title" id="modalMilitarTitle">Adicionar Militar</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal fade" id="modalMilitarGS" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content">
+  <div class="modal-header"><h5 class="modal-title" id="modalMilitarGSTitle">Adicionar Militar</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
   <div class="modal-body">
     <div class="position-relative mb-3">
       <label class="form-label small">Buscar Policial (matricula ou nome)</label>
-      <input id="mp-busca" class="form-control" autocomplete="off" oninput="P2.buscarEfetivo(this.value)" onblur="setTimeout(()=>{const s=document.getElementById('mp-suggest');if(s)s.style.display='none'},250)">
-      <div id="mp-suggest" class="list-group" style="position:absolute;top:100%;left:0;right:0;z-index:1050;display:none;max-height:200px;overflow-y:auto"></div>
+      <input id="mp-gs-busca" class="form-control" autocomplete="off" oninput="GS.buscarEfetivo(this.value)" onblur="setTimeout(()=>{const s=document.getElementById('mp-gs-suggest');if(s)s.style.display='none'},250)">
+      <div id="mp-gs-suggest" class="list-group" style="position:absolute;top:100%;left:0;right:0;z-index:1050;display:none;max-height:200px;overflow-y:auto"></div>
     </div>
     <div class="row g-2">
-      <div class="col-md-4"><label class="form-label small">Matricula *</label><input id="mp-mat" class="form-control form-control-sm"></div>
-      <div class="col-md-4"><label class="form-label small">Nome *</label><input id="mp-nome" class="form-control form-control-sm" style="text-transform:uppercase"></div>
-      <div class="col-md-4"><label class="form-label small">Telefone</label><input id="mp-tel" class="form-control form-control-sm"></div>
-      <div class="col-md-3"><label class="form-label small">Funcao *</label><select id="mp-funcao" class="form-select form-select-sm"></select></div>
-      <div class="col-md-3"><label class="form-label small">OPM *</label><select id="mp-opm" class="form-select form-select-sm"><option value="">--</option></select></div>
-      <div class="col-md-3"><label class="form-label small">GH *</label><select id="mp-gh" class="form-select form-select-sm"></select></div>
+      <div class="col-md-4"><label class="form-label small">Matricula *</label><input id="mp-gs-mat" class="form-control form-control-sm"></div>
+      <div class="col-md-4"><label class="form-label small">Nome *</label><input id="mp-gs-nome" class="form-control form-control-sm" style="text-transform:uppercase"></div>
+      <div class="col-md-4"><label class="form-label small">Telefone</label><input id="mp-gs-tel" class="form-control form-control-sm"></div>
+      <div class="col-md-3"><label class="form-label small">Funcao *</label><select id="mp-gs-funcao" class="form-select form-select-sm"></select></div>
+      <div class="col-md-3"><label class="form-label small">OPM *</label><select id="mp-gs-opm" class="form-select form-select-sm"><option value="">--</option></select></div>
+      <div class="col-md-3"><label class="form-label small">GH *</label><select id="mp-gs-gh" class="form-select form-select-sm"></select></div>
       <div class="col-md-3"><label class="form-label small">Tipo Pagamento</label>
-        <select id="mp-tp" class="form-select form-select-sm">
+        <select id="mp-gs-tp" class="form-select form-select-sm">
           <option value="HE">HE (Hora Extra)</option><option value="VD">VD (Valor Diferencial)</option><option value="SO">SO (Servico Ordinario)</option>
         </select>
       </div>
     </div>
   </div>
-  <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-primary" onclick="P2.salvarMilitar()">Salvar</button></div>
+  <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-primary" onclick="GS.salvarMilitar()">Salvar</button></div>
 </div></div></div>
 
-<div class="modal fade" id="modalCelula" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
-  <div class="modal-header"><h5 class="modal-title" id="modalCelulaTitle">Editar Dia</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-  <div class="modal-body" id="modalCelulaBody"></div>
+<div class="modal fade" id="modalCelulaGS" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+  <div class="modal-header"><h5 class="modal-title" id="modalCelulaGSTitle">Editar Dia</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body" id="modalCelulaGSBody"></div>
 </div></div></div>
 
-<div class="modal fade" id="modalSeparador" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+<div class="modal fade" id="modalSeparadorGS" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
   <div class="modal-header"><h5 class="modal-title">Inserir Separador</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
   <div class="modal-body">
     <label class="form-label">Texto do Separador (opcional)</label>
-    <input id="mp-sep-texto" class="form-control" placeholder="Ex.: Equipe A">
+    <input id="mp-gs-sep-texto" class="form-control" placeholder="Ex.: Equipe A">
   </div>
-  <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-primary" onclick="P2.salvarSeparador()">Inserir</button></div>
+  <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-primary" onclick="GS.salvarSeparador()">Inserir</button></div>
 </div></div></div>
 
 <script>
-const P2 = {
+const GS = {
   CODIGOS: [
     {cod:"C1", desc:"Das: 7h AS 19h", hD:12, hN:0, cor:"#3b82f644"},
     {cod:"C2", desc:"Das: 19h AS 7h", hD:5, hN:7, cor:"#22c55e44"},
@@ -149,7 +149,7 @@ const P2 = {
   csrf: '{{ csrf_token() }}',
 
   init() {
-    const sel = document.getElementById('p2-ano');
+    const sel = document.getElementById('gs-ano');
     if(sel && !sel.children.length) {
       const y = new Date().getFullYear();
       for(let a=y-2;a<=y+2;a++){
@@ -161,10 +161,10 @@ const P2 = {
     }
     const mes = parseInt('{{ mes or "0" }}');
     const ano = parseInt('{{ ano or "0" }}');
-    if(mes) document.getElementById('p2-mes').value = mes;
-    if(ano) document.getElementById('p2-ano').value = ano;
-    if(!ano) document.getElementById('p2-ano').value = new Date().getFullYear();
-    if(!mes) document.getElementById('p2-mes').value = new Date().getMonth()+1;
+    if(mes) document.getElementById('gs-mes').value = mes;
+    if(ano) document.getElementById('gs-ano').value = ano;
+    if(!ano) document.getElementById('gs-ano').value = new Date().getFullYear();
+    if(!mes) document.getElementById('gs-mes').value = new Date().getMonth()+1;
 
     this._loadOpmOptions();
     this._loadFuncoes();
@@ -175,16 +175,16 @@ const P2 = {
     this.render();
   },
 
-  getMes() { return parseInt(document.getElementById('p2-mes').value); },
-  getAno() { return parseInt(document.getElementById('p2-ano').value); },
+  getMes() { return parseInt(document.getElementById('gs-mes').value); },
+  getAno() { return parseInt(document.getElementById('gs-ano').value); },
 
   navegar(dir) {
     let m = this.getMes(), a = this.getAno();
     m += dir;
     if(m > 12){ m = 1; a++; }
     if(m < 1){ m = 12; a--; }
-    document.getElementById('p2-mes').value = m;
-    document.getElementById('p2-ano').value = a;
+    document.getElementById('gs-mes').value = m;
+    document.getElementById('gs-ano').value = a;
     this.render();
   },
 
@@ -202,7 +202,7 @@ const P2 = {
       const data = await r.json();
       this.meta = data;
       ['local','resp','cargo','emissao','nota','titulo'].forEach(f => {
-        const el = document.getElementById('p2-'+f);
+        const el = document.getElementById('gs-'+f);
         if(el) el.value = data[f]||'';
       });
     } catch(e) {}
@@ -218,7 +218,7 @@ const P2 = {
   },
 
   _loadCodigos() {
-    const sel = document.getElementById('p2-bulk-code');
+    const sel = document.getElementById('gs-bulk-code');
     if(!sel) return;
     const builtIn = this.CODIGOS.map(c => `<option value="${c.cod}">${c.cod} (${c.desc})</option>`).join('');
     const custom = this.legendas.map(l => `<option value="${l.codigo}">${l.codigo} (${l.descricao})</option>`).join('');
@@ -226,29 +226,28 @@ const P2 = {
   },
 
   _renderLegendas() {
-    const div = document.getElementById('p2-legenda-area');
+    const div = document.getElementById('gs-legenda-area');
     if(!div) return;
     let h = '';
     this.legendas.forEach(l => {
       h += `<div class="d-flex align-items-center gap-2 border-bottom py-1">
         <strong style="width:40px">${l.codigo}</strong><span class="flex-grow-1">${l.descricao}</span>
-        <button class="btn btn-sm btn-outline-danger" onclick="P2.removerLegenda(${l.id})"><i class="bi bi-trash"></i></button>
+        <button class="btn btn-sm btn-outline-danger" onclick="GS.removerLegenda(${l.id})"><i class="bi bi-trash"></i></button>
       </div>`;
     });
     h += `<div class="d-flex gap-2 align-items-center mt-2">
-      <input id="leg-cod" class="form-control form-control-sm" style="width:60px" placeholder="Codigo">
-      <input id="leg-desc" class="form-control form-control-sm flex-grow-1" placeholder="Descricao (ex: 7h-19h)">
-      <button class="btn btn-sm btn-primary" onclick="P2.adicionarLegenda()"><i class="bi bi-plus"></i></button>
+      <input id="gs-leg-cod" class="form-control form-control-sm" style="width:60px" placeholder="Codigo">
+      <input id="gs-leg-desc" class="form-control form-control-sm flex-grow-1" placeholder="Descricao (ex: 7h-19h)">
+      <button class="btn btn-sm btn-primary" onclick="GS.adicionarLegenda()"><i class="bi bi-plus"></i></button>
     </div>`;
     div.innerHTML = h;
   },
 
   async adicionarLegenda() {
-    const cod = document.getElementById('leg-cod');
-    const desc = document.getElementById('leg-desc');
+    const cod = document.getElementById('gs-leg-cod');
+    const desc = document.getElementById('gs-leg-desc');
     if(!cod || !desc || !cod.value.trim() || !desc.value.trim()) {
-      if(typeof toast !== 'undefined') toast('Preencha codigo e descricao', 'error');
-      else alert('Preencha codigo e descricao');
+      alert('Preencha codigo e descricao');
       return;
     }
     await this._api('/escala/p2/api/legenda', {method:'POST', body:{codigo:cod.value.trim(), descricao:desc.value.trim()}});
@@ -265,20 +264,19 @@ const P2 = {
   async salvarMeta() {
     const data = {};
     ['local','resp','cargo','emissao','nota','titulo'].forEach(f => {
-      data[f] = (document.getElementById('p2-'+f)||{}).value||'';
+      data[f] = (document.getElementById('gs-'+f)||{}).value||'';
     });
     data.mes = this.getMes();
     data.ano = this.getAno();
     await this._api('/escala/p2/api/meta', {method:'POST', body:data});
-    if(typeof toast !== 'undefined') toast('Cabecalho salvo!');
-    else alert('Cabecalho salvo!');
+    alert('Cabecalho salvo!');
   },
 
   async _loadOpmOptions() {
     try {
       const r = await fetch('/escala/p2/api/opms');
       const opms = await r.json();
-      const sel = document.getElementById('mp-opm');
+      const sel = document.getElementById('mp-gs-opm');
       if(sel) {
         sel.innerHTML = '<option value="">--</option>' + opms.map(o => `<option value="${o.sigla}">${o.sigla}</option>`).join('');
       }
@@ -289,7 +287,7 @@ const P2 = {
     try {
       const r = await fetch('/escala/p2/api/funcoes');
       const fns = await r.json();
-      const sel = document.getElementById('mp-funcao');
+      const sel = document.getElementById('mp-gs-funcao');
       if(sel) sel.innerHTML = fns.map(f => `<option value="${f}">${f}</option>`).join('');
     } catch(e) {}
   },
@@ -298,7 +296,7 @@ const P2 = {
     try {
       const r = await fetch('/escala/p2/api/ghs');
       const ghs = await r.json();
-      const sel = document.getElementById('mp-gh');
+      const sel = document.getElementById('mp-gs-gh');
       if(sel) sel.innerHTML = '<option value="">--</option>' + ghs.map(g => `<option value="${g}">${g}</option>`).join('');
     } catch(e) {}
   },
@@ -311,9 +309,9 @@ const P2 = {
     document.getElementById('frm-mes2').value = mes;
     document.getElementById('frm-ano2').value = ano;
 
-    const csvBtn = document.getElementById('btn-csv');
-    const excelBtn = document.getElementById('btn-excel');
-    const pdfBtn = document.getElementById('btn-pdf');
+    const csvBtn = document.getElementById('gs-btn-csv');
+    const excelBtn = document.getElementById('gs-btn-excel');
+    const pdfBtn = document.getElementById('gs-btn-pdf');
     if(csvBtn) csvBtn.href = '/escala/p2/exportar-csv?mes='+mes+'&ano='+ano;
     if(excelBtn) excelBtn.href = '/escala/p2/exportar-excel?mes='+mes+'&ano='+ano;
     if(pdfBtn) pdfBtn.href = '/escala/p2/exportar-pdf?mes='+mes+'&ano='+ano;
@@ -326,7 +324,7 @@ const P2 = {
     const mesesNome = ['','Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
     const mils = this.items.filter(i => !i.is_separador).length;
     const d = new Date(ano, mes, 0).getDate();
-    document.getElementById('p2-sub').textContent = `${mils} militares | ${d} dias | ${mesesNome[mes]} ${ano}`;
+    document.getElementById('gs-sub').textContent = `${mils} militares | ${d} dias | ${mesesNome[mes]} ${ano}`;
     this._renderGrid();
   },
 
@@ -347,7 +345,7 @@ const P2 = {
   _esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); },
 
   _renderGrid() {
-    const wrap = document.getElementById('p2-grid-wrap');
+    const wrap = document.getElementById('gs-grid-wrap');
     const items = this.items;
     const mes = this.getMes(), ano = this.getAno();
     const dnm = this._diasNoMes();
@@ -384,9 +382,9 @@ const P2 = {
           <div class="d-flex justify-content-between align-items-center px-2">
             <span>&equiv; ${this._esc(item.separador_texto||'')}</span>
             <span>
-              ${i>0?`<button class="btn btn-sm btn-outline-secondary py-0 px-1" onclick="P2.mover(${item.id},-1)" title="Mover para cima"><i class="bi bi-arrow-up" style="font-size:10px"></i></button>`:''}
-              ${i<n-1?`<button class="btn btn-sm btn-outline-secondary py-0 px-1" onclick="P2.mover(${item.id},1)" title="Mover para baixo"><i class="bi bi-arrow-down" style="font-size:10px"></i></button>`:''}
-              <button class="btn btn-sm btn-outline-danger py-0 px-1" onclick="P2.excluir(${item.id})" title="Excluir"><i class="bi bi-trash" style="font-size:10px"></i></button>
+              ${i>0?`<button class="btn btn-sm btn-outline-secondary py-0 px-1" onclick="GS.mover(${item.id},-1)" title="Mover para cima"><i class="bi bi-arrow-up" style="font-size:10px"></i></button>`:''}
+              ${i<n-1?`<button class="btn btn-sm btn-outline-secondary py-0 px-1" onclick="GS.mover(${item.id},1)" title="Mover para baixo"><i class="bi bi-arrow-down" style="font-size:10px"></i></button>`:''}
+              <button class="btn btn-sm btn-outline-danger py-0 px-1" onclick="GS.excluir(${item.id})" title="Excluir"><i class="bi bi-trash" style="font-size:10px"></i></button>
             </span>
           </div></td></tr>`;
       } else {
@@ -395,10 +393,10 @@ const P2 = {
         const tp = item.tipo_pagamento || 'HE';
         html += '<tr>';
         html += `<td class="text-center" style="white-space:nowrap;padding:2px">
-          <button class="btn btn-sm btn-outline-primary py-0 px-1" onclick="P2.abrirModalMilitar(${item.id})" title="Editar"><i class="bi bi-pencil" style="font-size:10px"></i></button>
-          <button class="btn btn-sm btn-outline-danger py-0 px-1" onclick="P2.excluir(${item.id})" title="Excluir"><i class="bi bi-trash" style="font-size:10px"></i></button>
-          ${i>0?`<button class="btn btn-sm btn-outline-secondary py-0 px-1" onclick="P2.mover(${item.id},-1)" title="Cima"><i class="bi bi-arrow-up" style="font-size:10px"></i></button>`:''}
-          ${i<n-1?`<button class="btn btn-sm btn-outline-secondary py-0 px-1" onclick="P2.mover(${item.id},1)" title="Baixo"><i class="bi bi-arrow-down" style="font-size:10px"></i></button>`:''}
+          <button class="btn btn-sm btn-outline-primary py-0 px-1" onclick="GS.abrirModalMilitar(${item.id})" title="Editar"><i class="bi bi-pencil" style="font-size:10px"></i></button>
+          <button class="btn btn-sm btn-outline-danger py-0 px-1" onclick="GS.excluir(${item.id})" title="Excluir"><i class="bi bi-trash" style="font-size:10px"></i></button>
+          ${i>0?`<button class="btn btn-sm btn-outline-secondary py-0 px-1" onclick="GS.mover(${item.id},-1)" title="Cima"><i class="bi bi-arrow-up" style="font-size:10px"></i></button>`:''}
+          ${i<n-1?`<button class="btn btn-sm btn-outline-secondary py-0 px-1" onclick="GS.mover(${item.id},1)" title="Baixo"><i class="bi bi-arrow-down" style="font-size:10px"></i></button>`:''}
         </td>`;
         html += `<td class="text-nowrap" style="padding:2px 4px;font-weight:600">${this._esc(item.funcao)}</td>`;
         html += `<td class="text-nowrap" style="padding:2px 4px">${this._esc(item.opm)}</td>`;
@@ -416,7 +414,7 @@ const P2 = {
           const isFds = dow==='SEX'||dow==='SAB'||dow==='DOM';
           const rowBg = isFds ? '#fff5f5' : bgColor;
           html += `<td class="text-center" style="padding:2px;cursor:pointer;background:${rowBg};font-weight:${cod?'700':'400'}" 
-            onclick="P2.abrirCelula(${item.id},${dd})" title="Dia ${dd} - ${dow}${cod?' | '+cod:''}">${cod?'<b>'+cod+'</b>':''}</td>`;
+            onclick="GS.abrirCelula(${item.id},${dd})" title="Dia ${dd} - ${dow}${cod?' | '+cod:''}">${cod?'<b>'+cod+'</b>':''}</td>`;
         }
         html += `<td class="text-center" style="padding:2px;font-weight:700;color:${ch.hD>0?'#198754':'#6c757d'}">${ch.hD||'-'}</td>`;
         html += `<td class="text-center" style="padding:2px;font-weight:700;color:${ch.hN>0?'#198754':'#6c757d'}">${ch.hN||'-'}</td>`;
@@ -433,17 +431,17 @@ const P2 = {
     if(!item) return;
     const dias = typeof item.dias==='string'?JSON.parse(item.dias||'{}'):(item.dias||{});
     const atual = dias[dia]||'';
-    document.getElementById('modalCelulaTitle').textContent = `${item.nome} — Dia ${dia} (${this._diaSem(dia, this.getMes(), this.getAno())})`;
+    document.getElementById('modalCelulaGSTitle').textContent = `${item.nome} — Dia ${dia} (${this._diaSem(dia, this.getMes(), this.getAno())})`;
     let btns = '<div class="text-center">';
     this.CODIGOS.forEach(c => {
       const sel = atual===c.cod ? ' btn-primary' : ' btn-outline-secondary';
-      btns += `<button class="btn btn-sm${sel} m-1" style="min-width:70px" onclick="P2.setCellCode(${id},${dia},'${c.cod}')">
+      btns += `<button class="btn btn-sm${sel} m-1" style="min-width:70px" onclick="GS.setCellCode(${id},${dia},'${c.cod}')">
         ${c.cod}<br><small>${c.desc}</small><br><small class="text-muted">D:${c.hD} N:${c.hN}</small></button>`;
     });
-    btns += `<button class="btn btn-sm btn-danger m-1" onclick="P2.setCellCode(${id},${dia},'')">Limpar</button>`;
+    btns += `<button class="btn btn-sm btn-danger m-1" onclick="GS.setCellCode(${id},${dia},'')">Limpar</button>`;
     btns += '</div>';
-    document.getElementById('modalCelulaBody').innerHTML = btns;
-    new bootstrap.Modal(document.getElementById('modalCelula')).show();
+    document.getElementById('modalCelulaGSBody').innerHTML = btns;
+    new bootstrap.Modal(document.getElementById('modalCelulaGS')).show();
   },
 
   async setCellCode(id, dia, codigo) {
@@ -453,22 +451,22 @@ const P2 = {
     if(codigo) dias[dia] = codigo; else delete dias[dia];
     item.dias = JSON.stringify(dias);
     try { await this._api('/escala/p2/api/cell', {method:'POST', body:{id, dia, codigo}}); } catch(e) {}
-    bootstrap.Modal.getInstance(document.getElementById('modalCelula')).hide();
+    bootstrap.Modal.getInstance(document.getElementById('modalCelulaGS')).hide();
     this._renderGrid();
   },
 
   async bulk(tipo) {
-    const cod = document.getElementById('p2-bulk-code').value;
+    const cod = document.getElementById('gs-bulk-code').value;
     if(!cod) { alert('Selecione um codigo'); return; }
     await this._api('/escala/p2/api/bulk', {method:'POST', body:{mes:this.getMes(), ano:this.getAno(), tipo, codigo:cod}});
-    if(typeof toast!=='undefined') toast(`Dias (${tipo}) preenchidos com ${cod}!`);
+    alert(`Dias (${tipo}) preenchidos com ${cod}!`);
     this.render();
   },
 
   async clearDays(tipo) {
     if(!confirm(tipo==='todos'?'Limpar TODOS os dias?':'Limpar fins de semana?')) return;
     await this._api('/escala/p2/api/clear', {method:'POST', body:{mes:this.getMes(), ano:this.getAno(), tipo}});
-    if(typeof toast!=='undefined') toast(tipo==='todos'?'Todos limpos!':'FDS limpo!');
+    alert(tipo==='todos'?'Todos limpos!':'FDS limpo!');
     this.render();
   },
 
@@ -480,7 +478,7 @@ const P2 = {
   async excluir(id) {
     if(!confirm('Excluir este registro?')) return;
     await this._api('/escala/p2/api/item/'+id, {method:'DELETE'});
-    if(typeof toast!=='undefined') toast('Excluido!');
+    alert('Excluido!');
     this.render();
   },
 
@@ -492,32 +490,32 @@ const P2 = {
 
   abrirModalMilitar(editId) {
     this.editingId = editId || null;
-    const title = document.getElementById('modalMilitarTitle');
+    const title = document.getElementById('modalMilitarGSTitle');
     if(editId) {
       const item = this.items.find(i => i.id===editId);
       if(item) {
         title.textContent = 'Editar Militar';
-        document.getElementById('mp-mat').value = item.matricula||'';
-        document.getElementById('mp-nome').value = item.nome||'';
-        document.getElementById('mp-tel').value = item.telefone||'';
-        document.getElementById('mp-funcao').value = item.funcao||'';
-        document.getElementById('mp-opm').value = item.opm||'';
-        document.getElementById('mp-gh').value = item.gh||'';
-        document.getElementById('mp-tp').value = item.tipo_pagamento||'HE';
-        document.getElementById('mp-busca').value = (item.matricula||'') + ' - ' + (item.nome||'');
+        document.getElementById('mp-gs-mat').value = item.matricula||'';
+        document.getElementById('mp-gs-nome').value = item.nome||'';
+        document.getElementById('mp-gs-tel').value = item.telefone||'';
+        document.getElementById('mp-gs-funcao').value = item.funcao||'';
+        document.getElementById('mp-gs-opm').value = item.opm||'';
+        document.getElementById('mp-gs-gh').value = item.gh||'';
+        document.getElementById('mp-gs-tp').value = item.tipo_pagamento||'HE';
+        document.getElementById('mp-gs-busca').value = (item.matricula||'') + ' - ' + (item.nome||'');
       }
     } else {
       title.textContent = 'Adicionar Militar';
-      ['mp-mat','mp-nome','mp-tel','mp-busca'].forEach(id => document.getElementById(id).value = '');
-      document.getElementById('mp-tp').value = 'HE';
-      const sel = document.getElementById('mp-funcao');
+      ['mp-gs-mat','mp-gs-nome','mp-gs-tel','mp-gs-busca'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('mp-gs-tp').value = 'HE';
+      const sel = document.getElementById('mp-gs-funcao');
       if(sel && sel.options.length) sel.selectedIndex = 0;
     }
-    new bootstrap.Modal(document.getElementById('modalMilitar')).show();
+    new bootstrap.Modal(document.getElementById('modalMilitarGS')).show();
   },
 
   async buscarEfetivo(q) {
-    const sug = document.getElementById('mp-suggest');
+    const sug = document.getElementById('mp-gs-suggest');
     if(!sug) return;
     if(!q || q.length < 2) { sug.style.display='none'; return; }
     try {
@@ -525,42 +523,42 @@ const P2 = {
       const rows = await r.json();
       if(!rows.length) { sug.style.display='none'; return; }
       if(rows.length===1) { this._preencherEfetivo(rows[0]); sug.style.display='none'; return; }
-      sug.innerHTML = rows.map(r => `<button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" onmousedown="P2._preencherEfetivo(${JSON.stringify(r).replace(/"/g,'&quot;')})">
+      sug.innerHTML = rows.map(r => `<button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" onmousedown="GS._preencherEfetivo(${JSON.stringify(r).replace(/"/g,'&quot;')})">
         <span>${r.matricula}</span><span class="text-muted">${r.nome}</span></button>`).join('');
       sug.style.display='block';
     } catch(e) { sug.style.display='none'; }
   },
 
   _preencherEfetivo(ef) {
-    document.getElementById('mp-mat').value = ef.matricula||'';
-    document.getElementById('mp-nome').value = ef.nome||'';
-    document.getElementById('mp-tel').value = ef.telefone||'';
-    document.getElementById('mp-busca').value = (ef.matricula||'')+' - '+(ef.nome||'');
+    document.getElementById('mp-gs-mat').value = ef.matricula||'';
+    document.getElementById('mp-gs-nome').value = ef.nome||'';
+    document.getElementById('mp-gs-tel').value = ef.telefone||'';
+    document.getElementById('mp-gs-busca').value = (ef.matricula||'')+' - '+(ef.nome||'');
     if(ef.funcao) {
-      const sel = document.getElementById('mp-funcao');
+      const sel = document.getElementById('mp-gs-funcao');
       for(let o of sel.options) { if(o.value===ef.funcao){ o.selected=true; break; } }
     }
     if(ef.opm) {
-      const sel = document.getElementById('mp-opm');
+      const sel = document.getElementById('mp-gs-opm');
       for(let o of sel.options) { if(o.value===ef.opm){ o.selected=true; break; } }
     }
     if(ef.cargo) {
-      const sel = document.getElementById('mp-gh');
+      const sel = document.getElementById('mp-gs-gh');
       for(let o of sel.options) { if(o.value===ef.cargo){ o.selected=true; break; } }
     }
-    document.getElementById('mp-suggest').style.display='none';
+    document.getElementById('mp-gs-suggest').style.display='none';
   },
 
   async salvarMilitar() {
     const v = id => (document.getElementById(id)||{}).value||'';
-    if(!v('mp-nome') || !v('mp-mat') || !v('mp-funcao')) {
+    if(!v('mp-gs-nome') || !v('mp-gs-mat') || !v('mp-gs-funcao')) {
       alert('Preencha Nome, Matricula e Funcao');
       return;
     }
     const data = {
-      funcao: v('mp-funcao'), opm: v('mp-opm'), gh: v('mp-gh'),
-      nome: v('mp-nome'), matricula: v('mp-mat'), telefone: v('mp-tel'),
-      tipo_pagamento: v('mp-tp')
+      funcao: v('mp-gs-funcao'), opm: v('mp-gs-opm'), gh: v('mp-gs-gh'),
+      nome: v('mp-gs-nome'), matricula: v('mp-gs-mat'), telefone: v('mp-gs-tel'),
+      tipo_pagamento: v('mp-gs-tp')
     };
     if(this.editingId) {
       await this._api('/escala/p2/api/item/'+this.editingId, {method:'PUT', body:data});
@@ -569,21 +567,21 @@ const P2 = {
       data.ano = this.getAno();
       await this._api('/escala/p2/api/item', {method:'POST', body:data});
     }
-    bootstrap.Modal.getInstance(document.getElementById('modalMilitar')).hide();
-    if(typeof toast!=='undefined') toast(this.editingId?'Atualizado!':'Adicionado!');
+    bootstrap.Modal.getInstance(document.getElementById('modalMilitarGS')).hide();
+    alert(this.editingId?'Atualizado!':'Adicionado!');
     this.render();
   },
 
   abrirModalSeparador() {
-    document.getElementById('mp-sep-texto').value = '';
-    new bootstrap.Modal(document.getElementById('modalSeparador')).show();
+    document.getElementById('mp-gs-sep-texto').value = '';
+    new bootstrap.Modal(document.getElementById('modalSeparadorGS')).show();
   },
 
   async salvarSeparador() {
-    const texto = (document.getElementById('mp-sep-texto').value||'').trim();
+    const texto = (document.getElementById('mp-gs-sep-texto').value||'').trim();
     await this._api('/escala/p2/api/separador', {method:'POST', body:{mes:this.getMes(), ano:this.getAno(), texto}});
-    bootstrap.Modal.getInstance(document.getElementById('modalSeparador')).hide();
-    if(typeof toast!=='undefined') toast('Separador inserido!');
+    bootstrap.Modal.getInstance(document.getElementById('modalSeparadorGS')).hide();
+    alert('Separador inserido!');
     this.render();
   },
 
@@ -615,7 +613,6 @@ const P2 = {
           const mi = header.findIndex(x => x==='matricula'||x==='matrícula');
           const ti = header.indexOf('telefone');
           const mes = this.getMes(), ano = this.getAno();
-          const dnm = this._diasNoMes();
           let importados=0;
           for(let i=1;i<lines.length;i++){
             const cols = lines[i].split(';');
@@ -637,17 +634,9 @@ const P2 = {
       reader.readAsText(file);
     };
     input.click();
-  },
-
-  async _loadSaved() {
-    try {
-      const r = await fetch('/escala/salvas/api/list');
-      if(r.ok) return await r.json();
-    } catch(e) {}
-    return [];
   }
 };
 
-document.addEventListener('DOMContentLoaded', () => P2.init());
+document.addEventListener('DOMContentLoaded', () => GS.init());
 </script>
 {% endblock %}

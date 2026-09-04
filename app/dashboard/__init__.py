@@ -1,12 +1,6 @@
-from flask import Blueprint, render_template, jsonify
+from flask import Blueprint, render_template
 from flask_login import login_required
-from sqlalchemy import func, desc
-from app import db
-from app.models import (
-    Usuario, EfetivoPM, Cargo, OPM, Evento, OpmEvento, Escala,
-    TabelaValores, EscalaP2, EscalaP2Meta, EscalaP2Legenda,
-    Ocorrencia, Viatura, Municipio, EscalaSalva, EscalaSalvaItem, EscalaSalvaMeta
-)
+from app import data as d
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 
@@ -15,35 +9,29 @@ dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 @login_required
 def index():
     stats = {
-        'total_efetivos': EfetivoPM.query.count(),
-        'total_eventos': Evento.query.count(),
-        'total_ocorrencias': Ocorrencia.query.count(),
-        'total_viaturas': Viatura.query.count(),
-        'escalas_ativas': EscalaSalva.query.filter_by(ativa=1).count(),
+        'total_efetivos': d.count_efetivos(),
+        'total_eventos': d.count_eventos(),
+        'total_ocorrencias': d.count_ocorrencias(),
+        'total_viaturas': len(d.list_all_viaturas()),
+        'escalas_ativas': len(d.list_all_escalas_salvas_ativas()),
     }
 
-    ocorrencias_recentes = Ocorrencia.query.order_by(desc(Ocorrencia.data_hora)).limit(5).all()
+    ocorrencias_recentes = d.list_ocorrencias_recentes(5)
 
     from datetime import date
     hoje = date.today().isoformat()
-    eventos_proximos = Evento.query.filter(Evento.evento_dta_fim >= hoje).order_by(Evento.evento_dta_inicio).limit(5).all()
+    eventos_proximos = d.list_eventos_proximos(hoje, limit=5)
 
-    ocorrencias_por_tipo = db.session.execute(
-        db.select(Ocorrencia.tipo, func.count(Ocorrencia.id))
-        .group_by(Ocorrencia.tipo)
-    ).all()
+    ocorrencias_por_tipo = d.list_ocorrencias_por_tipo()
 
-    efetivos_por_opm = db.session.execute(
-        db.select(OPM.opm_sigla, func.count(EfetivoPM.matricula))
-        .join(EfetivoPM, EfetivoPM.opm_id == OPM.opm_id)
-        .group_by(OPM.opm_sigla)
-    ).all()
+    efetivos_por_opm = []
+    for opm in d.list_opms():
+        n = d.count_efetivos(where=[('opm_id', '==', opm.opm_id)])
+        efetivos_por_opm.append((opm.get('opm_sigla') or opm.opm_id, n))
 
-    municipios = [m.to_dict() for m in Municipio.query.order_by(Municipio.nome).all()]
+    municipios = [m.to_dict() for m in d.list_municipios()]
 
-    ocorrencias = [
-        o.to_dict() for o in Ocorrencia.query.order_by(desc(Ocorrencia.data_hora)).all()
-    ]
+    ocorrencias = [o.to_dict() for o in d.list_all_ocorrencias()]
 
     return render_template('dashboard/index.html',
                            stats=stats,
@@ -58,10 +46,8 @@ def index():
 @dashboard_bp.route('/mapa')
 @login_required
 def mapa():
-    municipios = [m.to_dict() for m in Municipio.query.order_by(Municipio.nome).all()]
-    ocorrencias = [
-        o.to_dict() for o in Ocorrencia.query.order_by(desc(Ocorrencia.data_hora)).all()
-    ]
+    municipios = [m.to_dict() for m in d.list_municipios()]
+    ocorrencias = [o.to_dict() for o in d.list_all_ocorrencias()]
     return render_template('dashboard/mapa.html',
                            municipios_json=municipios,
                            ocorrencias_json=ocorrencias)

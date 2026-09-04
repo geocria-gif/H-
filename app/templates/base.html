@@ -38,7 +38,9 @@
                             <li><a class="dropdown-item" href="{{ url_for('escala.geral_mensal') }}">Escala Geral Mensal</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('escala.adicionar_militar') }}">Adicionar Militar</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('escala.p2') }}">Escala P2</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('escala.gerar_servico') }}">Gerar Escala de Servico</a></li>
                             <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('escala.eventos') }}">Escala de Eventos</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('escala.salvas') }}">Escalas Salvas</a></li>
                         </ul>
                     </li>
@@ -93,6 +95,7 @@
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('admin.backup') }}">Backup</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('admin.logs') }}">Logs</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('instagram.index') }}"><i class="bi bi-instagram me-1"></i>Instagram</a></li>
                         </ul>
                     </li>
                     {% endif %}

@@ -11,56 +11,160 @@
         </a>
     </div>
 
-    <div class="card">
-        <div class="card-body">
-            <form method="POST" novalidate>
-                {{ form.hidden_tag() }}
+    <form method="POST" novalidate>
+        {{ form.hidden_tag() }}
 
+        <div class="row g-3">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0"><i class="bi bi-geo-alt me-2"></i>Localização da Ocorrência</h6>
+                        <small class="text-muted">Clique no mapa para marcar o local</small>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="mapa-ocorrencia" style="height:400px; cursor:crosshair;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
                 <div class="row g-3">
-                    <div class="col-md-6">
+                    <div class="col-md-3">
                         <label for="tipo" class="form-label">{{ form.tipo.label }}</label>
                         {{ form.tipo(class="form-select" ~ (" is-invalid" if form.tipo.errors else "")) }}
                         {% for error in form.tipo.errors %}
                         <div class="invalid-feedback">{{ error }}</div>
                         {% endfor %}
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label for="data_hora" class="form-label">{{ form.data_hora.label }}</label>
-                        {{ form.data_hora(class="form-control" ~ (" is-invalid" if form.data_hora.errors else ""), placeholder="AAAA-MM-DD HH:MM:SS") }}
+                        {{ form.data_hora(class="form-control" ~ (" is-invalid" if form.data_hora.errors else ""), placeholder="DD/MM/AAAA HH:MM:SS", id="data_hora_input") }}
                         {% for error in form.data_hora.errors %}
                         <div class="invalid-feedback">{{ error }}</div>
                         {% endfor %}
                     </div>
-                    <div class="col-md-4">
-                        <label for="cidade" class="form-label">{{ form.cidade.label }}</label>
-                        {{ form.cidade(class="form-control") }}
-                    </div>
-                    <div class="col-md-2">
-                        <label for="latitude" class="form-label">{{ form.latitude.label }}</label>
-                        {{ form.latitude(class="form-control", step="any") }}
-                    </div>
-                    <div class="col-md-2">
-                        <label for="longitude" class="form-label">{{ form.longitude.label }}</label>
-                        {{ form.longitude(class="form-control", step="any") }}
-                    </div>
-                    <div class="col-md-4">
+                    <div class="col-md-5">
                         <label for="vtr" class="form-label">{{ form.vtr.label }}</label>
                         {{ form.vtr(class="form-control") }}
                     </div>
-                    <div class="col-12">
-                        <label for="descricao" class="form-label">{{ form.descricao.label }}</label>
-                        {{ form.descricao(class="form-control", rows="3") }}
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label for="logradouro" class="form-label">{{ form.logradouro.label }}</label>
+                        {{ form.logradouro(class="form-control" ~ (" is-invalid" if form.logradouro.errors else ""), id="logradouro_input") }}
+                        {% for error in form.logradouro.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
                     </div>
-                    <div class="col-12">
-                        <label for="dados_relevantes" class="form-label">{{ form.dados_relevantes.label }}</label>
-                        {{ form.dados_relevantes(class="form-control", rows="3") }}
+                    <div class="col-md-3">
+                        <label for="cidade" class="form-label">{{ form.cidade.label }}</label>
+                        {{ form.cidade(class="form-control" ~ (" is-invalid" if form.cidade.errors else ""), id="cidade_input") }}
+                        {% for error in form.cidade.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
                     </div>
-                    <div class="col-12">
-                        {{ form.submit(class="btn btn-primary") }}
+                    <div class="col-md-3">
+                        <label for="latitude" class="form-label">{{ form.latitude.label }}</label>
+                        {{ form.latitude(class="form-control" ~ (" is-invalid" if form.latitude.errors else ""), step="any", id="latitude_input") }}
+                        {% for error in form.latitude.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-3">
+                        <label for="longitude" class="form-label">{{ form.longitude.label }}</label>
+                        {{ form.longitude(class="form-control" ~ (" is-invalid" if form.longitude.errors else ""), step="any", id="longitude_input") }}
+                        {% for error in form.longitude.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
                     </div>
                 </div>
-            </form>
+            </div>
+
+            <div class="col-12">
+                <label for="descricao" class="form-label">{{ form.descricao.label }}</label>
+                {{ form.descricao(class="form-control", rows="3") }}
+            </div>
+            <div class="col-12">
+                <label for="dados_relevantes" class="form-label">{{ form.dados_relevantes.label }}</label>
+                {{ form.dados_relevantes(class="form-control", rows="3") }}
+            </div>
+            <div class="col-12">
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
         </div>
-    </div>
+    </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var latInput = document.getElementById('latitude_input');
+    var lngInput = document.getElementById('longitude_input');
+    var logradouroInput = document.getElementById('logradouro_input');
+    var cidadeInput = document.getElementById('cidade_input');
+    var dataHoraInput = document.getElementById('data_hora_input');
+
+    if (!dataHoraInput.value) {
+        var now = new Date();
+        var dd = String(now.getDate()).padStart(2, '0');
+        var mm = String(now.getMonth() + 1).padStart(2, '0');
+        var yyyy = now.getFullYear();
+        var hh = String(now.getHours()).padStart(2, '0');
+        var mi = String(now.getMinutes()).padStart(2, '0');
+        var ss = String(now.getSeconds()).padStart(2, '0');
+        dataHoraInput.value = dd + '/' + mm + '/' + yyyy + ' ' + hh + ':' + mi + ':' + ss;
+    }
+
+    var map = L.map('mapa-ocorrencia').setView([-11.0, -40.8], 9);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    var marker = null;
+    var existingLat = parseFloat(latInput.value);
+    var existingLng = parseFloat(lngInput.value);
+    if (!isNaN(existingLat) && !isNaN(existingLng)) {
+        marker = L.marker([existingLat, existingLng]).addTo(map);
+        map.setView([existingLat, existingLng], 14);
+    }
+
+    map.on('click', function(e) {
+        var lat = e.latlng.lat;
+        var lng = e.latlng.lng;
+        latInput.value = lat.toFixed(6);
+        lngInput.value = lng.toFixed(6);
+        if (marker) {
+            marker.setLatLng(e.latlng);
+        } else {
+            marker = L.marker(e.latlng).addTo(map);
+        }
+
+        fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&addressdetails=1&accept-language=pt-BR', {
+            headers: { 'User-Agent': 'SISPM/1.0' }
+        })
+        .then(function(resp) { return resp.json(); })
+        .then(function(data) {
+            if (data && data.address) {
+                var a = data.address;
+                var parts = [];
+                if (a.road) parts.push(a.road);
+                if (a.suburb) parts.push(a.suburb);
+                if (a.neighbourhood) parts.push(a.neighbourhood);
+                if (parts.length > 0) {
+                    logradouroInput.value = parts.join(' - ');
+                }
+                if (a.city || a.town || a.village || a.municipality) {
+                    var city = a.city || a.town || a.village || a.municipality;
+                    if (!cidadeInput.value) cidadeInput.value = city;
+                }
+            }
+        })
+        .catch(function() {});
+    });
+});
+</script>
 {% endblock %}

@@ -4,187 +4,209 @@
 <meta charset="utf-8">
 <style>
 @page {
-    size: A3 landscape;
-    margin: 10mm;
+    size: A4 landscape;
+    margin: 5mm 5mm 6mm 5mm;
 }
 body {
     font-family: Helvetica, Arial, sans-serif;
     font-size: 7pt;
     margin: 0;
     padding: 0;
+    color: #111;
 }
-h1 {
-    font-size: 11pt;
+.header {
     text-align: center;
-    margin: 2px 0;
+    margin-bottom: 2px;
 }
-h2 {
-    font-size: 9pt;
-    text-align: center;
+.header h1 {
+    font-size: 12pt;
+    margin: 0;
+    color: #1a3a6e;
+}
+.header h2 {
+    font-size: 10pt;
     margin: 1px 0;
     font-weight: normal;
+    color: #444;
 }
-.header-info {
-    text-align: center;
-    font-size: 7pt;
-    margin-bottom: 4px;
-    color: #333;
+.header-sub {
+    font-size: 6.5pt;
+    color: #666;
+}
+.header-meta {
+    font-size: 6pt;
+    color: #888;
+    margin-top: 1px;
+}
+.sep-bar {
+    height: 2px;
+    background: #1a3a6e;
+    margin: 2px 0;
+    border: none;
 }
 table {
-    width: 100%;
     border-collapse: collapse;
-    table-layout: fixed;
 }
 th, td {
-    border: 1px solid #333;
-    padding: 2px 1px;
+    border: 0.6px solid #999;
+    padding: 1.5px 2px;
     text-align: center;
     vertical-align: middle;
-    overflow: hidden;
 }
 th {
-    background-color: #2c3e50;
+    background-color: #1a3a6e;
     color: white;
     font-weight: bold;
+    font-size: 7pt;
 }
-th.dia-header {
-    font-size: 6pt;
-    width: 18px;
-    min-width: 18px;
-    max-width: 18px;
-}
-th.dow-header {
+th.dow-sub {
     font-size: 5pt;
-    width: 18px;
-    min-width: 18px;
-    max-width: 18px;
-    background-color: #34495e;
+    font-weight: normal;
+    background-color: #2a4a7e;
 }
-td.col-funcao { width: 55px; text-align: left; }
-td.col-opm { width: 55px; text-align: left; }
-td.col-gh { width: 25px; }
-td.col-nome { width: 110px; text-align: left; }
-td.col-mat { width: 45px; }
-td.col-tel { width: 55px; }
-td.col-dia {
-    width: 18px;
-    min-width: 18px;
-    max-width: 18px;
-    font-size: 6pt;
-    font-weight: bold;
+th.dow-fds {
+    background-color: #7a3a3a !important;
 }
-.separador td {
-    background-color: #bdc3c7;
-    font-weight: bold;
-    font-size: 7pt;
-}
-.footer {
-    margin-top: 6px;
-    font-size: 6pt;
-    color: #555;
-}
-.legend {
-    font-size: 6pt;
-    margin-top: 4px;
-}
-.legend span {
-    margin-right: 8px;
-}
-.assinatura {
-    margin-top: 20px;
-    font-size: 7pt;
-    text-align: center;
-}
-.assinatura-linha {
-    width: 200px;
-    border-top: 1px solid #333;
-    margin: 0 auto;
-    padding-top: 2px;
-}
+td.c-funcao { text-align: left; font-weight: bold; background-color: #eef2f8; border-right: 1.5px solid #1a3a6e; }
+td.c-opm { text-align: left; font-weight: bold; background-color: #eef2f8; border-right: 1.5px solid #1a3a6e; }
+td.c-gh { text-align: center; font-weight: bold; background-color: #eef2f8; border-right: 1.5px solid #1a3a6e; }
+td.c-nome { text-align: left; font-weight: bold; background-color: #eef2f8; border-right: 1.5px solid #1a3a6e; }
+td.c-mat { text-align: center; font-weight: bold; background-color: #eef2f8; border-right: 1.5px solid #1a3a6e; }
+td.c-tel { text-align: center; background-color: #eef2f8; border-right: 2px solid #1a3a6e; }
+td.c-tipo { text-align: center; font-weight: bold; background-color: #f0f4fa; border-right: 2px solid #1a3a6e; }
+td.c-dia { font-weight: bold; text-align: center; padding: 1px 0.5px; }
+td.dia-fds { background-color: #fff0f0; }
+td.c-sum { font-weight: bold; text-align: center; border-left: 1.5px solid #1a3a6e; }
+tr.sep td { background-color: #e0e0e0; font-weight: bold; text-align: center; color: #444; border-top: 1px solid #bbb; border-bottom: 1px solid #bbb; padding: 2px; }
+.footer-bar { height: 2px; background: #1a3a6e; margin: 3px 0 2px 0; border: none; }
+.footer { font-size: 6.5pt; color: #555; text-align: center; }
+.footer strong { color: #1a3a6e; }
+.legend { font-size: 5.5pt; margin-top: 2px; text-align: center; color: #666; }
+.assinatura { margin-top: 8px; font-size: 6pt; text-align: center; }
+.assinatura-linha { display: inline-block; width: 160px; border-top: 0.5px solid #333; padding-top: 1px; color: #333; }
 </style>
 </head>
 <body>
 
-{% if meta and meta.titulo %}
-<h1>{{ meta.titulo }}</h1>
-{% else %}
-<h1>ESCALA DE COORDENADOR REGIONAL DO CPR-CN</h1>
-{% endif %}
-
-<h2>{{ mes_nome }}/{{ ano }}</h2>
-
-<div class="header-info">
+<div class="header">
+    {% if meta and meta.titulo %}
+    <h1>{{ meta.titulo }}</h1>
+    {% else %}
+    <h1>ESCALA DE COORDENADOR REGIONAL DO CPR-CN</h1>
+    {% endif %}
+    <h2>{{ mes_nome }} de {{ ano }}</h2>
+    <div class="header-sub">POLICIA MILITAR DA BAHIA &mdash; COPPM CPR-CN</div>
     {% if meta %}
-        {% if meta.local %}<strong>Local:</strong> {{ meta.local }} | {% endif %}
-        {% if meta.responsavel %}<strong>Responsavel:</strong> {{ meta.responsavel }} | {% endif %}
-        {% if meta.cargo %}<strong>Cargo:</strong> {{ meta.cargo }} | {% endif %}
-        {% if meta.emissao %}<strong>Emissao:</strong> {{ meta.emissao }}{% endif %}
+    <div class="header-meta">
+        {% if meta.local %}Local: {{ meta.local }}{% endif %}
+        {% if meta.responsavel %} | Resp: {{ meta.responsavel }}{% endif %}
+        {% if meta.cargo %} | Cargo: {{ meta.cargo }}{% endif %}
+        {% if meta.emissao %} | Emissao: {{ meta.emissao }}{% endif %}
+    </div>
     {% endif %}
 </div>
+<hr class="sep-bar">
 
 <table>
     <thead>
         <tr>
-            <th class="col-funcao">Funcao</th>
-            <th class="col-opm">OPM</th>
-            <th class="col-gh">GH</th>
-            <th class="col-nome">Nome</th>
-            <th class="col-mat">Mat.</th>
-            <th class="col-tel">Tel</th>
+            <th style="width:20mm;text-align:left;padding-left:3px">FUNCAO</th>
+            <th style="width:18mm;text-align:left;padding-left:3px">OPM</th>
+            <th style="width:11mm">GH</th>
+            <th style="width:36mm;text-align:left;padding-left:3px">NOME</th>
+            <th style="width:14mm">MATRICULA</th>
+            <th style="width:12mm">TEL.</th>
+            <th style="width:9mm">TIPO</th>
             {% for dia in range(1, max_day + 1) %}
-            <th class="dow-header">{{ dia_semanas.get(dia, '') }}</th>
+            {% set dow = dia_semanas.get(dia, '') %}
+            <th style="width:4.2mm;font-size:6pt;padding:1px 0.5px{% if dow in ['Sex', 'Sab', 'Dom'] %};background-color:#7a3a3a{% endif %}">{{ dia }}</th>
             {% endfor %}
+            <th style="width:8mm;border-left:1.5px solid #1a3a6e">D</th>
+            <th style="width:8mm">N</th>
+            <th style="width:10mm">TOTAL</th>
         </tr>
         <tr>
-            <th class="col-funcao"></th>
-            <th class="col-opm"></th>
-            <th class="col-gh"></th>
-            <th class="col-nome"></th>
-            <th class="col-mat"></th>
-            <th class="col-tel"></th>
+            <th style="width:20mm;background:#2a4a7e"></th>
+            <th style="width:18mm;background:#2a4a7e"></th>
+            <th style="width:11mm;background:#2a4a7e"></th>
+            <th style="width:36mm;background:#2a4a7e"></th>
+            <th style="width:14mm;background:#2a4a7e"></th>
+            <th style="width:12mm;background:#2a4a7e"></th>
+            <th style="width:9mm;background:#2a4a7e"></th>
             {% for dia in range(1, max_day + 1) %}
-            <th class="dia-header">{{ dia }}</th>
+            {% set dow = dia_semanas.get(dia, '') %}
+            <th class="dow-sub{% if dow in ['Sex', 'Sab', 'Dom'] %} dow-fds{% endif %}" style="width:4.2mm">{{ dow }}</th>
             {% endfor %}
+            <th style="width:8mm;background:#2a4a7e;border-left:1.5px solid #1a3a6e"></th>
+            <th style="width:8mm;background:#2a4a7e"></th>
+            <th style="width:10mm;background:#2a4a7e"></th>
         </tr>
     </thead>
     <tbody>
+        {% set ns = namespace(hd_total=0, hn_total=0) %}
         {% for escala in escalas %}
             {% if escala.is_separador %}
-            <tr class="separador">
-                <td colspan="{{ 6 + max_day }}">{{ escala.separador_texto or '-' }}</td>
+            <tr class="sep">
+                <td colspan="{{ 7 + max_day + 3 }}">{{ escala.separador_texto or '-' }}</td>
             </tr>
             {% else %}
+            {% set dias = escala.dias_dict or {} %}
+            {% set rns = namespace(hd=0, hn=0) %}
+            {% for dia in range(1, max_day + 1) %}
+                {% set cod = dias.get(dia|string, '') %}
+                {% if cod == 'C1' %}{% set rns.hd = rns.hd + 12 %}
+                {% elif cod == 'C2' %}{% set rns.hd = rns.hd + 5 %}{% set rns.hn = rns.hn + 7 %}
+                {% elif cod == 'A1' %}{% set rns.hd = rns.hd + 8 %}
+                {% elif cod == 'A2' %}{% set rns.hd = rns.hd + 6 %}
+                {% elif cod == 'B1' %}{% set rns.hd = rns.hd + 6 %}
+                {% endif %}
+            {% endfor %}
+            {% set ns.hd_total = ns.hd_total + rns.hd %}
+            {% set ns.hn_total = ns.hn_total + rns.hn %}
             <tr>
-                <td class="col-funcao">{{ escala.funcao or '' }}</td>
-                <td class="col-opm">{{ escala.opm or '' }}</td>
-                <td class="col-gh">{{ escala.gh or '' }}</td>
-                <td class="col-nome">{{ escala.nome }}</td>
-                <td class="col-mat">{{ escala.matricula }}</td>
-                <td class="col-tel">{{ escala.telefone or '' }}</td>
-                {% set dias = escala.dias_dict or {} %}
+                <td class="c-funcao" style="width:20mm;font-size:7.5pt">{{ escala.funcao or '' }}</td>
+                <td class="c-opm" style="width:18mm;font-size:7.5pt">{{ escala.opm or '' }}</td>
+                <td class="c-gh" style="width:11mm;font-size:7.5pt">{{ escala.gh or '' }}</td>
+                <td class="c-nome" style="width:36mm;font-size:7.5pt">{{ escala.nome }}</td>
+                <td class="c-mat" style="width:14mm;font-size:7pt">{{ escala.matricula }}</td>
+                <td class="c-tel" style="width:12mm;font-size:6.5pt">{{ escala.telefone or '' }}</td>
+                <td class="c-tipo" style="width:9mm;font-size:6.5pt">{{ escala.tipo_pagamento or 'HE' }}</td>
                 {% for dia in range(1, max_day + 1) %}
-                <td class="col-dia">{{ dias.get(dia|string, '') }}</td>
+                {% set dow = dia_semanas.get(dia, '') %}
+                {% set cod = dias.get(dia|string, '') %}
+                <td class="c-dia{% if dow in ['Sex', 'Sab', 'Dom'] %} dia-fds{% endif %}" style="width:4.2mm">{{ cod }}</td>
                 {% endfor %}
+                <td class="c-sum" style="width:8mm">{{ rns.hd if rns.hd > 0 else '' }}</td>
+                <td class="c-sum" style="width:8mm">{{ rns.hn if rns.hn > 0 else '' }}</td>
+                <td class="c-sum" style="width:10mm">{{ (rns.hd + rns.hn) if (rns.hd + rns.hn) > 0 else '' }}</td>
             </tr>
             {% endif %}
         {% endfor %}
     </tbody>
 </table>
 
+<hr class="footer-bar">
+<div class="footer">
+    <strong>TOTAL:</strong> Diurno {{ ns.hd_total }}h | Noturno {{ ns.hn_total }}h | Geral {{ ns.hd_total + ns.hn_total }}h
+</div>
 {% if legendas %}
 <div class="legend">
-    <strong>Legendas:</strong>
-    {% for leg in legendas %}
-    <span><strong>{{ leg.codigo }}</strong> = {{ leg.descricao }}</span>
-    {% endfor %}
+    <strong>Legenda:</strong>
+    {% for leg in legendas %}{{ leg.codigo }} ({{ leg.descricao }}){% if not loop.last %} | {% endif %}{% endfor %}
 </div>
 {% endif %}
-
 {% if meta and meta.nota %}
-<div class="footer">
-    <strong>Nota:</strong> {{ meta.nota }}
-</div>
+<div class="footer" style="margin-top:2px"><strong>Nota:</strong> {{ meta.nota }}</div>
 {% endif %}
+<div class="assinatura">
+    {% if meta and meta.local %}{{ meta.local }}, {% endif %}______ de ______________ de {{ ano }}
+    <br><br>
+    <div class="assinatura-linha">
+        {% if meta and meta.responsavel %}{{ meta.responsavel }}{% else %}________________________{% endif %}
+        <br>
+        {% if meta and meta.cargo %}{{ meta.cargo }}{% else %}________________________{% endif %}
+    </div>
+</div>
 
 </body>
 </html>

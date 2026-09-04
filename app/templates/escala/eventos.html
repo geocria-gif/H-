@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+{% block title %}Escala de Eventos - SISPM{% endblock %}
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0"><i class="bi bi-calendar-event me-2"></i>Escala de Eventos</h4>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>1. Selecionar Evento</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-6">
+                            <label class="form-label">Evento</label>
+                            <select id="ev-evento" class="form-select" onchange="EscalaEvt.onEventoChange()">
+                                <option value="">-- selecione --</option>
+                                {% for e in eventos %}
+                                <option value="{{ e.evento_id }}">{{ e.evento_desc }} — {{ e.evento_dta_inicio or '' }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <div id="ev-evento-info" class="d-flex flex-wrap gap-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-12" id="ev-opm-card" style="display:none">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>2. OPMs Alocadas</span>
+                    <div class="d-flex gap-2">
+                        <select id="ev-opm-select" class="form-select form-select-sm" style="width:250px">
+                            <option value="">-- selecione uma OPM --</option>
+                            {% for o in [] %}{% endfor %}
+                        </select>
+                        <button class="btn btn-sm btn-primary" onclick="EscalaEvt.addOpmEvento()">+ Adicionar</button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead><tr><th>Sigla</th><th>Descricao</th><th>Municipio</th><th>Pols</th><th>CH</th><th>Acoes</th></tr></thead>
+                        <tbody id="ev-opm-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-12" id="ev-policial-card" style="display:none">
+            <div class="card">
+                <div class="card-header">
+                    <span id="ev-policial-title">3. Lancamento de Horas</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-4 position-relative">
+                            <label class="form-label">Buscar Policial</label>
+                            <input id="ev-pol-search" class="form-control" placeholder="Matricula ou nome..." oninput="EscalaEvt.searchPolicial()" autocomplete="off" />
+                            <div id="ev-pol-results" style="display:none" class="list-group position-absolute w-100" style="z-index:100"></div>
+                        </div>
+                        <div class="col-md-2"><label class="form-label">Matricula</label><input id="ev-pol-mat" class="form-control" readonly /></div>
+                        <div class="col-md-2"><label class="form-label">Nome</label><input id="ev-pol-nome" class="form-control" readonly /></div>
+                        <div class="col-md-2"><label class="form-label">Data</label><input id="ev-data" type="date" class="form-control" /></div>
+                        <div class="col-md-1"><label class="form-label">Tipo</label><select id="ev-tipo-pagamento" class="form-select form-select-sm"><option value="HE">HE</option><option value="VD">VD</option></select></div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-2"><label class="form-label">Hora Inicio</label><input id="ev-hora-inicio" type="time" class="form-control" onchange="EscalaEvt.calcularCHForm()" /></div>
+                        <div class="col-md-2"><label class="form-label">Hora Fim</label><input id="ev-hora-fim" type="time" class="form-control" onchange="EscalaEvt.calcularCHForm()" /></div>
+                        <div class="col-md-1"><label class="form-label">CH Diurna</label><input id="ev-ch-d" class="form-control" readonly /></div>
+                        <div class="col-md-1"><label class="form-label">CH Noturna</label><input id="ev-ch-n" class="form-control" readonly /></div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-primary w-100" onclick="EscalaEvt.addPolicial()">Lancar</button>
+                        </div>
+                    </div>
+                    <div id="ev-pol-summary" class="d-flex flex-wrap gap-2 mb-2"></div>
+                    <table class="table table-sm table-hover mb-0">
+                        <thead><tr><th>Mat.</th><th>Nome</th><th>Posto</th><th>Tipo</th><th>Data</th><th>Inicio</th><th>Fim</th><th>CH D</th><th>CH N</th><th>Total</th><th></th></tr></thead>
+                        <tbody id="ev-pol-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const API = '/escala/eventos/api';
+const EvSel = document.getElementById('ev-evento');
+const CSRF_TOKEN = '{{ csrf_token() }}';
+
+fetch(`${API}/opms`).then(r=>r.json()).then(d=>{
+    const sel = document.getElementById('ev-opm-select');
+    d.forEach(o => { const opt = document.createElement('option'); opt.value = o.opm_id; opt.textContent = o.sigla; sel.appendChild(opt); });
+});
+
+const EscalaEvt = {
+    currentEvento: null,
+    currentOpmEvento: null,
+
+    _api(url, opts) {
+        const def = { headers:{'Content-Type':'application/json','X-CSRFToken':CSRF_TOKEN} };
+        const cfg = Object.assign({}, def, opts||{});
+        if(cfg.body && typeof cfg.body==='object') cfg.body = JSON.stringify(cfg.body);
+        return fetch(url, cfg).then(r=>r.json());
+    },
+
+    async onEventoChange() {
+        const id = EvSel.value;
+        if (!id) {
+            document.getElementById('ev-opm-card').style.display = 'none';
+            document.getElementById('ev-policial-card').style.display = 'none';
+            document.getElementById('ev-evento-info').innerHTML = '';
+            return;
+        }
+        this.currentEvento = +id;
+        this.currentOpmEvento = null;
+        document.getElementById('ev-policial-card').style.display = 'none';
+        const r = await fetch(`${API}/evento/${id}`).then(r=>r.json());
+        const e = r.evento;
+        document.getElementById('ev-evento-info').innerHTML =
+            `<span class="badge bg-secondary">${e.evento_dta_inicio || ''} → ${e.evento_dta_fim || ''}</span>` +
+            `<span class="badge bg-primary">OPMs: ${r.opms}</span>` +
+            `<span class="badge bg-success">Pols: ${r.pols}</span>` +
+            `<span class="badge bg-info">CH: ${r.ch} h</span>`;
+        document.getElementById('ev-opm-card').style.display = 'block';
+        this.renderOpmEvento();
+    },
+
+    async renderOpmEvento() {
+        const rows = await fetch(`${API}/opm-eventos/${this.currentEvento}`).then(r=>r.json());
+        const tbody = document.getElementById('ev-opm-tbody');
+        tbody.innerHTML = rows.length ? rows.map(r => `
+            <tr style="${this.currentOpmEvento===r.opm_evento_id?'background:#e8f0fe':''}">
+                <td><span class="badge bg-primary">${r.sigla}</span></td>
+                <td>${r.desc}</td>
+                <td>${r.mun}</td>
+                <td><b>${r.pols}</b></td>
+                <td><b>${r.ch} h</b></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="EscalaEvt.selectOpm(${r.opm_evento_id})">Policiais</button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="EscalaEvt.delOpmEvento(${r.opm_evento_id})">Excluir</button>
+                </td>
+            </tr>
+        `).join('') : '<tr><td colspan="6" class="text-center text-muted">Nenhuma OPM alocada</td></tr>';
+    },
+
+    async addOpmEvento() {
+        const opmId = document.getElementById('ev-opm-select').value;
+        if (!opmId) { alert('Selecione uma OPM'); return; }
+        const r = await this._api(`${API}/opm-evento`, {
+            method: 'POST', body:{evento_id: this.currentEvento, opm_id: opmId}
+        });
+        if (r.error) { alert(r.error); return; }
+        document.getElementById('ev-opm-select').value = '';
+        this.renderOpmEvento();
+        this.onEventoChange();
+    },
+
+    async delOpmEvento(id) {
+        if (!confirm('Remover esta OPM do evento? Todas as horas lancadas serao excluidas.')) return;
+        await this._api(`${API}/opm-evento/${id}`, {method:'DELETE'});
+        if (this.currentOpmEvento === id) {
+            this.currentOpmEvento = null;
+            document.getElementById('ev-policial-card').style.display = 'none';
+        }
+        this.renderOpmEvento();
+        this.onEventoChange();
+    },
+
+    async selectOpm(id) {
+        this.currentOpmEvento = id;
+        document.getElementById('ev-policial-card').style.display = 'block';
+        const rows = await fetch(`${API}/opm-eventos/${this.currentEvento}`).then(r=>r.json());
+        const oe = rows.find(r => r.opm_evento_id === id);
+        if (oe) document.getElementById('ev-policial-title').innerHTML = `3. Lancamento de Horas — <span class="text-primary">${oe.sigla}</span>`;
+        this.renderPolicial();
+        document.getElementById('ev-policial-card').scrollIntoView({behavior:'smooth'});
+    },
+
+    async renderPolicial() {
+        const rows = await fetch(`${API}/escalas/${this.currentOpmEvento}`).then(r=>r.json());
+        const tbody = document.getElementById('ev-pol-tbody');
+        let totD = 0, totN = 0;
+        tbody.innerHTML = rows.length ? rows.map(r => {
+            totD += r.escala_ch_diurna || 0;
+            totN += r.escala_ch_noturna || 0;
+            const tot = (r.escala_ch_diurna||0) + (r.escala_ch_noturna||0);
+            return `<tr>
+                <td><b>${r.matricula}</b></td>
+                <td>${r.militar_nome||''}</td>
+                <td><span class="badge bg-secondary">${r.militar_posto||'-'}</span></td>
+                <td><select class="form-select form-select-sm" style="width:60px" onchange="EscalaEvt.updTipoPagamento('${r.matricula}','${r.escala_data||''}',this.value)">
+                    <option value="HE"${r.tipo_pagamento==='HE'?' selected':''}>HE</option>
+                    <option value="VD"${r.tipo_pagamento==='VD'?' selected':''}>VD</option>
+                </select></td>
+                <td><input type="date" value="${r.escala_data||''}" class="form-control form-control-sm" style="width:130px" onchange="EscalaEvt.updData('${r.matricula}','${r.escala_data||''}',this.value)" /></td>
+                <td><input type="time" value="${r.hora_inicio||''}" class="form-control form-control-sm" style="width:90px" onchange="EscalaEvt.updHorario('${r.matricula}','${r.escala_data||''}','hora_inicio',this.value)" /></td>
+                <td><input type="time" value="${r.hora_fim||''}" class="form-control form-control-sm" style="width:90px" onchange="EscalaEvt.updHorario('${r.matricula}','${r.escala_data||''}','hora_fim',this.value)" /></td>
+                <td>${r.escala_ch_diurna||0}</td>
+                <td>${r.escala_ch_noturna||0}</td>
+                <td><b>${tot} h</b></td>
+                <td><button class="btn btn-sm btn-outline-danger" onclick="EscalaEvt.delPolicial('${r.matricula}','${r.escala_data||''}')">X</button></td>
+            </tr>`;
+        }).join('') : '<tr><td colspan="11" class="text-center text-muted">Nenhum policial escalado</td></tr>';
+        document.getElementById('ev-pol-summary').innerHTML =
+            `<span class="badge bg-primary">Pols: ${rows.length}</span>` +
+            `<span class="badge bg-warning">Diurnas: ${totD} h</span>` +
+            `<span class="badge bg-dark">Noturnas: ${totN} h</span>` +
+            `<span class="badge bg-success">Total: ${totD+totN} h</span>`;
+    },
+
+    async searchPolicial() {
+        const q = document.getElementById('ev-pol-search').value.trim();
+        const div = document.getElementById('ev-pol-results');
+        if (q.length < 2) { div.style.display = 'none'; return; }
+        const rows = await fetch(`/escala/buscar-militar?q=${encodeURIComponent(q)}`).then(r=>r.json());
+        div.innerHTML = rows.map(r => `
+            <button type="button" class="list-group-item list-group-item-action" onclick="EscalaEvt.pickPolicial('${r.matricula}','${(r.nome||'').replace(/'/g,"\\'")}','${r.posto_grad||''}')">
+                <b>${r.matricula}</b> — ${r.nome} <span class="badge bg-secondary">${r.posto_grad||'-'}</span>
+            </button>`).join('') || '<div class="list-group-item text-muted">Nenhum encontrado</div>';
+        div.style.display = 'block';
+    },
+
+    pickPolicial(mat, nome, pg) {
+        document.getElementById('ev-pol-mat').value = mat;
+        document.getElementById('ev-pol-nome').value = nome;
+        document.getElementById('ev-pol-search').value = mat + ' — ' + nome;
+        document.getElementById('ev-pol-results').style.display = 'none';
+    },
+
+    calcularCH(inicio, fim) {
+        if (!inicio || !fim) return {d:0, n:0};
+        const toMin = s => { const [h,m]=s.split(':').map(Number); return h*60+m; };
+        let s = toMin(inicio), e = toMin(fim);
+        if (e <= s) e += 1440;
+        const D1=300, D2=1320;
+        let diurna = 0, cur = s;
+        while (cur < e) {
+            const ds = Math.floor(cur/1440)*1440;
+            const dS = Math.max(cur, ds+D1);
+            const dE = Math.min(e, ds+D2);
+            if (dS < dE) diurna += dE - dS;
+            cur = ds + 1440;
+        }
+        const total = e - s;
+        return {d: parseFloat((diurna/60).toFixed(1)), n: parseFloat(((total-diurna)/60).toFixed(1))};
+    },
+
+    calcularCHForm() {
+        const ch = this.calcularCH(document.getElementById('ev-hora-inicio').value, document.getElementById('ev-hora-fim').value);
+        document.getElementById('ev-ch-d').value = ch.d;
+        document.getElementById('ev-ch-n').value = ch.n;
+    },
+
+    async addPolicial() {
+        const mat = document.getElementById('ev-pol-mat').value;
+        if (!mat) { alert('Selecione um policial'); return; }
+        await this._api(`${API}/escala`, {
+            method: 'POST', body:{
+                opm_evento_id: this.currentOpmEvento,
+                matricula: mat,
+                escala_data: document.getElementById('ev-data').value || '',
+                hora_inicio: document.getElementById('ev-hora-inicio').value || '',
+                hora_fim: document.getElementById('ev-hora-fim').value || '',
+                tipo_pagamento: document.getElementById('ev-tipo-pagamento').value
+            }
+        });
+        document.getElementById('ev-pol-mat').value = '';
+        document.getElementById('ev-pol-nome').value = '';
+        document.getElementById('ev-pol-search').value = '';
+        document.getElementById('ev-hora-inicio').value = '';
+        document.getElementById('ev-hora-fim').value = '';
+        document.getElementById('ev-ch-d').value = 0;
+        document.getElementById('ev-ch-n').value = 0;
+        this.renderPolicial();
+        this.renderOpmEvento();
+        this.onEventoChange();
+    },
+
+    async updHorario(mat, data, campo, valor) {
+        const body = {opm_evento_id: this.currentOpmEvento, matricula: mat, escala_data: data};
+        body[campo] = valor;
+        await this._api(`${API}/escala/horario`, {method:'PUT', body});
+        this.renderPolicial();
+        this.renderOpmEvento();
+        this.onEventoChange();
+    },
+
+    async updData(mat, oldData, val) {
+        await this._api(`${API}/escala/data`, {method:'PUT', body:{opm_evento_id: this.currentOpmEvento, matricula: mat, old_data: oldData, new_data: val||''}});
+        this.renderPolicial();
+    },
+
+    async updTipoPagamento(mat, data, val) {
+        await this._api(`${API}/escala/tipo-pagamento`, {method:'PUT', body:{opm_evento_id: this.currentOpmEvento, matricula: mat, escala_data: data, tipo_pagamento: val}});
+        this.renderPolicial();
+    },
+
+    async delPolicial(mat, data) {
+        if (!confirm('Remover este policial da escala?')) return;
+        await this._api(`${API}/escala`, {method:'DELETE', body:{opm_evento_id: this.currentOpmEvento, matricula: mat, escala_data: data}});
+        this.renderPolicial();
+        this.renderOpmEvento();
+        this.onEventoChange();
+    }
+};
+
+document.addEventListener('click', e => {
+    if (!e.target.closest('#ev-pol-results') && !e.target.closest('#ev-pol-search')) {
+        document.getElementById('ev-pol-results').style.display = 'none';
+    }
+});
+</script>
+{% endblock %}

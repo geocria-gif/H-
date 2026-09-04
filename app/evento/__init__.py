@@ -1,11 +1,21 @@
+"""Blueprint evento: gestão de eventos e das OPMs vinculadas."""
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
-from app import db
-from app.models import Evento, OpmEvento, OPM
-from app.forms import EventoForm, OpmEventoForm
-from app.services import evento_service
+from app import data as d
+from app.data import base as b
+from app.forms import EventoForm
 
 evento_bp = Blueprint('evento', __name__, url_prefix='/evento')
+
+
+def _delete_opm_evento(oe):
+    """Remove um vínculo OPM-evento e as escalas associadas (cascade)."""
+    opm_evento_id = oe.get('opm_evento_id')
+    if opm_evento_id is None:
+        opm_evento_id = oe.id
+    for esc in d.list_escalas_by_opm_evento(opm_evento_id):
+        d.delete_escala(opm_evento_id, esc.get('matricula'), esc.get('escala_data'))
+    d.delete_opm_evento(opm_evento_id)
 
 
 @evento_bp.route('/')
@@ -13,13 +23,17 @@ evento_bp = Blueprint('evento', __name__, url_prefix='/evento')
 def index():
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '')
-    
-    query = db.select(Evento).order_by(Evento.evento_dta_inicio.desc())
+
+    items = d.list_eventos()
     if search:
-        query = query.where(Evento.evento_desc.ilike(f'%{search}%'))
-    
-    pagination = db.paginate(query, page=page, per_page=20, error_out=False)
-    
+        termo = search.lower()
+        items = [e for e in items if termo in (e.get('evento_desc') or '').lower()]
+    items.sort(key=lambda e: e.get('evento_dta_inicio') or '', reverse=True)
+
+    total = len(items)
+    start = (page - 1) * 20
+    pagination = b.Page(items[start:start + 20], page, 20, total)
+
     return render_template('evento/index.html',
                            pagination=pagination,
                            search=search)
@@ -29,57 +43,74 @@ def index():
 @login_required
 def novo():
     form = EventoForm()
-    opms = OPM.query.order_by(OPM.opm_sigla).all()
-    
+    opms = d.list_opms(order_by='opm_sigla')
+
     if form.validate_on_submit():
         opm_ids = request.form.getlist('opms')
-        evento = evento_service.criar_com_opms({
+        evento_id = d.next_evento_id()
+        d.add_evento({
+            'evento_id': evento_id,
             'evento_desc': form.evento_desc.data,
             'evento_dta_inicio': form.evento_dta_inicio.data,
             'evento_dta_fim': form.evento_dta_fim.data,
             'campo1': form.campo1.data,
-            'tipo_pagamento': form.tipo_pagamento.data
-        }, opm_ids)
+            'tipo_pagamento': form.tipo_pagamento.data or 'HE'
+        }, evento_id=evento_id)
+        for opm_id in opm_ids:
+            d.add_opm_evento({
+                'opm_evento_id': d.next_opm_evento_id(),
+                'evento_id': evento_id,
+                'opm_id': opm_id
+            })
         flash('Evento criado com sucesso!', 'success')
         return redirect(url_for('evento.index'))
-    
+
     return render_template('evento/form.html', form=form, opms=opms, title='Novo Evento')
 
 
 @evento_bp.route('/<int:id>/editar', methods=['GET', 'POST'])
 @login_required
 def editar(id):
-    evento = db.session.get(Evento, id)
+    evento = d.get_evento_with_opms(id)
     if not evento:
         flash('Evento não encontrado.', 'danger')
         return redirect(url_for('evento.index'))
-    
+
     form = EventoForm(obj=evento)
-    opms = OPM.query.order_by(OPM.opm_sigla).all()
-    evento_opms = [oe.opm_id for oe in evento.opm_eventos]
-    
+    opms = d.list_opms(order_by='opm_sigla')
+    evento_opms = [oe.get('opm_id') for oe in (evento.get('opm_eventos') or [])]
+
     if form.validate_on_submit():
         opm_ids = request.form.getlist('opms')
-        
-        evento.evento_desc = form.evento_desc.data
-        evento.evento_dta_inicio = form.evento_dta_inicio.data
-        evento.evento_dta_fim = form.evento_dta_fim.data
-        evento.campo1 = form.campo1.data
-        evento.tipo_pagamento = form.tipo_pagamento.data
-        
+
+        d.update_evento(id, {
+            'evento_desc': form.evento_desc.data,
+            'evento_dta_inicio': form.evento_dta_inicio.data,
+            'evento_dta_fim': form.evento_dta_fim.data,
+            'campo1': form.campo1.data,
+            'tipo_pagamento': form.tipo_pagamento.data or 'HE'
+        })
+
+        opm_eventos = evento.get('opm_eventos') or []
         current_opms = set(evento_opms)
         new_opms = set(opm_ids)
-        
+
         for opm_id in current_opms - new_opms:
-            evento_service.remover_opm(id, opm_id)
+            for oe in opm_eventos:
+                if oe.get('opm_id') == opm_id:
+                    _delete_opm_evento(oe)
         for opm_id in new_opms - current_opms:
-            evento_service.adicionar_opm(id, opm_id)
-        
-        db.session.commit()
+            d.add_opm_evento({
+                'opm_evento_id': d.next_opm_evento_id(),
+                'evento_id': id,
+                'opm_id': opm_id
+            })
+
         flash('Evento atualizado!', 'success')
         return redirect(url_for('evento.index'))
-    
-    return render_template('evento/form.html', form=form, opms=opms, evento=evento, evento_opms=evento_opms, title='Editar Evento')
+
+    return render_template('evento/form.html', form=form, opms=opms, evento=evento,
+                           evento_opms=evento_opms, title='Editar Evento')
 
 
 @evento_bp.route('/<int:id>/excluir', methods=['POST'])
@@ -88,11 +119,12 @@ def excluir(id):
     if not current_user.is_admin:
         flash('Acesso negado.', 'danger')
         return redirect(url_for('evento.index'))
-    
-    evento = db.session.get(Evento, id)
+
+    evento = d.get_evento(id)
     if evento:
-        db.session.delete(evento)
-        db.session.commit()
+        for oe in d.list_opm_eventos_by_evento(id):
+            _delete_opm_evento(oe)
+        d.delete_evento(id)
         flash('Evento excluído.', 'success')
     return redirect(url_for('evento.index'))
 
@@ -100,10 +132,13 @@ def excluir(id):
 @evento_bp.route('/<int:id>/opms')
 @login_required
 def opms(id):
-    evento = db.session.get(Evento, id)
+    evento = d.get_evento_with_opms(id)
     if not evento:
         return jsonify({'error': 'Evento não encontrado'}), 404
-    
-    opms = [{'opm_id': oe.opm_id, 'opm_sigla': oe.opm_rel.opm_sigla if oe.opm_rel else ''} 
-            for oe in evento.opm_eventos]
-    return jsonify(opms)
+
+    result = []
+    for oe in (evento.get('opm_eventos') or []):
+        opm_rel = oe.get('opm_rel')
+        result.append({'opm_id': oe.get('opm_id'),
+                       'opm_sigla': opm_rel.get('opm_sigla') if opm_rel else ''})
+    return jsonify(result)
