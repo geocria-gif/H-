@@ -229,11 +229,22 @@ def delete_doc(collection, doc_id):
 
 
 def count_docs(collection, where=None):
+    """Count documents without reading them.
+
+    Uses Firestore's aggregate count query (O(1), no per-document reads) so a
+    paginated page / dashboard never scans the whole collection. Falls back to
+    scanning only when the aggregate API is unavailable.
+    """
     fs = get_fs()
     q = fs.collection(collection)
     for field, op, value in (where or []):
         q = q.where(field, op, _safe(value))
-    return len(q.get())
+    try:
+        agg = q.count()
+        result = agg.get()
+        return int(result[0][0].value)
+    except Exception:
+        return len(q.get())
 
 
 def delete_all(collection):
