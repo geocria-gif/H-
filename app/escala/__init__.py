@@ -1137,7 +1137,7 @@ def p2_exportar_csv():
         si.write(f'{meta.get("responsavel") or ""}\n')
         si.write(f'{meta.get("cargo") or ""}\n')
     if legendas:
-        si.write(f'Legenda: {" | ".join(f"{l.get("codigo")} ({l.get("descricao")})" for l in legendas)}\n')
+        si.write('Legenda: ' + ' | '.join(f"{l.get('codigo')} ({l.get('descricao')})" for l in legendas) + '\n')
     resp = make_response(si.getvalue())
     resp.headers['Content-Type'] = 'text/csv; charset=utf-8'
     resp.headers['Content-Disposition'] = f'attachment; filename=escala_p2_{ano}_{mes:02d}.csv'
