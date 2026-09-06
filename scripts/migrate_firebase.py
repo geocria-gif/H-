@@ -41,7 +41,7 @@ COLLECTIONS = [
     ("tbOcorrenciaConfig","ocorrencia_config", lambda r: str(r["Chave"])),
     ("tbMunicipio",      "municipios",       lambda r: str(r["Id"])),
     ("tbViatura",        "viaturas",         lambda r: str(r["Prefixo"])),
-    ("tbUsuario",        "usuarios",         lambda r: str(r["Matricula"])),
+    ("tbUsuario",        "usuarios",         lambda r: str(r.get('matricula') or r.get('Matricula') or '')),
 ]
 
 # Source DB column -> Firestore field (snake_case, matching the app model attributes)

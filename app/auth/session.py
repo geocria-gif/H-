@@ -2,6 +2,7 @@
 Usuario). Works with flask-login and flask-jwt-extended.
 """
 from app import data as d
+from app.firebase_db import get_auth as fb_get_auth
 
 
 class FireUser:
@@ -90,7 +91,7 @@ def load_user_by_matricula(matricula):
 
 def load_user_by_uid(uid):
     """Look up a user by Firebase Auth UID/custom claims."""
-    auth = d.get_auth()
+    auth = fb_get_auth()
     try:
         user = auth.get_user(uid)
     except auth.UserNotFoundError:
