@@ -27,6 +27,15 @@ tr:hover td{background:rgba(59,130,246,.07)}
 .btn.danger{background:var(--err)}
 .btn.sm{padding:3px 10px;font-size:12px}
 .btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary{background:var(--ok)}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:flex-start;justify-content:center;padding:8vh 16px 16px;z-index:60;overflow-y:auto}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:12px;max-width:520px;width:100%;padding:18px}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.modal-head h3{font-size:16px;margin:0}
+.modal-body .grid{grid-template-columns:1fr 1fr}
+.modal-body label{display:block;margin-bottom:4px}
+.modal-foot{margin-top:16px;display:flex;justify-content:flex-end;gap:8px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
 .grid{display:grid;gap:10px}
 .card h3{margin-bottom:8px;font-size:15px}
@@ -87,6 +96,28 @@ main{flex:1;overflow-y:auto;padding:20px}
 .tab{padding:8px 14px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent}
 .tab.active{color:var(--txt);border-bottom-color:var(--accent)}
 @media(max-width:820px){ #app{flex-direction:column;height:auto} aside{width:100%;flex-direction:row;align-items:center;border-right:none;border-bottom:1px solid var(--line);overflow-x:auto} nav{flex-direction:row;align-items:center;padding:0 8px} .nav-group{display:none} .brand{width:180px;white-space:nowrap} .nav-item{white-space:nowrap} main{padding:12px} }
+/* Mapa */
+#map{height:520px;border-radius:10px;border:1px solid var(--line);background:#1a1f2a}
+.legend{margin-top:10px;display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.p2-day{min-width:34px;padding:2px;text-align:center;border:1px solid var(--line);border-radius:5px;background:var(--bg);cursor:pointer;font-size:12px}
+.p2-day:hover{border-color:var(--accent)}
+.p2-day.sel{background:var(--accent);color:#fff}
+.p2-mini{display:inline-block;min-width:28px;padding:1px 3px;text-align:center;border:1px dashed var(--line);border-radius:4px;margin:1px;font-size:11px;cursor:pointer}
+.p2-mini.sel{background:var(--accent);color:#fff}
+.p2-input{width:110px;background:transparent;border:1px solid transparent;color:var(--txt);padding:2px 4px;border-radius:4px}
+.p2-input:hover,.p2-input:focus{border-color:var(--line);outline:none}
+.p2-oculto{display:none}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);font-size:12px;margin:2px}
+@media print{
+  body *{visibility:hidden}
+  #imp, #imp *{visibility:visible}
+  #imp{position:absolute;left:0;top:0;width:100%;padding:0;margin:0;background:#fff;color:#000}
+  #imp table{border-collapse:collapse;font-size:8pt}
+  #imp th,#imp td{border:1px solid #999;padding:2px 4px;text-align:center}
+  #imp th{background:#2B488B!important;color:#fff!important;-webkit-print-color-adjust:exact}
+  #imp tr.alt td{background:#f2f2f2;-webkit-print-color-adjust:exact}
+}
 </style>
 </head>
 <body>
@@ -131,14 +162,23 @@ const FIREBASE_READY = FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.startsW
       <div class="nav-group">Principal</div>
       <div class="nav-item" data-page="dashboard" onclick="go('dashboard')">📊 Dashboard</div>
       <div class="nav-item" data-page="escala" onclick="go('escala')">🎯 Escala de Horas</div>
+      <div class="nav-item" data-page="p2" onclick="go('p2')">🗓️ Escala P2</div>
+      <div class="nav-item" data-page="salvas" onclick="go('salvas')">💾 Escalas Salvas</div>
       <div class="nav-group">Cadastros</div>
       <div class="nav-item" data-page="efetivo" onclick="go('efetivo')">👮 Efetivo PM</div>
       <div class="nav-item" data-page="opms" onclick="go('opms')">🏛️ OPMs</div>
       <div class="nav-item" data-page="municipios" onclick="go('municipios')">🏘️ Municípios</div>
       <div class="nav-item" data-page="eventos" onclick="go('eventos')">📅 Eventos</div>
       <div class="nav-item" data-page="viaturas" onclick="go('viaturas')">🚔 Viaturas</div>
+      <div class="nav-item" data-page="valores" onclick="go('valores')">💰 Tabela de Valores</div>
       <div class="nav-group">Análise</div>
+      <div class="nav-item" data-page="relatorio" onclick="go('relatorio')">📈 Relatório de Horas</div>
       <div class="nav-item" data-page="ocorrencias" onclick="go('ocorrencias')">🚨 Ocorrências</div>
+      <div class="nav-group">Divulgação</div>
+      <div class="nav-item" data-page="cards" onclick="go('cards')">🃏 Cards Instagram</div>
+      <div class="nav-group">Administração</div>
+      <div class="nav-item" data-page="usuarios" onclick="go('usuarios')">👤 Usuários</div>
+      <div class="nav-item" data-page="backup" onclick="go('backup')">🗄️ Backup / Exportar</div>
       <div class="nav-item sair" onclick="logout()">↩ Sair</div>
     </nav>
   </aside>
@@ -207,28 +247,62 @@ async function getDocs(q){
 }
 function col(name){ return db.collection(name); }
 function all(name){ return getDocs(col(name)); }
+async function getDoc(name,id){
+  const s=await col(name).doc(String(id)).get();
+  if(!s.exists) return null;
+  const x=s.data(); x.__id=s.id; return x;
+}
+
+/* Carrega libs CDN sob demanda (Chart.js, Leaflet, XLSX…) */
+function loadCSS(url){ if(document.querySelector('link[href="'+url+'"]')) return Promise.resolve(); const l=document.createElement('link'); l.rel='stylesheet'; l.href=url; document.head.appendChild(l); return Promise.resolve(); }
+function loadScript(url){ return new Promise((res,rej)=>{ window.__loaded=window.__loaded||{}; if(window.__loaded[url]) return res(); const s=document.createElement('script'); s.src=url; s.onload=()=>{window.__loaded[url]=1;res();}; s.onerror=()=>rej(new Error('Falha ao carregar '+url)); document.head.appendChild(s); }); }
+function LEAFLET(){ return loadCSS('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css').then(()=>loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js')); }
+function CHARTJS(){ return loadScript('https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js'); }
+function XLSX(){ return window.XLSX?Promise.resolve():loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'); }
+
+/* Contagem via REST runAggregationQuery: custa 1 "small read" por query,
+   NÃO 1 leitura por documento — essencial para a cota do Firebase (Spark). */
+function _val2fs(v){
+  if(typeof v==='number') return Number.isInteger(v)?{integerValue:String(v)}:{doubleValue:String(v)};
+  return {stringValue:String(v)};
+}
 async function countDocs(collectionName, wheres){
-  if(collectionName==='efetivopm' && C.efetivopm){
-    let list=C.efetivopm;
-    for(const [f,op,val] of (wheres||[])){
-      if(op==='==') list=list.filter(d=>String(d[f])===String(val));
-    }
-    return list.length;
+  if(collectionName==='opms'&&C.opms) return C.opms.length;
+  if(collectionName==='cargos'&&C.cargos) return C.cargos.length;
+  if(collectionName==='municipios'&&C.municipios) return C.municipios.length;
+  if(collectionName==='escala_p2_legendas'&&C.legendas) return C.legendas.length;
+  if(collectionName==='tabela_valores'&&C.valores) return C.valores.length;
+  const u=auth&&auth.currentUser;
+  if(u){
+    try{
+      const token=await u.getIdToken();
+      const api='https://firestore.googleapis.com/v1/projects/'+FIREBASE_CONFIG.projectId+'/databases/(default)/documents:runAggregationQuery';
+      const filters=((wheres||[]).filter(w=>w&&w.length>=3&&w[1]==='=='))
+        .map(w=>({fieldFilter:{field:{fieldPath:String(w[0])},op:'EQUAL',value:_val2fs(w[2])}}));
+      const sq={from:[{collectionId:collectionName}],aggregations:[{count:{},alias:'n'}]};
+      if(filters.length===1) sq.where=filters[0];
+      else if(filters.length>1) sq.where={compositeFilter:{op:'AND',filters:filters}};
+      const res=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({structuredAggregationQuery:{structuredQuery:sq}})});
+      const j=await res.json();
+      const agg=j&&j.batch&&j.batch[0]&&j.batch[0].aggregateFields&&j.batch[0].aggregateFields.n;
+      if(agg) return parseInt(agg.integerValue!=null?agg.integerValue:agg.doubleValue,10)||0;
+    }catch(e){ console.warn('[count] REST aggregation falhou, usando .get().size', e.message); }
   }
-  let q=db.collection(collectionName);
+  let q=col(collectionName);
   for(const w of (wheres||[])) q=q.where(w[0],w[1],w[2]);
   const snap=await q.get();
   return snap.size;
 }
 
-/* ================= cache (coleções pequenas) ================= */
-let C = { opms:[], cargos:[], municipios:[], legendas:[], valores:[], efetivopm:null };
+/* ================= cache (coleções pequenas) =================
+   IMPORTANTE: efetivopm (30k) NÃO é mais cacheado no boot — 30 mil leituras
+   por acesso estouravam a cota diária. Buscas por documento são pontuais. */
+let C = { opms:[], cargos:[], municipios:[], legendas:[], valores:[] };
 async function loadCaches(){
-  const [o,ca,mu,le,va,ef]=await Promise.all([
-    all('opms'), all('cargos'), all('municipios'), all('escala_p2_legendas'), all('tabela_valores'),
-    all('efetivopm')
+  const [o,ca,mu,le,va]=await Promise.all([
+    all('opms'), all('cargos'), all('municipios'), all('escala_p2_legendas'), all('tabela_valores')
   ]);
-  C={opms:o,cargos:ca,municipios:mu,legendas:le,valores:va,efetivopm:ef};
+  C={opms:o,cargos:ca,municipios:mu,legendas:le,valores:va};
 }
 function opmOf(id){ const o=C.opms.find(x=>String(x.opm_id)===String(id)); return o?o:null; }
 function opmSigla(id){ const o=opmOf(id); return o?(o.opm_sigla||o.opm_desc||id):String(id); }
@@ -240,12 +314,18 @@ function munNome(id){ const m=C.municipios.find(x=>String(x.id)===String(id)||x.
 const RENDER = {
   dashboard: renderDashboard, efetivo: renderEfetivo, opms: renderOPMs,
   municipios: renderMunicipios, eventos: renderEventos, viaturas: renderViaturas,
-  escala: renderEscala, ocorrencias: renderOcorrencias
+  escala: renderEscala, ocorrencias: renderOcorrencias,
+  p2: renderP2, salvas: renderSalvas, valores: renderValores,
+  relatorio: renderRelatorio, cards: renderCards, usuarios: renderUsuarios,
+  backup: renderBackup
 };
 const PAGE_TITLE = {
   dashboard:'Dashboard', efetivo:'Efetivo PM', opms:'OPMs — Unidades',
   municipios:'Municípios', eventos:'Eventos', viaturas:'Viaturas',
-  escala:'Escala de Horas', ocorrencias:'Ocorrências'
+  escala:'Escala de Horas', ocorrencias:'Ocorrências',
+  p2:'Escala P2', salvas:'Escalas Salvas', valores:'Tabela de Valores',
+  relatorio:'Relatório de Horas', cards:'Cards Instagram', usuarios:'Usuários',
+  backup:'Backup / Exportar'
 };
 let currentPage='';
 function go(page){
@@ -258,45 +338,116 @@ function go(page){
 }
 
 /* ================= Dashboard ================= */
+const OPM_GROUPS=[
+ {label:'3ª CIPM',color:'#e53935',names:['America Dourada','Bonito','Cafarnaum','Morro do Chapéu','Morro do Chapueu','Mulungu do Morro']},
+ {label:'10ª CIPM',color:'#1E88E5',names:['Central','Gentio do Ouro','Ipupiara','Itaguacu da Bahia','Itaguaçu da Bahia','Xique-Xique']},
+ {label:'7º BPM',color:'#43A047',names:['Barra do Mendes','Barro Alto','Canarana','Ibipeba','Ibitita','Irece','Joao Dourado','João Dourado','Jussara','Lapao','Lapão','Presidente Dutra','Sao Gabriel','São Gabriel','Uibai']}
+];
+const OCORR_COLORS={"Homicídio":"#dc2626","Feminicídio":"#991b1b","Tentativa de Homicídio":"#ef4444","Latrocínio":"#f97316","Incêndio Criminoso":"#ea580c","Extorsão":"#f59e0b","Roubo":"#eab308","Roubo a Banco":"#ca8a04","Roubo de Veículo":"#a16207","Furto":"#d97706","Furto de Veículo":"#92400e","Estupro":"#a855f7","Estupro de Vulnerável":"#7c3aed","Sequestro":"#9333ea","Atentado ao Pudor":"#c084fc","Corrupção de Menores":"#d8b4fe","Violência Doméstica":"#ec4899","Violência Doméstica - LMP":"#ec4899","Lesão Corporal":"#3b82f6","Dano ao Patrimônio":"#2563eb","Ameaça":"#60a5fa","Direção Perigosa":"#06b6d4","Perturbação do Sossego":"#22d3ee","Receptação":"#0ea5e9","Estelionato":"#0284c7","Acidente de Trânsito":"#14b8a6","Atropelamento":"#0d9488","Violação de Domicílio":"#0891b2","Tráfico de Drogas":"#22c55e","Porte de Drogas":"#16a34a","Porte Ilegal de Arma":"#65a30d","Desaparecimento de Pessoa":"#94a3b8","Suicídio":"#6b7280","Achado de Cadáver":"#4b5563","Crime Cibernético":"#8b5cf6","ACIDENTE":"#dc2626","ROUBO":"#eab308","ASSALTO":"#f97316","HOMICIDIO":"#dc2626","OUTRO":"#9ca3af","Outros":"#9ca3af"};
+function normName(s){ return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); }
+function makeChart(canvasId,type,labels,data,colors,extra){
+  const ctx=document.getElementById(canvasId); if(!ctx) return;
+  if(window.__chart){ try{window.__chart.destroy();}catch(e){} }
+  const dark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
+  window.__chart=new Chart(ctx,{type:type,data:{labels:labels||[],datasets:[{label:extra&&extra.label||'',data:data||[],
+    backgroundColor:colors||'rgba(59,130,246,.75)',borderColor:extra&&extra.border||'#3b82f6',borderWidth:1}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:dark?'#e6edf3':'#1a1d21',boxWidth:14}}},
+      scales:extra&&extra.noScales?{}:{y:{beginAtZero:true,ticks:{color:dark?'#8b949e':'#666'},grid:{color:dark?'#2d333b':'#eee'}},x:{ticks:{color:dark?'#8b949e':'#666',maxRotation:45,autoSkip:false},grid:{display:false}}}}});
+}
+let MAP_OBJ=null;
+async function buildMap(mapId){
+  await LEAFLET();
+  const el=document.getElementById(mapId);
+  if(!el||typeof L==='undefined') return;
+  if(MAP_OBJ){ try{MAP_OBJ.remove();}catch(e){} MAP_OBJ=null; }
+  const munis=MAP_DATA.municipios||[], occs=MAP_DATA.ocorrencias||[];
+  const dir={}; OPM_GROUPS.forEach(g=>g.names.forEach(n=>dir[normName(n)]=g));
+  const latlngs=[];
+  const map=L.map(mapId,{zoomControl:true}).setView([-11.3,-41.9],8);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap'}).addTo(map);
+  munis.forEach(m=>{
+    if(m.latitude==null||m.longitude==null) return;
+    const g=dir[normName(m.nome||'')];
+    latlngs.push([m.latitude,m.longitude]);
+    L.circleMarker([m.latitude,m.longitude],{radius:7,color:g?g.color:'#888',fillColor:g?g.color:'#888',fillOpacity:.65,weight:2})
+      .bindPopup('<b>'+esc(m.nome)+'</b><br><b>OPM:</b> '+esc(g?g.label:'—')+'<br><b>População:</b> '+fmt(m.populacao||0)).addTo(map);
+  });
+  occs.forEach(o=>{
+    if(o.latitude==null||o.longitude==null) return;
+    const c=OCORR_COLORS[o.tipo]||'#9ca3af';
+    L.circleMarker([o.latitude,o.longitude],{radius:9,color:c,fillColor:c,fillOpacity:.8,weight:2})
+      .bindPopup('<b>'+esc(o.tipo)+'</b><br>'+(o.data_hora||'').replace('T',' ')+'<br>'+esc(o.cidade||'')+(o.vtr?'<br><b>VTR:</b> '+esc(o.vtr):'')).addTo(map);
+  });
+  if(latlngs.length) map.fitBounds(latlngs,{padding:[30,30]});
+  MAP_OBJ=map;
+}
+let MAP_DATA={municipios:[],ocorrencias:[]};
+
 async function renderDashboard(){
-  const [ec,oc,mc,vc,carc,evc]=await Promise.all([
-    countDocs('efetivopm'), countDocs('opms'), countDocs('municipios'),
-    countDocs('viaturas'), countDocs('cargos'), countDocs('eventos')
+  const now=new Date();
+  const [ec,evc,mc,vc,carc,ocvs,occ,escn]=await Promise.all([
+    countDocs('efetivopm'), countDocs('eventos'), countDocs('municipios'),
+    countDocs('viaturas'), countDocs('cargos'), countDocs('opms'),
+    countDocs('ocorrencias'), countDocs('escalas')
   ]);
   const eventos=await all('eventos'); eventos.sort((a,b)=>(b.evento_dta_inicio||'').localeCompare(a.evento_dta_inicio||''));
-  const oe=await all('opm_eventos');
-  const porEvento = {};
-  for(const ev of eventos){ porEvento[ev.evento_id]= {oe:[], escalados:0}; }
-  for(const r of oe){ if(porEvento[r.evento_id]) porEvento[r.evento_id].oe.push(r); }
-  for(const ev of eventos){
-    const oes=porEvento[ev.evento_id].oe;
-    for(const r of oes){ porEvento[ev.evento_id].escalados += await countDocs('escalas',[['opm_evento_id','==',num(r.opm_evento_id)]]); }
-  }
-  const ativos = C.opms.filter(o=>o.opm_atv!=='FIM').length;
+  const oeRows=await all('opm_eventos');
+  const oeCounts={};
+  for(const oe of oeRows) oeCounts[oe.opm_evento_id]=await countDocs('escalas',[['opm_evento_id','==',num(oe.opm_evento_id)]]);
+  const ocorrencias=await all('ocorrencias');
+  const porTipo={};
+  for(const o of ocorrencias){ const t=o.tipo||'OUTRO'; porTipo[t]=(porTipo[t]||0)+1; }
+  const ativos=C.opms.filter(o=>o.opm_atv!=='FIM').length;
+  const efOpm=[];
+  for(const o of C.opms) efOpm.push([o, o.opm_atv==='FIM'?0:await countDocs('efetivopm',[['opm_id','==',o.opm_id]])]);
+  efOpm.sort((a,b)=>b[1]-a[1]);
   let cards = `
-    <div class="pagehead"><h2>Dashboard</h2><div class="sub">Visão geral do efetivo, unidades e eventos — dados do Firestore</div></div>
+    <div class="pagehead"><h2>Dashboard</h2><div class="sub">Visão geral do efetivo, unidades, eventos e ocorrências — Firestore</div></div>
     <div class="stat-row mb">
       <div class="stat"><div class="v">${fmt(ec)}</div><div class="l">Efetivo PM</div></div>
-      <div class="stat"><div class="v">${oc}</div><div class="l">OPMs (${ativos} ativas)</div></div>
-      <div class="stat"><div class="v">${fmt(carc)}</div><div class="l">Cargos/Postos</div></div>
+      <div class="stat"><div class="v">${ocvs}</div><div class="l">OPMs (${ativos} ativas)</div></div>
+      <div class="stat"><div class="v">${fmt(escn)}</div><div class="l">Escalas lançadas</div></div>
       <div class="stat"><div class="v">${fmt(mc)}</div><div class="l">Municípios</div></div>
       <div class="stat"><div class="v">${fmt(vc)}</div><div class="l">Viaturas</div></div>
       <div class="stat"><div class="v">${evc}</div><div class="l">Eventos</div></div>
+      <div class="stat"><div class="v">${fmt(occ)}</div><div class="l">Ocorrências</div></div>
+      <div class="stat"><div class="v">${fmt(carc)}</div><div class="l">Postos/Grads</div></div>
     </div>`;
+  cards += `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr))">
+      <div class="card"><h3>Efetivo por OPM (ativas)</h3><div style="height:260px"><canvas id="cv-efopm"></canvas></div></div>
+      <div class="card"><h3>Ocorrências por Tipo</h3><div style="height:260px"><canvas id="cv-occt"></canvas></div></div>
+    </div>`;
+  cards += `<div class="card"><h3>Mapa Operacional CPR-CN</h3><div id="map-dash"></div>
+      <div class="legend">${OPM_GROUPS.map(g=>'<span><i style="background:'+g.color+'"></i>'+esc(g.label)+'</span>').join('')}<span><i style="background:#9ca3af"></i>Ocorrências</span></div></div>`;
   if(eventos.length){
     cards += `<div class="card"><h3>Policiais Escalados por Evento</h3>
       <table><thead><tr><th>Evento</th><th>Início</th><th>Fim</th><th>Tipo</th><th>OPMs</th><th>Escalados</th></tr></thead><tbody>`;
     for(const ev of eventos){
-      const p=porEvento[ev.evento_id];
+      const oes=oeRows.filter(r=>String(r.evento_id)===String(ev.evento_id));
+      const escTotal=oes.reduce((s,r)=>s+(oeCounts[r.opm_evento_id]||0),0);
       cards += `<tr><td>${esc(ev.evento_desc||ev.evento_nome||'')}</td>
         <td class="muted">${esc(ev.evento_dta_inicio||'—')}</td><td class="muted">${esc(ev.evento_dta_fim||'—')}</td>
         <td>${esc(ev.tipo_pagamento||'')}</td>
-        <td>${p.oe.map(x=>'<span class="pill">'+esc(opmSigla(x.opm_id))+'</span>').join('')}</td>
-        <td><b>${p.escalados}</b></td></tr>`;
+        <td>${oes.map(x=>'<span class="pill">'+esc(opmSigla(x.opm_id))+'</span>').join('')||'<span class="muted">—</span>'}</td>
+        <td><b>${escTotal}</b></td></tr>`;
     }
     cards += `</tbody></table></div>`;
   }
+  cards += `<div class="card"><h3>Ocorrências recentes</h3>`;
+  if(ocorrencias.length){
+    cards += `<table class="mt"><thead><tr><th>Data/Hora</th><th>Tipo</th><th>Cidade</th><th>VTR</th></tr></thead><tbody>`+
+      ocorrencias.slice(0,8).map(o=>`<tr><td class="muted">${esc((o.data_hora||'').replace('T',' '))}</td><td>${esc(o.tipo)}</td><td>${esc(o.cidade||'—')}</td><td>${esc(o.vtr||'—')}</td></tr>`).join('')+`</tbody></table>`;
+  } else cards += `<div class="notice">Nenhuma ocorrência registrada.</div>`;
+  cards += `</div>`;
   $('#view').innerHTML=cards;
+  await CHARTJS();
+  const act=efOpm.filter(x=>x[1]>0);
+  makeChart('cv-efopm','bar',act.map(x=>esc(x[0].opm_sigla||x[0].opm_id)),act.map(x=>x[1]),'rgba(59,130,246,.75)',{border:'#3b82f6',label:'Efetivo'});
+  const tipos=Object.keys(porTipo).sort();
+  makeChart('cv-occt','doughnut',tipos,tipos.map(t=>porTipo[t]),tipos.map(t=>OCORR_COLORS[t]||'#9ca3af'),{noScales:true,label:'Ocorrências'});
+  MAP_DATA={municipios:C.municipios,ocorrencias:ocorrencias};
+  buildMap('map-dash');
 }
 
 /* ================= Efetivo PM ================= */
@@ -346,7 +497,7 @@ function efPrev(){ if(EF.stack.length){ EF.start=EF.stack.pop(); EF.end=null; go
 async function renderOPMs(){
   const rows=[];
   for(const o of C.opms){
-    const n=await countDocs('efetivopm',[['opm_id','==',String(o.opm_id)]]);
+    const n=await countDocs('efetivopm',[['opm_id','==',o.opm_id]]);
     rows.push([o,n]);
   }
   rows.sort((a,b)=>(a[0].opm_sigla||'').localeCompare(b[0].opm_sigla||''));
@@ -651,6 +802,718 @@ async function ocSalvar(){
   await col('ocorrencias').doc(String(next)).set(payload);
   toast('Ocorrência #'+next+' salva no Firestore.','ok');
   OC.tab='ind'; go('ocorrencias');
+}
+
+/* ================= util diverso ================= */
+function downloadText(filename,text,mime){
+  const blob=new Blob(['\uFEFF'+text],{type:mime||'text/csv;charset=utf-8;'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+}
+function downloadBlob(filename,blob){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500); }
+function parseDias(v){ if(!v) return {}; if(typeof v==='object') return v; try{ return JSON.parse(v)||{}; }catch(e){ return {}; } }
+const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const DSEMANA=['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
+const FERIADOS={"01-01":"Confraternização Universal","21-04":"Tiradentes","01-05":"Dia do Trabalho","07-09":"Independência","12-10":"Nossa Srª Aparecida","02-11":"Finados","15-11":"Proclamação da República","20-11":"Dia da Consciência Negra","25-12":"Natal"};
+const FUNCOES=["CSO","NUGAF/C.L.C.","COMANDANTE","CMD. DE UOP","CAAF","CH. CPO","CH. NUGAF","ASS. ESPECIAL","MOTORISTA","PATRULHEIRO"];
+const GHS=["CEL PM","TEN CEL PM","MAJ PM","CAP PM","TEN PM","ASP OF PM","AL OF PM 1 ANO","AL OF PM 2 ANO","AL OF PM 3 ANO","SUB TEN PM","SGT PM","CB PM","SD PM","AL SD PM","ALUNO OFICIAL - CFOA PM - SGT","ALUNO OFICIAL - CFOA PM - ST","ALUNO OFICIAL - CFTA PM - ST"];
+let CURRENT_MODAL=null;
+function openModal(title,body,onSave){
+  const el=document.createElement('div');
+  el.className='modal-overlay';
+  el.innerHTML=`<div class="modal"><div class="modal-head"><h3>${esc(title)}</h3><button class="btn ghost sm" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">${body}</div><div class="modal-foot">${onSave?'<button class="btn" onclick="CURRENT_MODAL&&CURRENT_MODAL()">Salvar</button>':''}<button class="btn ghost" onclick="closeModal()">Fechar</button></div></div>`;
+  el.addEventListener('mousedown',e=>{ if(e.target===el) closeModal(); });
+  document.body.appendChild(el);
+  if(onSave) CURRENT_MODAL=onSave;
+}
+function closeModal(){ const m=document.querySelector('.modal-overlay'); if(m) m.remove(); CURRENT_MODAL=null; }
+
+/* ================= Escala P2 ================= */
+const P2 = { mes:new Date().getMonth()+1, ano:new Date().getFullYear() };
+function p2HeaderCodigos(c){
+  return Object.assign({
+    cod:'',desc:'',horas:0,hD:0,hN:0,cor:'transparent'
+  },c||{});
+}
+function p2CalcCodigo(cod){
+  const hc=P2.CODIGOS.find(x=>x.cod===cod);
+  if(hc) return {hD:hc.hD,hN:hc.hN};
+  const leg=(C.legendas||[]).find(l=>String(l.codigo)===String(cod));
+  if(leg) return calcCHdesc(leg.descricao);
+  return {hD:0,hN:0};
+}
+function calcCHdesc(desc){
+  if(!desc) return {hD:0,hN:0};
+  let s=String(desc).replace(/^das\s*:?\s*/i,'').replace(/\s*[àa]\s*s\s*/gi,'-').replace(/\s*-\s*/g,'-');
+  const partes=s.split(/[•\/,;]/).map(p=>p.trim()).filter(p=>p);
+  let hD=0,hN=0;
+  partes.forEach(p=>{
+    const m=p.match(/(\d{1,2})h\s*-?\s*(\d{1,2})h?/);
+    if(m){
+      let ini=parseInt(m[1]),fim=parseInt(m[2]);
+      if(fim<=ini) fim+=24;
+      for(let h=ini;h<fim;h++){ const hh=h%24; if(hh>=5&&hh<22) hD++; else hN++; }
+    }
+  });
+  return {hD,hN};
+}
+function p2DiasMes(){ const y=P2.ano,m=P2.mes; return new Date(y,m,0).getDate(); }
+function p2Eia(d,padrao){ const dow=new Date(P2.ano,P2.mes-1,d).getDay(); if(padrao==='sex-sab-dom') return dow===5||dow===6||dow===0; if(padrao==='sab-dom') return dow===6||dow===0; if(padrao==='sex') return dow===5; return false; }
+function p2Eferiado(d){ const ch=pad(d)+'-'+pad(P2.mes); return FERIADOS[ch]||false; }
+P2.CODIGOS=[
+  {cod:"C1",desc:"Das: 7h ÀS 19h",horas:12,hD:12,hN:0,cor:"#3b82f644",label:"C1"},
+  {cod:"C2",desc:"Das: 19h ÀS 7h",horas:12,hD:5,hN:7,cor:"#22c55e44",label:"C2"},
+  {cod:"F",desc:"Férias",horas:0,hD:0,hN:0,cor:"#f59e0b44",label:"F"},
+  {cod:"A1",desc:"Das: 8h-12h • 14h-18h",horas:8,hD:8,hN:0,cor:"#a855f744",label:"A1"},
+  {cod:"A2",desc:"Das: 7h-13h",horas:6,hD:6,hN:0,cor:"#14b8a644",label:"A2"},
+  {cod:"B1",desc:"Das: 13h-19h",horas:6,hD:6,hN:0,cor:"#ec489944",label:"B1"}
+];
+P2.meta={ local:"IRECÊ", resp:"CARLOS AUGUSTO FERREIRA DIAS - Ten Cel PM", cargo:"CHEFE DO CPODE", emissao:"", nota:"", titulo:"" };
+async function renderP2(){
+  const metaRows=await all('escala_p2_meta');
+  if(metaRows.length){ const m=metaRows[0]; Object.keys(P2.meta).forEach(k=>{ if(m[k]) P2.meta[k]=m[k]; }); }
+  $('#view').innerHTML=`
+    <div class="pagehead"><h2>🗓️ Escala P2</h2><div class="sub"><span id="p2-sub"></span></div></div>
+    <div class="toolbar">
+      <button class="btn ghost" onclick="P2.navegar(-1)">◀</button>
+      <select id="p2-mes" onchange="P2.syncNav()">${MESES.map((m,i)=>`<option value="${i+1}" ${i+1===P2.mes?'selected':''}>${m}</option>`).join('')}</select>
+      <select id="p2-ano" onchange="P2.syncNav()">${(()=>{const y=new Date().getFullYear();let s='';for(let a=y-2;a<=y+2;a++)s+=`<option value="${a}" ${a===P2.ano?'selected':''}>${a}</option>`;return s;})()}</select>
+      <button class="btn ghost" onclick="P2.navegar(1)">▶</button>
+      <div style="flex:1"></div>
+      <button class="btn" onclick="P2.abrirModalSeparador()">≡ Separador</button>
+      <button class="btn primary" onclick="P2.abrirModal()">+ Adicionar Militar</button>
+    </div>
+    <div class="card">
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px">
+        <div><label class="muted">Local</label><input class="p2-input" style="width:100%" id="p2-local" value="${esc(P2.meta.local)}" /></div>
+        <div><label class="muted">Responsável</label><input class="p2-input" style="width:100%" id="p2-resp" value="${esc(P2.meta.resp)}" /></div>
+        <div><label class="muted">Cargo</label><input class="p2-input" style="width:100%" id="p2-cargo" value="${esc(P2.meta.cargo)}" /></div>
+        <div><label class="muted">Emissão</label><input class="p2-input" style="width:100%" id="p2-emissao" value="${esc(P2.meta.emissao)}" /></div>
+        <div><label class="muted">Título</label><input class="p2-input" style="width:100%" id="p2-titulo" value="${esc(P2.meta.titulo)}" /></div>
+      </div>
+      <div class="toolbar" style="margin-bottom:10px">
+        <span class="muted">Inserir dias:</span>
+        <select id="p2-bulk-code">${P2.bulkCodigos().map(c=>`<option value="${c.cod}">${c.cod} (${c.desc.replace(/^Das:\s*/i,'')})</option>`).join('')}</select>
+        <button class="btn ghost sm" onclick="P2.inserirBulk('sex-sab-dom')">SEX-SÁB-DOM</button>
+        <button class="btn ghost sm" onclick="P2.inserirBulk('sab-dom')">SÁB-DOM</button>
+        <button class="btn ghost sm" onclick="P2.inserirBulk('sex')">SEX</button>
+        <div style="flex:1"></div>
+        <button class="btn ghost sm" onclick="P2.limparDias('fds')">🗑 Limpar FDS</button>
+        <button class="btn ghost sm" onclick="P2.limparDias('todos')">🗑 Limpar TODOS</button>
+        <button class="btn danger" onclick="P2.limparMes()">🗑 Limpar Mês</button>
+        <button class="btn" onclick="P2.exportarXls()">📊 Excel</button>
+        <button class="btn" onclick="P2.exportarCsv()">⬇ CSV</button>
+        <button class="btn" onclick="P2.salvarEscala()">💾 SALVAR</button>
+      </div>
+      <div id="p2-grid"></div>
+      <hr style="margin:14px 0;border-color:var(--line)">
+      <div class="muted" style="font-size:12px;margin-bottom:6px">Legendas:</div>
+      <div id="p2-legenda-list"></div>
+    </div>
+    <div id="imp"></div>`;
+  P2.bindMeta();
+  await P2.render();
+}
+P2.bulkCodigos=function(){
+  const out=P2.CODIGOS.slice();
+  (C.legendas||[]).forEach(l=>{ if(!out.some(c=>c.cod===l.codigo)) out.push(p2HeaderCodigos({cod:l.codigo,desc:l.descricao})); });
+  return out;
+};
+P2.syncNav=function(){ P2.mes=parseInt($('#p2-mes').value); P2.ano=parseInt($('#p2-ano').value); P2.render(); };
+P2.navegar=function(dir){ let mi=P2.mes-1+dir, ai=P2.ano; if(mi>11){mi=0;ai++;} if(mi<0){mi=11;ai--;} P2.mes=mi+1; P2.ano=ai; P2.render(); };
+P2.bindMeta=function(){
+  ['local','resp','cargo','emissao','nota','titulo'].forEach(f=>{
+    const el=$('#p2-'+f); if(!el) return;
+    el.oninput=()=>{ P2.meta[f]=el.value; };
+  });
+};
+P2.salvarMeta=async function(){
+  const m=P2.meta;
+  await col('escala_p2_meta').doc('1').set({id:1,mes:P2.mes,ano:P2.ano,local:m.local,responsavel:m.resp,cargo:m.cargo,emissao:m.emissao,nota:m.nota,titulo:m.titulo},{merge:true});
+  toast('Cabeçalho salvo no Firestore.','ok');
+};
+P2.abrirModal=async function(id){
+  P2.salvarMeta();
+  let r={id:null,funcao:'',opm:'',gh:'',nome:'',matricula:'',telefone:'',dias:{},is_separador:0,separador_texto:'',tipo_pagamento:'HE'};
+  if(id){ const f=await getDoc('escala_p2',id); if(f) r=Object.assign(r,f); }
+  const opms = [...new Set(C.opms.map(o=>o.opm_sigla||o.opm_id).filter(Boolean))].sort();
+  openModal(id?'Editar Militar':'Adicionar Militar',`
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px">
+      <div style="grid-column:1/-1"><label class="muted">Buscar Policial (matrícula/nome)</label>
+        <div class="searchbox"><input id="p2-busca" placeholder="digite…" autocomplete="off" onkeydown="if(event.key==='Enter')p2Buscar(this.value)" />
+        <div class="results" id="p2-res" hidden></div></div></div>
+      <div><label class="muted">Matrícula *</label><input id="p2-mat" value="${esc(r.matricula)}"></div>
+      <div><label class="muted">Nome *</label><input id="p2-nome" value="${esc(r.nome)}" style="text-transform:uppercase"></div>
+      <div><label class="muted">Função *</label><select id="p2-funcao">${FUNCOES.map(f=>`<option ${f===r.funcao?'selected':''}>${f}</option>`).join('')}</select></div>
+      <div><label class="muted">OPM</label><select id="p2-opm"><option value="">--</option>${opms.map(o=>`<option value="${esc(o)}" ${o===r.opm?'selected':''}>${esc(o)}</option>`).join('')}</select></div>
+      <div><label class="muted">GH</label><select id="p2-gh">${GHS.map(g=>`<option ${g===r.gh?'selected':''}>${g}</option>`).join('')}</select></div>
+      <div><label class="muted">Telefone</label><input id="p2-tel" value="${esc(r.telefone)}"></div>
+      <div><label class="muted">Tipo Pagamento</label><select id="p2-tp"><option value="HE" ${r.tipo_pagamento==='HE'||!r.tipo_pagamento?'selected':''}>HE</option><option value="VD" ${r.tipo_pagamento==='VD'?'selected':''}>VD</option><option value="SO" ${r.tipo_pagamento==='SO'?'selected':''}>SO</option></select></div>
+    </div>`, async ()=>{
+    const v=x=>($('#p2-'+x).value||'').trim();
+    if(!v('nome')||!v('mat')||!v('funcao')){ toast('Preencha Nome, Matrícula e Função','err'); return; }
+    const data={funcao:v('funcao'),opm:v('opm'),gh:v('gh'),nome:v('nome'),matricula:v('mat'),telefone:v('tel'),tipo_pagamento:$('#p2-tp').value};
+    if(id){ await col('escala_p2').doc(String(id)).update(data); }
+    else {
+      const rows=await getDocs(col('escala_p2').where('mes','==',P2.mes).where('ano','==',P2.ano));
+      const max=rows.reduce((a,r)=>Math.max(a,num(r.ordem)),0);
+      const nid=(await nextP2Id());
+      await col('escala_p2').doc(String(nid)).set({id:nid,mes:P2.mes,ano:P2.ano,dias:{},is_separador:0,separador_texto:'',ordem:max+1,...data});
+    }
+    closeModal(); toast(id?'Atualizado!':'Adicionado!','ok'); P2.render();
+  });
+};
+function p2PickCod(cod){ return (P2.CODIGOS||[]).find(c=>c.cod===cod); }
+async function p2Buscar(termRaw){
+  const t=(termRaw||'').trim(); const box=$('#p2-res');
+  if(!t){ box.hidden=true; return; }
+  let found=[];
+  const t2=t.replace(/\D/g,'');
+  if(t2.length>=4){ found=await getDocs(col('efetivopm').orderBy('matricula').startAt(t2).endAt(t2+'\uf8ff').limit(10)); }
+  const n=await getDocs(col('efetivopm').orderBy('nome').startAt(t).endAt(t+'\uf8ff').limit(10));
+  const seen={}; const merged=[];
+  for(const x of n){ if(!seen[x.matricula]){seen[x.matricula]=1;merged.push(x);} }
+  for(const x of found){ if(!seen[x.matricula]){seen[x.matricula]=1;merged.push(x);} }
+  box.hidden=false;
+  box.innerHTML=merged.slice(0,10).map(x=>`<div class="r-item" onclick="p2Pick('${esc(x.matricula)}','${esc(String(x.nome).replace(/'/g,"\\'"))}','${esc(x.telefone||'')}')"><b>${esc(x.matricula)}</b> — ${esc(x.nome)} <span class="muted">${esc(cargoNome(x.cargo))}</span></div>`).join('')||'<div class="r-item muted">Nada encontrado.</div>';
+}
+function p2Pick(mat,nome,tel){
+  $('#p2-mat').value=mat; $('#p2-nome').value=nome; if($('#p2-tel')) $('#p2-tel').value=tel||'';
+  const b=$('#p2-busca'); b.value=''; $('#p2-res').hidden=true; toast('Selecionado: '+nome,'ok');
+}
+P2.abrirModalSeparador=function(){
+  openModal('Inserir Separador',`<div><label class="muted">Texto do Separador</label><input id="p2-sep" placeholder="Ex.: Equipe A" style="width:100%"></div>`,async ()=>{
+    const texto=($('#p2-sep').value||'').trim(); if(!texto){ toast('Informe o texto','err'); return; }
+    const rows=await getDocs(col('escala_p2').where('mes','==',P2.mes).where('ano','==',P2.ano));
+    const max=rows.reduce((a,r)=>Math.max(a,num(r.ordem)),0);
+    const nid=await nextP2Id();
+    await col('escala_p2').doc(String(nid)).set({id:nid,mes:P2.mes,ano:P2.ano,funcao:'-',opm:'-',gh:'-',nome:'-',matricula:'-',telefone:'',dias:{},is_separador:1,separador_texto:texto,ordem:max+1});
+    closeModal(); toast('Separador inserido!','ok'); P2.render();
+  });
+};
+async function nextP2Id(){ const rows=await getDocs(col('escala_p2')); const m=rows.reduce((a,r)=>Math.max(a,num(r.id)),0); return m+1; }
+function p2PickCell(id,dia){
+  openModal('Escolher código para o dia '+dia,`
+    <div style="text-align:center">
+      ${P2.bulkCodigos().map(c=>
+        `<button class="btn sm mt" style="margin:3px;min-width:70px;background:${c.cor||'transparent'}" onclick="P2PickStep(${id},${dia},'${c.cod}')">${c.cod}<br><small style="font-weight:400;font-size:9px;color:var(--muted)">${esc(c.desc)}</small></button>`
+      ).join('')}
+      <button class="btn danger sm" style="margin:3px" onclick="P2PickStep(${id},${dia},'')">Limpar</button>
+    </div>`);
+}
+async function P2PickStep(id,dia,codigo){
+  const r=await getDoc('escala_p2',id);
+  if(!r){ closeModal(); return; }
+  const dias=parseDias(r.dias);
+  if(codigo) dias[String(dia)]=codigo; else delete dias[String(dia)];
+  await col('escala_p2').doc(r.__id).set({dias},{merge:true});
+  closeModal(); P2.render();
+}
+async function p2SetCellBulk(id,padrao,cod){
+  const rows=await getDocs(col('escala_p2'));
+  const r=rows.find(x=>String(x.id)===String(id)||x.__id===String(id));
+  if(!r) return;
+  const dias=parseDias(r.dias); const nd=p2DiasMes();
+  for(let d=1;d<=nd;d++){ if(p2Eia(d,padrao)||p2Eferiado(d)) dias[String(d)]=cod; }
+  await col('escala_p2').doc(r.__id).set({dias},{merge:true});
+  P2.render();
+}
+P2.inserirBulk=async function(padrao){
+  const cod=$('#p2-bulk-code').value;
+  const rows=await getDocs(col('escala_p2').where('mes','==',P2.mes).where('ano','==',P2.ano));
+  const mils=rows.filter(r=>!num(r.is_separador));
+  if(!mils.length){ toast('Nenhum militar para preencher','err'); return; }
+  const nd=p2DiasMes();
+  for(const r of mils){
+    const dias=parseDias(r.dias);
+    for(let d=1;d<=nd;d++){ if(p2Eia(d,padrao)||p2Eferiado(d)) dias[String(d)]=cod; }
+    await col('escala_p2').doc(r.__id).set({dias},{merge:true});
+  }
+  toast('Dias ('+padrao+') preenchidos com '+cod+'!','ok'); P2.render();
+};
+P2.limparDias=async function(tipo){
+  const rows=await getDocs(col('escala_p2').where('mes','==',P2.mes).where('ano','==',P2.ano));
+  const mils=rows.filter(r=>!num(r.is_separador));
+  const nd=p2DiasMes();
+  for(const r of mils){
+    const dias=parseDias(r.dias);
+    for(let d=1;d<=nd;d++){
+      if(tipo==='todos'||p2Eia(d,'sex-sab-dom')||p2Eferiado(d)) delete dias[String(d)];
+    }
+    await col('escala_p2').doc(r.__id).set({dias},{merge:true});
+  }
+  toast(tipo==='todos'?'Todos os dias limpos!':'Fins de semana limpos!','ok'); P2.render();
+};
+P2.limparMes=async function(){
+  if(!confirm('Limpar todos os registros de '+P2.mes+'/'+P2.ano+'?')) return;
+  const rows=await getDocs(col('escala_p2').where('mes','==',P2.mes).where('ano','==',P2.ano));
+  for(const r of rows) await col('escala_p2').doc(r.__id).delete();
+  toast('Mês limpo!','ok'); P2.render();
+};
+P2.mover=async function(id,dir){
+  const all=await getDocs(col('escala_p2').where('mes','==',P2.mes).where('ano','==',P2.ano));
+  const sorted=all.slice().sort((a,b)=>num(a.ordem)-num(b.ordem));
+  const i=sorted.findIndex(x=>String(x.id)===String(id)||x.__id===String(id));
+  const j=i+dir;
+  if(i<0||j<0||j>=sorted.length) return;
+  const ai=sorted[i],aj=sorted[j];
+  await col('escala_p2').doc(ai.__id).set({ordem:num(aj.ordem)},{merge:true});
+  await col('escala_p2').doc(aj.__id).set({ordem:num(ai.ordem)},{merge:true});
+  P2.render();
+};
+P2.excluir=async function(id){
+  if(!confirm('Excluir este registro?')) return;
+  const r=await getDoc('escala_p2',id);
+  if(r) await col('escala_p2').doc(r.__id).delete();
+  toast('Excluído!','ok'); P2.render();
+};
+P2.adicionarLegenda=async function(){
+  const cod=$('#p2-lg-cod'); const desc=$('#p2-lg-desc');
+  if(!cod||!desc||!cod.value.trim()||!desc.value.trim()){ toast('Preencha código e descrição','err'); return; }
+  const codVal=cod.value.trim(); const descVal=desc.value.trim();
+  const rows=await getDocs(col('escala_p2_legendas'));
+  const max=rows.reduce((a,r)=>Math.max(a,num(r.id)),0);
+  await col('escala_p2_legendas').doc(String(max+1)).set({id:max+1,codigo:codVal,descricao:descVal});
+  cod.value=''; desc.value=''; C.legendas.push({id:max+1,codigo:codVal,descricao:descVal}); P2.render();
+};
+P2.removerLegenda=async function(id){
+  if(!confirm('Remover este código?')) return;
+  await col('escala_p2_legendas').doc(String(id)).delete();
+  C.legendas=C.legendas.filter(l=>String(l.id)!==String(id)); P2.render();
+};
+P2.render=async function(){
+  const sub=$('#p2-sub');
+  const rows=(await getDocs(col('escala_p2').where('mes','==',P2.mes).where('ano','==',P2.ano))).sort((a,b)=>num(a.ordem)-num(b.ordem));
+  const mils=rows.filter(r=>!num(r.is_separador));
+  if(sub) sub.textContent=mils.length+' militares · '+p2DiasMes()+' dias · '+MESES[P2.mes-1]+' '+P2.ano;
+  const grid=$('#p2-grid'); if(!grid) return;
+  if(!rows.length){ grid.innerHTML='<div class="notice">Nenhum registro para este mês. Clique em <b>+ Adicionar Militar</b>.</div>'; return; }
+  const nd=p2DiasMes();
+  const sem=d=>DSEMANA[new Date(P2.ano,P2.mes-1,d).getDay()];
+  let html=`<div style="overflow:auto"><table style="font-size:11px"><thead><tr><th>FUNÇÃO</th><th>OPM</th><th>GH</th><th>NOME</th><th>MATRÍCULA</th><th>TEL</th><th>TIPO</th>`;
+  for(let d=1;d<=nd;d++){ const fer=p2Eferiado(d),fds=sem(d)==='DOM'; const dow=sem(d); const isFds=dow==='SAB'||dow==='DOM';
+    html+=`<th style="text-align:center;min-width:24px;padding:4px 1px;background:${fer?'#f59e0b22':isFds?'#3b82f622':'transparent'}">${pad(d)}<br><span style="font-weight:400;font-size:8px;color:var(--muted)">${dow.slice(0,3)}</span></th>`; }
+  html+=`<th>D</th><th>N</th><th>H</th><th></th></tr></thead><tbody>`;
+  rows.forEach((r,i)=>{
+    if(num(r.is_separador)){
+      html+=`<tr style="background:var(--panel)"><td colspan="${7+nd+4}" style="text-align:center;padding:5px;font-weight:700;color:var(--muted)">
+        <div style="display:flex;justify-content:space-between;align-items:center"><span>≡ ${esc(r.separador_texto||'')}</span>
+        <span>${i>0?`<button class="btn ghost sm" onclick="P2.mover(${num(r.id)},-1)">⬆</button>`:''} ${i<rows.length-1?`<button class="btn ghost sm" onclick="P2.mover(${num(r.id)},1)">⬇</button>`:''} <button class="btn danger sm" onclick="P2.excluir(${num(r.id)})">🗑</button></span></div></td></tr>`;
+    } else {
+      const dias=parseDias(r.dias); const {hD,hN,total}=p2TotalHoras(dias);
+      const tp=r.tipo_pagamento||'HE';
+      html+=`<tr><td style="font-weight:600">${esc(r.funcao)}</td><td>${esc(r.opm)}</td><td>${esc(r.gh)}</td><td style="white-space:nowrap">${esc(r.nome)}</td><td>${esc(r.matricula)}</td><td>${esc(r.telefone||'-')}</td><td><span class="badge">${esc(tp)}</span></td>`;
+      for(let d=1;d<=nd;d++){
+        const cod=dias[String(d)]||''; const hc=p2PickCod(cod);
+        html+=`<td style="text-align:center;padding:2px;cursor:pointer;background:${hc?hc.cor:'transparent'}" onclick="p2PickCell(${num(r.id)},${d})" title="${pad(d)} - ${sem(d)}${hc?' | '+esc(hc.desc):''}">${cod?`<b>${esc(cod)}</b>`:''}</td>`;
+      }
+      html+=`<td style="text-align:center;font-weight:700;color:${hD>0?'var(--ok)':'var(--muted)'}">${hD||'-'}</td><td style="text-align:center;font-weight:700;color:${hN>0?'var(--ok)':'var(--muted)'}">${hN||'-'}</td><td style="text-align:center;font-weight:700;color:${total>0?'var(--ok)':'var(--muted)'}">${total}</td><td style="white-space:nowrap">${i>0?`<button class="btn ghost sm" onclick="P2.mover(${num(r.id)},-1)">⬆</button>`:''}${i<rows.length-1?`<button class="btn ghost sm" onclick="P2.mover(${num(r.id)},1)">⬇</button>`:''}<button class="btn ghost sm" onclick="P2.abrirModal(${num(r.id)})">✏️</button><button class="btn danger sm" onclick="P2.excluir(${num(r.id)})">🗑</button></td></tr>`;
+    }
+  });
+  html+=`</tbody></table></div>`;
+  grid.innerHTML=html;
+  const lg=$('#p2-legenda-list');
+  lg.innerHTML=(C.legendas||[]).map(l=>`<div class="chip">${esc(l.codigo)} (${esc(l.descricao)}) <button class="btn danger sm" style="padding:0 4px;font-size:10px" onclick="P2.removerLegenda(${num(l.id)})">🗑</button></div>`).join('')+
+    `<span style="display:inline-flex;gap:4px;align-items:center"><input class="p2-input" style="width:44px" id="p2-lg-cod" placeholder="Cod"><input class="p2-input" style="width:140px" id="p2-lg-desc" placeholder="Descrição (ex: 7h-19h)"><button class="btn sm" onclick="P2.adicionarLegenda()">➕</button></span>`;
+};
+function p2TotalHoras(dias){
+  let hD=0,hN=0;
+  for(const k in dias){ const c=p2CalcCodigo(dias[k]); hD+=c.hD; hN+=c.hN; }
+  return {hD,hN,total:hD+hN};
+}
+P2.exportarCsv=async function(){
+  const rows=(await getDocs(col('escala_p2').where('mes','==',P2.mes).where('ano','==',P2.ano))).sort((a,b)=>num(a.ordem)-num(b.ordem));
+  if(!rows.length){ toast('Nada para exportar','err'); return; }
+  const dias=p2DiasComDados(rows); const sem=d=>DSEMANA[new Date(P2.ano,P2.mes-1,d).getDay()];
+  const titulo=P2.meta.titulo||`ESCALA DE COORDENADOR REGIONAL DO CPR-CN - ${MESES[P2.mes-1].toUpperCase()} DE ${P2.ano}`;
+  let csv=`POLÍCIA MILITAR DA BAHIA;;;${titulo}\n`;
+  csv+="FUNÇÃO;OPM;GH;NOME;MATRÍCULA;TELEFONE;TIPO"; dias.forEach(d=>csv+=`;${pad(d)}`); csv+=';D;N;HORAS\n';
+  dias.forEach((d,i)=>csv+=(i?';':';;;;;;;')+sem(d).slice(0,3)); csv+='\n';
+  for(const r of rows){ if(num(r.is_separador)){ csv+=';'.repeat(6)+';'+escapeCsv(r.separador_texto||'').replace(/;/g,' ')+'\n'; continue; }
+    const dd=parseDias(r.dias); const ch=p2TotalHoras(dd);
+    let line=[r.funcao,r.opm,r.gh,r.nome,r.matricula,r.telefone||'',r.tipo_pagamento||'HE'].map(escapeCsv).join(';');
+    dias.forEach(d=>line+=`;${dd[String(d)]||''}`);
+    csv+=line+`;${ch.hD};${ch.hN};${ch.total}\n`;
+  }
+  csv+=`\n${P2.meta.local||'IRECÊ'}, ${pad(new Date().getDate())}/${pad(new Date().getMonth()+1)}/${P2.ano}\n${P2.meta.resp||''}\n${P2.meta.cargo||''}\nNota: ${P2.meta.nota||'Última alteração em '+new Date().toLocaleString('pt-BR')}\n`;
+  const leg=(C.legendas||[]); if(leg.length) csv+=`Legenda: ${leg.map(l=>l.codigo+' ('+l.descricao+')').join(' | ')}\n`;
+  downloadText(`escala_p2_${P2.ano}_${pad(P2.mes)}.csv`,csv);
+  toast('CSV exportado!','ok');
+};
+function escapeCsv(v){ const s=String(v==null?'':v); return /[;"\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
+P2.exportarXls=async function(){
+  const allRows=(await getDocs(col('escala_p2').where('mes','==',P2.mes).where('ano','==',P2.ano))).sort((a,b)=>num(a.ordem)-num(b.ordem));
+  if(!allRows.length){ toast('Nada para exportar','err'); return; }
+  const rows=allRows.filter(r=>!num(r.is_separador));
+  const dias=p2DiasComDados(rows); const sem=d=>DSEMANA[new Date(P2.ano,P2.mes-1,d).getDay()];
+  await XLSX();
+  const totalCols=7+dias.length+3;
+  const titulo=P2.meta.titulo||`ESCALA DE COORDENADOR REGIONAL DO CPR-CN - ${MESES[P2.mes-1].toUpperCase()} DE ${P2.ano}`;
+  const xesc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const hoje=new Date(); const dataStamp=`${pad(hoje.getDate())}/${pad(hoje.getMonth()+1)}/${hoje.getFullYear()}`;
+  let h=`<html><head><meta charset="UTF-8"></head><body><table style="width:100%;border-collapse:collapse;font-family:Calibri,Arial;font-size:10pt">`;
+  h+=`<tr><td style="border:1px solid #2B488B;background:#FFF8E8;text-align:center;vertical-align:middle;padding:1px 3px;font-weight:700;color:#2B488B;font-size:6pt;width:24mm">VISTO<br><span style="font-weight:400;font-size:5pt">EM ${dataStamp}</span><br><span style="font-size:5pt">________________</span><br>COMANDANTE<br>CPR-CN</td><td colspan="${totalCols-1}" style="text-align:center;font-size:12pt;font-weight:700;border:none;padding:2px 0">POLÍCIA MILITAR DA BAHIA</td></tr>`;
+  h+=`<tr><td colspan="${totalCols}" style="text-align:center;font-size:9pt;border:none;padding:1px 0">COPPM CPR-CN</td></tr>`;
+  h+=`<tr><td colspan="${totalCols}" style="text-align:center;font-size:9pt;border:none;padding:1px 0;color:#666">CENTRO DE PLANEJAMENTO OPERACIONAL E DECISÕES ESTRATÉGICAS</td></tr>`;
+  h+=`<tr><td colspan="${totalCols}" style="text-align:center;font-size:12pt;font-weight:700;border:none;padding:8px 0 6px 0">${xesc(titulo)}</td></tr>`;
+  h+=`<tr style="height:6pt"><td colspan="${totalCols}" style="background:#2B488B;border:none;padding:0;line-height:6pt;font-size:6pt">&nbsp;</td></tr>`;
+  h+=`<tr style="height:18pt">`;
+  ['FUNÇÃO','OPM','GH','NOME','MATRÍCULA','TEL.','TIPO'].forEach(c=>{h+=`<th style="background:#2B488B;color:#fff;font-weight:700;border:1px solid #2B488B;padding:2px 4px">${c}</th>`;});
+  dias.forEach(d=>{h+=`<th style="background:#2B488B;color:#fff;font-weight:700;border:1px solid #2B488B;padding:2px 4px;font-size:8pt">${pad(d)}<br><span style="font-weight:400;font-size:6pt;color:#C8D7FF">${sem(d).slice(0,3)}</span></th>`;});
+  h+=`<th style="background:#2B488B;color:#fff;font-weight:700;border:1px solid #2B488B;padding:2px 4px;font-size:7pt">D</th><th style="background:#2B488B;color:#fff;font-weight:700;border:1px solid #2B488B;padding:2px 4px;font-size:7pt">N</th><th style="background:#2B488B;color:#fff;font-weight:700;border:1px solid #2B488B;padding:2px 4px;font-size:7pt">HORAS</th></tr>`;
+  let di=0;
+  for(const r of allRows){
+    if(num(r.is_separador)){ h+=`<tr><td colspan="${totalCols}" style="text-align:center;font-weight:600;font-size:8pt;color:#666;border:1px solid #ddd;background:#F5F0E8;padding:3px 4px">${xesc(r.separador_texto)}</td></tr>`; }
+    else {
+      const rr=rows[di++]; const dd=parseDias(rr.dias); const bg=di%2===0?'background:#F5F5FA':'';
+      h+=`<tr style="${bg}"><td style="text-align:center;vertical-align:middle;font-weight:600;border:1px solid #bbb;padding:2px 4px">${xesc(rr.funcao)}</td><td style="text-align:center;vertical-align:middle;border:1px solid #bbb;padding:2px 4px">${xesc(rr.opm)}</td><td style="text-align:center;vertical-align:middle;border:1px solid #bbb;padding:2px 4px">${xesc(rr.gh)}</td><td style="text-align:left;vertical-align:middle;border:1px solid #bbb;padding:2px 4px">${xesc(rr.nome)}</td><td style="text-align:center;vertical-align:middle;border:1px solid #bbb;padding:2px 4px">${xesc(rr.matricula)}</td><td style="text-align:center;vertical-align:middle;border:1px solid #bbb;padding:2px 4px">${xesc(rr.telefone||'')}</td><td style="text-align:center;vertical-align:middle;border:1px solid #bbb;padding:2px 4px;font-weight:700">${xesc(rr.tipo_pagamento||'HE')}</td>`;
+      dias.forEach(d=>{const cod=dd[String(d)]||''; h+=`<td style="text-align:center;vertical-align:middle;font-weight:${cod?'700':'400'};border:1px solid #bbb;padding:2px 4px">${xesc(cod)}</td>`;});
+      const ch=p2TotalHoras(dd);
+      h+=`<td style="text-align:center;vertical-align:middle;font-weight:700;border:1px solid #bbb;padding:2px 4px">${ch.hD||''}</td><td style="text-align:center;vertical-align:middle;font-weight:700;border:1px solid #bbb;padding:2px 4px">${ch.hN||''}</td><td style="text-align:center;vertical-align:middle;font-weight:700;border:1px solid #bbb;padding:2px 4px">${ch.total||''}</td></tr>`;
+    }
+  }
+  h+=`<tr style="height:4pt"><td colspan="${totalCols}" style="background:#2B488B;border:none;padding:0;line-height:4pt;font-size:4pt">&nbsp;</td></tr>`;
+  h+=`<tr><td colspan="${totalCols}" style="text-align:center;font-size:9pt;border:none;padding-top:8px">${xesc(P2.meta.local||'IRECÊ')}, ${hoje.getDate()} DE ${MESES[hoje.getMonth()].toUpperCase()} DE ${P2.ano}</td></tr>`;
+  h+=`<tr><td colspan="${totalCols}" style="text-align:center;font-size:9pt;font-weight:700;border:none;padding-top:6px">${xesc(P2.meta.resp||'CARLOS AUGUSTO FERREIRA DIAS - Ten Cel PM')}</td></tr>`;
+  h+=`<tr><td colspan="${totalCols}" style="text-align:center;font-size:8pt;border:none;color:#555">${xesc(P2.meta.cargo||'CHEFE DO CPODE')}</td></tr>`;
+  h+=`<tr><td colspan="${totalCols}" style="text-align:center;font-size:7pt;border:none;color:#888;padding-top:4px">Nota: ${xesc(P2.meta.nota||'Última alteração em '+new Date().toLocaleString('pt-BR'))}</td></tr>`;
+  const leg=C.legendas||[]; if(leg.length) h+=`<tr><td colspan="${totalCols}" style="text-align:center;font-size:7pt;border:none;color:#888;padding-top:2px">Legenda: ${xesc(leg.map(l=>l.codigo+' ('+l.descricao+')').join(' | '))}</td></tr>`;
+  h+=`</table></body></html>`;
+  downloadText(`escala_p2_${P2.ano}_${pad(P2.mes)}.xls`,h,'application/vnd.ms-excel;charset=utf-8');
+  toast('Excel exportado!','ok');
+};
+function p2DiasComDados(rows){
+  const s=new Set(); rows.forEach(r=>{ if(num(r.is_separador)) return; const d=parseDias(r.dias); Object.keys(d).forEach(k=>{ if(d[k]) s.add(parseInt(k)); }); });
+  return Array.from(s).sort((a,b)=>a-b);
+}
+P2.print=function(){
+  P2.salvarMeta();
+  const rows=(P2['_printRows']||[]);
+  const imp=$('#imp'); if(!imp) return;
+  const nd=p2DiasMes(); const sem=d=>DSEMANA[new Date(P2.ano,P2.mes-1,d).getDay()];
+  const titulo=P2.meta.titulo||`ESCALA DE COORDENADOR REGIONAL DO CPR-CN - ${MESES[P2.mes-1].toUpperCase()} DE ${P2.ano}`;
+  let html=`<div style="text-align:center;font-size:13pt;font-weight:700">POLÍCIA MILITAR DA BAHIA</div>
+    <div style="text-align:center;font-size:10pt">COPPM CPR-CN · CENTRO DE PLANEJAMENTO OPERACIONAL E DECISÕES ESTRATÉGICAS</div>
+    <div style="text-align:center;font-size:12pt;font-weight:700;margin:6px 0">${esc(titulo)}</div>
+    <table><thead><tr><th>FUNÇÃO</th><th>OPM</th><th>GH</th><th>NOME</th><th>MATRÍCULA</th><th>TIPO</th>`;
+  for(let d=1;d<=nd;d++){ const fer=p2Eferiado(d); html+=`<th style="font-size:7pt;${fer?'background:#f59e0b!important':''}">${pad(d)}<br>${sem(d).slice(0,3)}</th>`; }
+  html+='<th>D</th><th>N</th><th>H</th></tr></thead><tbody>';
+  for(const r of rows){ if(num(r.is_separador)){ html+=`<tr class="alt"><td colspan="${6+nd+3}" style="font-weight:700">≡ ${esc(r.separador_texto||'')}</td></tr>`; continue; } const dd=parseDias(r.dias); const ch=p2TotalHoras(dd);
+    html+=`<tr><td>${esc(r.funcao)}</td><td>${esc(r.opm)}</td><td>${esc(r.gh)}</td><td style="text-align:left">${esc(r.nome)}</td><td>${esc(r.matricula)}</td><td>${esc(r.tipo_pagamento||'HE')}</td>`;
+    for(let d=1;d<=nd;d++){ const cod=dd[String(d)]||''; html+=`<td>${esc(cod)}</td>`; }
+    html+=`<td>${ch.hD||''}</td><td>${ch.hN||''}</td><td>${ch.total||''}</td></tr>`;}
+html+='</tbody></table>'; imp.innerHTML=html; setTimeout(()=>window.print(),50);
+}
+
+/* ================= Escalas Salvas ================= */
+async function renderSalvas(){
+  let cards=await all('escalas_salvas');
+  cards.sort((a,b)=>(b.data_salva||'').localeCompare(a.data_salva||''));
+  let html=`<div class="pagehead"><h2>💾 Escalas Salvas</h2><div class="sub">${cards.length} escala(s) salva(s)</div></div>
+    <div class="card" style="padding:0;overflow:auto"><table>
+    <thead><tr><th>ID</th><th>Nome</th><th>Mês</th><th>Ano</th><th>Salva em</th><th>Militares</th><th>Ativa</th><th></th></tr></thead><tbody>`;
+  if(!cards.length){ html+=`<tr><td colspan="8" class="center muted">Nenhuma escala salva. Salve uma na tela Escala P2.</td></tr>`; }
+  for(const es of cards){
+    const itens=es.itens||[];
+    const mils=itens.filter(i=>!num(i.is_separador)).length;
+    html+=`<tr><td>${num(es.id)}</td><td><b>${esc(es.nome)}</b></td><td>${es.mes?MESES[(es.mes-1)]||es.mes:'—'}</td><td>${es.ano||'—'}</td>
+      <td class="muted">${esc(es.data_salva||'')}</td><td><span class="badge">${mils}</span></td>
+      <td>${num(es.ativa)?'<span class="ok">★</span>':''}</td>
+      <td style="white-space:nowrap">
+        <button class="btn ghost sm" title="Carregar no editor" onclick="salvaCarregar(${num(es.id)})">📂</button>
+        <button class="btn ghost sm ${num(es.ativa)?'':''}" onclick="salvaAtiva(${num(es.id)})">${num(es.ativa)?'★':'☆'}</button>
+        <button class="btn danger sm" onclick="salvaExcluir(${num(es.id)})">🗑</button>
+      </td></tr>`;
+  }
+  html+=`</tbody></table></div>`;
+  $('#view').innerHTML=html;
+}
+async function salvaCarregar(id){
+  const es=await getDoc('escalas_salvas',id);
+  if(!es){ toast('Escala não encontrada','err'); return; }
+  if(!confirm('Carregar "'+es.nome+'" para o editor? Os dados atuais de '+(es.mes||'?')+'/'+(es.ano||'?')+' serão substituídos.')) return;
+  const existing=await getDocs(col('escala_p2').where('mes','==',num(es.mes||P2.mes)).where('ano','==',num(es.ano||P2.ano)));
+  for(const r of existing){ await col('escala_p2').doc(r.__id).delete(); }
+  const itens=es.itens||[];
+  const maxOrd=existing.reduce((a,r)=>Math.max(a,num(r.ordem)),0);
+  for(const it of itens){
+    await col('escala_p2').add({
+      mes:num(es.mes||P2.mes), ano:num(es.ano||P2.ano),
+      funcao:it.funcao||'-', opm:it.opm||'', gh:it.gh||'', nome:it.nome||'', matricula:it.matricula||'',
+      telefone:it.telefone||'', dias:it.dias||{}, tipo_pagamento:it.tipo_pagamento||'HE',
+      is_separador:num(it.is_separador||0), separador_texto:it.separador_texto||'', ordem:num(it.ordem||0)
+    });
+  }
+  if(es.meta){ const m=es.meta; Object.keys(P2.meta).forEach(k=>{ if(m[k]) P2.meta[k]=m[k]; }); await col('escala_p2_meta').doc('1').set({id:1,mes:num(es.mes||P2.mes),ano:num(es.ano||P2.ano),local:P2.meta.local,responsavel:P2.meta.resp,cargo:P2.meta.cargo,emissao:P2.meta.emissao,nota:P2.meta.nota,titulo:P2.meta.titulo},{merge:true}); }
+  if(es.mes) P2.mes=num(es.mes); if(es.ano) P2.ano=num(es.ano);
+  toast('Escala carregada no editor!','ok'); go('p2');
+}
+async function salvaAtiva(id){
+  const all=await all('escalas_salvas');
+  for(const es of all){ if(num(es.ativa)) await col('escalas_salvas').doc(es.__id).set({ativa:0},{merge:true}); }
+  await col('escalas_salvas').doc(String(id)).set({ativa:1},{merge:true});
+  toast('Escala definida como ativa!','ok'); go('salvas');
+}
+async function salvaExcluir(id){
+  if(!confirm('Excluir esta escala?')) return;
+  await col('escalas_salvas').doc(String(id)).delete();
+  toast('Escala excluída!','ok'); go('salvas');
+}
+P2.salvarEscala=async function(){
+  P2.salvarMeta();
+  const rows=(await getDocs(col('escala_p2').where('mes','==',P2.mes).where('ano','==',P2.ano))).sort((a,b)=>num(a.ordem)-num(b.ordem));
+  if(!rows.length){ toast('Nenhum militar na escala para salvar','err'); return; }
+  const itens=rows.map(r=>({funcao:r.funcao,opm:r.opm,gh:r.gh,nome:r.nome,matricula:r.matricula,telefone:r.telefone||'',dias:parseDias(r.dias),tipo_pagamento:r.tipo_pagamento||'HE',is_separador:num(r.is_separador),separador_texto:r.separador_texto||'',ordem:num(r.ordem)}));
+  const agora=new Date();
+  const nome=`ESCALA GERAL - ${MESES[P2.mes-1].toUpperCase()} ${P2.ano} - ${pad(agora.getDate())}/${pad(agora.getMonth()+1)}/${agora.getFullYear()} ${pad(agora.getHours())}:${pad(agora.getMinutes())}`;
+  const all=await all('escalas_salvas'); const maxId=all.reduce((a,x)=>Math.max(a,num(x.id)),0);
+  const id=maxId+1;
+  const payload={id,mes:P2.mes,ano:P2.ano,nome,data_salva:agora.toISOString(),ativa:1,itens,meta:Object.assign({},P2.meta,{responsavel:P2.meta.resp})};
+  await col('escalas_salvas').doc(String(id)).set(payload);
+  toast(`Escala salva! ID ${id} — ${nome}`,'ok');
+};
+
+/* ================= Tabela de Valores ================= */
+async function renderValores(){
+  let html=`<div class="pagehead"><h2>💰 Tabela de Valores</h2><div class="sub">Valores por posto/graduação (HE / VD)</div></div>
+    <div class="card" style="padding:0;overflow:auto"><table>
+    <thead><tr><th>Posto/Grad</th><th>HE Diurna</th><th>Adicional HE Noturna</th><th>VD Diurno</th><th>VD Noturno</th><th></th></tr></thead><tbody>`;
+  const vals=await all('tabela_valores');
+  vals.sort((a,b)=>(a.posto_grad||'').localeCompare(b.posto_grad||''));
+  if(!vals.length){ html+=`<tr><td colspan="6" class="center muted">Sem valores cadastrados.</td></tr>`; }
+  for(const v of vals){
+    html+=`<tr><td><b>${esc(v.posto_grad)}</b></td>
+      <td>${fmtMon(v.he_diurna)}</td><td>${fmtMon(v.ad_he_noturna)}</td><td>${fmtMon(v.vd_diurno)}</td><td>${fmtMon(v.vd_noturno)}</td>
+      <td><button class="btn ghost sm" onclick="valorEditar('${esc(v.__id)}','${esc(v.posto_grad)}')">✏️</button></td></tr>`;
+  }
+  html+=`</tbody></table></div>`;
+  $('#view').innerHTML=html;
+}
+function fmtMon(v){ return num(v)?num(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—'; }
+async function valorEditar(id,posto){
+  const v=await getDoc('tabela_valores',id);
+  openModal('Editar valores — '+posto,`
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px">
+      <div><label class="muted">HE Diurna</label><input id="v-he" type="number" step="0.01" value="${num(v?(v.he_diurna):0)}"></div>
+      <div><label class="muted">Ad. HE Noturna</label><input id="v-ad" type="number" step="0.01" value="${num(v?(v.ad_he_noturna):0)}"></div>
+      <div><label class="muted">VD Diurno</label><input id="v-vd" type="number" step="0.01" value="${num(v?(v.vd_diurno):0)}"></div>
+      <div><label class="muted">VD Noturno</label><input id="v-vn" type="number" step="0.01" value="${num(v?(v.vd_noturno):0)}"></div>
+    </div>`,async ()=>{
+    await col('tabela_valores').doc(v.__id).set({
+      posto_grad:posto||v.posto_grad,
+      he_diurna:num($('#v-he').value), ad_he_noturna:num($('#v-ad').value),
+      vd_diurno:num($('#v-vd').value), vd_noturno:num($('#v-vn').value)
+    },{merge:true});
+    closeModal(); toast('Valores atualizados!','ok'); go('valores');
+  });
+}
+
+/* ================= Relatório de Horas ================= */
+let REL_ROWS=[];
+async function renderRelatorio(){
+  const hoje=new Date();
+  const eventos=await all('eventos');
+  const mesesEvento=[...new Set(eventos.map(e=>{ const d=(e.evento_dta_inicio||'').split('-'); return d.length>=2?(+d[1]):null; }).filter(Boolean))];
+  const anosEvento=[...new Set(eventos.map(e=>{ const d=(e.evento_dta_inicio||'').split('-'); return d.length>=1?(+d[0]):null; }).filter(Boolean))].sort((a,b)=>a-b);
+  $('#view').innerHTML=`
+    <div class="pagehead"><h2>📈 Relatório de Horas</h2><div class="sub">Horas extras/diferenciais por militar, mês e evento</div></div>
+    <div class="card"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;align-items:end">
+      <div><label class="muted">Mês</label><select id="r-mes">${Array.from({length:12},(_,i)=>`<option value="${i+1}" ${i+1===hoje.getMonth()+1?'selected':''}>${MESES[i]}</option>`).join('')}</select></div>
+      <div><label class="muted">Ano</label><select id="r-ano">${((anosEvento.length?anosEvento:[hoje.getFullYear()])).map(a=>`<option value="${a}" ${a===hoje.getFullYear()?'selected':''}>${a}</option>`).join('')}</select></div>
+      <div><label class="muted">Tipo Pagamento</label><select id="r-tp"><option value="">Todos</option><option value="HE">HE</option><option value="VD">VD</option><option value="SO">SO</option></select></div>
+      <div><label class="muted">OPM</label><select id="r-opm"><option value="">Todas</option>${C.opms.filter(o=>o.opm_atv!=='FIM').map(o=>`<option value="${esc(o.opm_id)}">${esc(o.opm_sigla||o.opm_id)}</option>`).join('')}</select></div>
+      <div><button class="btn" onclick="relatorioGerar()">Gerar</button></div>
+    </div></div>
+    <div id="relatorio-out"></div>`;
+}
+async function relatorioGerar(){
+  const mes=parseInt($('#r-mes').value), ano=parseInt($('#r-ano').value);
+  const tipo=$('#r-tp').value, opmId=$('#r-opm').value;
+  busy('Calculando…');
+  const eventos=await all('eventos');
+  const filter=eventos.filter(e=>{ const p=(e.evento_dta_inicio||'').split('-'); return (+p[1])===mes&&(+p[0])===ano; });
+  const allOes=await all('opm_eventos');
+  const rows=[];
+  for(const ev of filter){
+    const oes=allOes.filter(r=>String(r.evento_id)===String(ev.evento_id));
+    for(const oe of oes){
+      if(opmId && String(oe.opm_id)!==String(opmId)) continue;
+      const escs=await getDocs(col('escalas').where('opm_evento_id','==',num(oe.opm_evento_id)));
+      const agg={};
+      for(const es of escs){
+        if(tipo && String(es.tipo_pagamento||'HE')!==String(tipo)) continue;
+        const mat=es.matricula; if(!agg[mat]) agg[mat]={matricula:mat,nome:'',chd:0,chn:0,dias:0};
+        agg[mat].chd+=num(es.escala_ch_diurna); agg[mat].chn+=num(es.escala_ch_noturna); agg[mat].dias+=1;
+      }
+      const o=opmOf(oe.opm_id); const sigla=o?(o.opm_sigla||o.opm_id):'';
+      for(const mat in agg){
+        const a=agg[mat];
+        const per=(await getDocs(col('efetivopm').where('matricula','==',String(mat)).limit(1)))[0];
+        a.nome=per?per.nome:'';
+        const posto=(per&&per.cargo)?cargoNome(per.cargo):(C.cargos.find(c=>String(c.cargo_id)===String(per?per.cargo:''))||{}).posto_grad||'';
+        const t=tipo||'HE';
+        a.valor=await calcValor(posto, a.chd, a.chn, t);
+        rows.push({evento:ev.evento_desc||ev.evento_nome||'',opm:sigla,matricula:mat,nome:a.nome,posto,chd:a.chd,chn:a.chn,dias:a.dias,tipo:t,valor:a.valor});
+      }
+    }
+  }
+  rows.sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
+  REL_ROWS=rows;
+  const out=$('#relatorio-out');
+  const totD=rows.reduce((s,r)=>s+r.chd,0), totN=rows.reduce((s,r)=>s+r.chn,0), totV=rows.reduce((s,r)=>s+r.valor,0), totDias=rows.reduce((s,r)=>s+r.dias,0);
+  let html=`<div class="card mt"><div class="stat-row">
+      <div class="stat"><div class="v">${rows.length}</div><div class="l">Militares</div></div>
+      <div class="stat"><div class="v">${fmt(totD)}h</div><div class="l">CH Diurna</div></div>
+      <div class="stat"><div class="v">${fmt(totN)}h</div><div class="l">CH Noturna</div></div>
+      <div class="stat"><div class="v">${fmt(totDias)}</div><div class="l">Dias</div></div>
+      <div class="stat"><div class="v">${fmtMon(totV)}</div><div class="l">Valor total</div></div>
+    </div>
+    <div class="toolbar mt"><button class="btn" onclick="relatorioCsv()">⬇ CSV</button><button class="btn" onclick="relatorioXls()">📊 Excel</button></div></div>`;
+  if(!rows.length){ html+=`<div class="notice mt">Nenhum lançamento para ${MESES[mes-1]}/${ano}${tipo?' ('+tipo+')':''}.</div>`; }
+  else{
+    html+=`<div class="card mt" style="padding:0;overflow:auto"><table>
+      <thead><tr><th>Evento</th><th>OPM</th><th>Matrícula</th><th>Nome</th><th>Posto</th><th>CH D</th><th>CH N</th><th>Dias</th><th>Tipo</th><th>Valor</th></tr></thead><tbody>`;
+    for(const r of rows){
+      html+=`<tr><td>${esc(r.evento)}</td><td>${esc(r.opm)}</td><td>${esc(r.matricula)}</td><td>${esc(r.nome)}</td><td>${esc(r.posto)}</td><td>${r.chd}</td><td>${r.chn}</td><td>${r.dias}</td><td>${esc(r.tipo)}</td><td><b>${fmtMon(r.valor)}</b></td></tr>`;
+    }
+    html+=`</tbody></table></div>`;
+  }
+  out.innerHTML=html;
+}
+function calcValor(posto,chd,chn,tipo){
+  const vt=C.valores.find(x=>String(x.posto_grad)===String(posto));
+  if(!vt) return 0;
+  let vd,vn;
+  if(tipo==='HE'){ vd=num(vt.he_diurna); vn=num(vt.ad_he_noturna); }
+  else if(tipo==='VD'){ vd=num(vt.vd_diurno); vn=num(vt.vd_noturno); }
+  else return 0;
+  return Math.round(((chd*vd)+(chn*vn))*100)/100;
+}
+function relatorioCsv(){
+  if(!REL_ROWS.length){ toast('Gere o relatório primeiro','err'); return; }
+  let csv='Evento;OPM;Matrícula;Nome;Posto/Grad;CH Diurna;CH Noturna;Dias;Tipo Pagamento;Valor\n';
+  for(const r of REL_ROWS){ csv+=`${escapeCsv(r.evento)};${escapeCsv(r.opm)};${escapeCsv(r.matricula)};${escapeCsv(r.nome)};${escapeCsv(r.posto)};${r.chd};${r.chn};${r.dias};${r.tipo};${r.valor.toFixed(2).replace('.',',')}\n`; }
+  downloadText('relatorio.csv',csv);
+  toast('CSV exportado!','ok');
+}
+function relatorioXls(){
+  if(!REL_ROWS.length){ toast('Gere o relatório primeiro','err'); return; }
+  let h='<html><head><meta charset="UTF-8"></head><body><table border="1"><tr><th>Evento</th><th>OPM</th><th>Matrícula</th><th>Nome</th><th>Posto</th><th>CH D</th><th>CH N</th><th>Dias</th><th>Tipo</th><th>Valor</th></tr>';
+  for(const r of REL_ROWS){ h+=`<tr><td>${esc(r.evento)}</td><td>${esc(r.opm)}</td><td>${esc(r.matricula)}</td><td>${esc(r.nome)}</td><td>${esc(r.posto)}</td><td>${r.chd}</td><td>${r.chn}</td><td>${r.dias}</td><td>${esc(r.tipo)}</td><td>${r.valor.toFixed(2).replace('.',',')}</td></tr>`; }
+  h+='</table></body></html>';
+  downloadText('relatorio.xls',h,'application/vnd.ms-excel;charset=utf-8');
+  toast('Excel exportado!','ok');
+}
+
+/* ================= Cards Instagram ================= */
+async function renderCards(){
+  const eventos=await all('eventos');
+  const porTipo=await all('ocorrencias');
+  const tipos=[...new Set(porTipo.map(o=>o.tipo).filter(Boolean))].sort();
+  $('#view').innerHTML=`
+    <div class="pagehead"><h2>🃏 Cards Instagram</h2><div class="sub">Gere cards com estatísticas e compartilhe</div></div>
+    <div class="card"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
+      <div><label class="muted">Título</label><input id="cd-titulo" placeholder="Ex.: Balanço Mensal"></div>
+      <div><label class="muted">Subtítulo</label><input id="cd-sub" placeholder="Ex.: Junho de 2026"></div>
+      <div><label class="muted">Tipo de ocorrência</label><select id="cd-tipo"><option value="">Todas</option>${tipos.map(t=>`<option>${esc(t)}</option>`).join('')}</select></div>
+      <div><label class="muted">Cor de fundo</label><input id="cd-cor" type="color" value="#1a1f2a"></div>
+      <div><button class="btn" onclick="gerarCard()">✨ Gerar</button></div>
+    </div></div>
+    <div class="card mt"><div id="cd-canvas"></div>
+      <div class="toolbar mt"><button class="btn" id="cd-dl" onclick="downloadCard()" hidden>⬇ Baixar PNG</button></div></div>`;
+}
+async function gerarCard(){
+  const titulo=$('#cd-titulo').value||'Estatísticas CPR-CN';
+  const sub=$('#cd-sub').value||'';
+  const tipoF=$('#cd-tipo').value;
+  const cor=$('#cd-cor').value||'#1a1f2a';
+  const occs=await all('ocorrencias');
+  const fil=occs.filter(o=>!tipoF||o.tipo===tipoF);
+  const total=fil.length;
+  const porOrdem={}; // agrupar por cidade
+  const porTipo={};
+  for(const o of fil){ porTipo[o.tipo]=(porTipo[o.tipo]||0)+1; }
+  const top=Object.entries(porTipo).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  let html=`<div id="card-box" style="width:1080px;aspect-ratio:1;background:${cor};color:var(--txt);border-radius:20px;padding:60px;display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:10px;background:linear-gradient(90deg,#dc2626,var(--accent),#22c55e)"></div>
+    <div><div style="font-size:26px;font-weight:700">${esc(titulo)}</div>
+      <div style="font-size:20px;color:var(--muted);margin-top:6px">${esc(sub)}${tipoF?' · '+esc(tipoF):''}</div></div>
+    <div style="text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center">
+      <div style="font-size:140px;font-weight:800;line-height:1">${total}</div>
+      <div style="font-size:28px;color:var(--muted);margin-top:8px">OCORRÊNCIAS</div>
+    </div>
+    <div><div style="font-size:20px;color:var(--muted);margin-bottom:12px">Principais tipos</div>
+      <div style="display:flex;flex-direction:column;gap:8px">${top.map((t,i)=>`<div style="display:flex;align-items:center;gap:12px">
+        <div style="font-size:18px;color:#fff;background:${OCORR_COLORS[t[0]]||'#9ca3af'};border-radius:6px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-weight:700">${i+1}</div>
+        <div style="flex:1;font-size:20px">${esc(t[0])}</div><div style="font-size:22px;font-weight:700">${t[1]}</div></div>`).join('')}
+    </div></div>
+  </div>`;
+  $('#cd-canvas').innerHTML=html;
+  $('#cd-dl').hidden=false;
+  await loadHTML2Canvas();
+  window.__cardBox=document.getElementById('card-box');
+}
+function html2canvasLoad(){ return window.html2canvas?Promise.resolve():loadScript('https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js'); }
+async function loadHTML2Canvas(){ return html2canvasLoad(); }
+async function downloadCard(){
+  const box=document.getElementById('card-box'); if(!box) return;
+  if(window.html2canvas){ const c=await html2canvas(box,{scale:2,useCORS:true,backgroundColor:box.style.backgroundColor}); c.toBlob(b=>downloadBlob('card_instagram.png',b),'image/png'); return; }
+  if(window.toPng){ const url=await window.toPng(box); const b=await fetch(url).then(r=>r.blob()); downloadBlob('card_instagram.png',b); return; }
+  toast('Biblioteca de exportação indisponível','err');
+}
+
+/* ================= Usuários ================= */
+async function renderUsuarios(){
+  const rows=await all('usuarios');
+  let html=`<div class="pagehead"><h2>👤 Usuários</h2><div class="sub">Contas de acesso (Firebase Auth)</div></div>`;
+  if(auth&&auth.currentUser){
+    const u=auth.currentUser;
+    html+=`<div class="card"><div class="notice" style="border-color:var(--line)">Você está logado como <b>${esc(u.email)}</b> — UID <span class="muted">${esc(u.uid)}</span>.</div></div>`;
+  }
+  html+=`<div class="card" style="padding:0;overflow:auto"><table>
+    <thead><tr><th>Matrícula</th><th>Nome</th><th>Função</th><th>OPM</th><th>Telefone</th></tr></thead><tbody>`;
+  if(!rows.length){ html+=`<tr><td colspan="5" class="center muted">Nenhum usuário local registrado. (Contas de login ficam no Firebase Authentication.)</td></tr>`; }
+  for(const u of rows){
+    html+=`<tr><td>${esc(u.matricula)}</td><td><b>${esc(u.nome)}</b></td><td>${esc(u.funcao||'')}</td><td>${esc(u.opm||'')}</td><td>${esc(u.telefone||'—')}</td></tr>`;
+  }
+  html+=`</tbody></table></div>`;
+  $('#view').innerHTML=html;
+}
+
+/* ================= Backup / Exportar ================= */
+async function renderBackup(){
+  const sets=[['efetivopm','Efetivo PM'],['opms','OPMs'],['cargos','Cargos/Postos'],['municipios','Municípios'],['viaturas','Viaturas'],['eventos','Eventos'],['opm_eventos','OPM×Eventos'],['escalas','Escalas de Horas'],['escala_p2','Escala P2'],['escala_p2_meta','P2 Meta'],['escala_p2_legendas','P2 Legendas'],['escalas_salvas','Escalas Salvas'],['tabela_valores','Tabela de Valores'],['ocorrencias','Ocorrências'],['ocorrencia_eventos','Ocorrência×Eventos'],['ocorrencia_meta','Ocorrência Meta'],['ocorrencia_config','Ocorrência Config'],['usuarios','Usuários']];
+  const counts={};
+  for(const [name] of sets){ counts[name]=await countDocs(name); }
+  $('#view').innerHTML=`
+    <div class="pagehead"><h2>🗄️ Backup / Exportar</h2><div class="sub">Baixe os dados do Firestore em JSON (um arquivo por coleção)</div></div>
+    <div class="toolbar"><button class="btn" onclick="backupJson()">⬇ Backup completo (JSON)</button><button class="btn ghost" onclick="backupSelectOnly()">Selecionadas</button></div>
+    <div class="card" style="padding:0;overflow:auto"><table>
+    <thead><tr><th><input type="checkbox" id="bk-all" onchange="bkToggleAll(this.checked)" checked></th><th>Coleção</th><th>Documentos</th></tr></thead><tbody>`;
+  const big = ['efetivopm','escalas'];
+  for(const [name,label] of sets){
+    const isBig=big.includes(name);
+    html+=`<tr><td><input type="checkbox" class="bk-cb" data-col="${esc(name)}" ${isBig?'':'checked'}></td><td><b>${esc(name)}</b><span class="muted" style="margin-left:8px">${esc(label)}</span>${isBig?'<span class="warn" style="margin-left:8px">⚠ leitura pesada</span>':''}</td><td>${counts[name]}</td></tr>`;
+  }
+  html+=`</tbody></table></div>`;
+};
+function bkToggleAll(checked){ document.querySelectorAll('.bk-cb').forEach(c=>c.checked=checked); }
+function backupSelectOnly(){ document.querySelectorAll('.bk-cb').forEach(c=>c.checked=false); }
+async function backupJson(){
+  const checked=[...document.querySelectorAll('.bk-cb:checked')].map(c=>c.dataset.col);
+  if(checked.includes('efetivopm')||checked.includes('escalas')){
+    if(!confirm('As coleções selecionadas incluem dados pesados (efetivopm ~30 mil docs / escalas). Isso consumirá muita leitura da quota. Continuar?')) return;
+  }
+  if(!checked.length){ toast('Selecione ao menos uma coleção','err'); return; }
+  busy('Exportando…');
+  const out={};
+  for(const name of checked){
+    try{ out[name]=await all(name); toast('Exportando '+name+' ('+out[name].length+')…'); }catch(e){ out[name]=[]; }
+  }
+  downloadText('backup_firestore.json',JSON.stringify(out,null,2),'application/json');
+  toast('Backup pronto!','ok');
+  go('backup');
 }
 
 /* ================= boot ================= */
