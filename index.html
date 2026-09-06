@@ -300,7 +300,7 @@ async function renderDashboard(){
 }
 
 /* ================= Efetivo PM ================= */
-const EF = { term:'', stack:[], nextLast:null, page:0 };
+const EF = { term:'', stack:[], start:null, end:null };
 async function renderEfetivo(){
   EF.term=$('#ef-term')?$('#ef-term').value.trim():EF.term;
   const term=EF.term;
@@ -310,14 +310,12 @@ async function renderEfetivo(){
     else { q=col('efetivopm').orderBy('nome').startAt(term).endAt(term+'\uf8ff'); }
   }else{ q=col('efetivopm').orderBy('matricula'); }
   q=q.limit(20);
-  if(EF.nextLast) q=q.startAfter(EF.nextLast);
+  if(EF.start) q=q.startAfter(EF.start);
   const items=await getDocs(q);
-  EF.nextLast = items.length ? col('efetivopm').doc(items[items.length-1].__id) : EF.nextLast;
-  EF.page = term ? 0 : EF.nextLast? 1 : 0;
-  if(term){ EF.stack=[]; }
+  EF.end = items.length ? col('efetivopm').doc(items[items.length-1].__id) : null;
   let html=`<div class="pagehead"><h2>Efetivo PM</h2><div class="sub">Lista paginada direto do Firestore (30.5 mil militares)</div></div>
     <div class="toolbar">
-      <div class="searchbox"><input id="ef-term" type="text" placeholder="Buscar por nome ou matrícula…" value="${esc(term)}" onkeydown="if(event.key==='Enter')go('efetivo')" />
+      <div class="searchbox"><input id="ef-term" type="text" placeholder="Buscar por nome ou matrícula…" value="${esc(term)}" onkeydown="if(event.key==='Enter')efBuscar()" />
       </div>
       <button class="btn ghost" onclick="efSetTerm('')">Limpar</button>
     </div>
@@ -334,16 +332,15 @@ async function renderEfetivo(){
   html+=`<div class="pager">
     <button class="btn ghost sm" onclick="efPrev()" ${EF.stack.length?'':'disabled'}>◀ Anterior</button>
     <button class="btn ghost sm" onclick="efNext()" ${items.length<20?'disabled':''}>Próxima ▶</button>
-    <span>${term?'Busca':EF.page?'Página '+EF.page:'Início'}</span>
+    <span>${term?'Busca':EF.stack.length?'Página '+EF.stack.length:'Início'}</span>
   </div>`;
   $('#view').innerHTML=html;
   document.getElementById('ef-term')?.focus();
 }
-function efSetTerm(t){ EF.term=t; EF.stack=[]; EF.nextLast=null; go('efetivo'); }
-function efNext(){
-  if(EF.nextLast){ EF.stack.push(EF.nextLast); EF.nextLast=null; go('efetivo'); }
-}
-function efPrev(){ EF.nextLast=EF.stack.pop()||null; go('efetivo'); }
+function efSetTerm(t){ EF.term=t; EF.stack=[]; EF.start=null; EF.end=null; go('efetivo'); }
+function efBuscar(){ const t=$('#ef-term').value.trim(); if(t!==EF.term){ EF.term=t; EF.stack=[]; EF.start=null; EF.end=null; } go('efetivo'); }
+function efNext(){ if(EF.end){ EF.stack.push(EF.start); EF.start=EF.end; EF.end=null; go('efetivo'); } }
+function efPrev(){ if(EF.stack.length){ EF.start=EF.stack.pop(); EF.end=null; go('efetivo'); } }
 
 /* ================= OPMs ================= */
 async function renderOPMs(){
@@ -403,13 +400,13 @@ async function renderEventos(){
 }
 
 /* ================= Viaturas ================= */
-const VF = { last:null };
+const VF = { start:null, end:null, stack:[] };
 async function renderViaturas(){
   let q=col('viaturas').orderBy('prefixo').limit(20);
-  if(VF.last) q=q.startAfter(VF.last);
+  if(VF.start) q=q.startAfter(VF.start);
   const items=await getDocs(q);
-  VF.last=items.length?col('viaturas').doc(items[items.length-1].__id):VF.last;
-  let html=`<div class="pagehead"><h2>Viaturas</h2><div class="sub">Página ${VF.last?'>1':1} · ordem por prefixo</div></div>
+  VF.end=items.length?col('viaturas').doc(items[items.length-1].__id):null;
+  let html=`<div class="pagehead"><h2>Viaturas</h2><div class="sub">Página ${VF.stack.length+1} · ordem por prefixo</div></div>
     <div class="card" style="padding:0;overflow:auto"><table>
     <thead><tr><th>Prefixo</th><th>Placa</th><th>Marca/Modelo</th><th>Município</th><th>Unidade</th><th>Situação</th></tr></thead><tbody>`;
   if(!items.length) html+=`<tr><td colspan="6" class="center muted">Vazio.</td></tr>`;
@@ -420,14 +417,12 @@ async function renderViaturas(){
       <td><span class="pill ${String(v.situacao||'').toUpperCase()==='ATIVA'?'alt':''}">${esc(v.situacao||'—')}</span></td></tr>`;
   }
   html+=`</tbody></table></div>
-    <div class="pager"><button class="btn ghost sm" onclick="vfPrev()">◀ Página anterior</button>
+    <div class="pager"><button class="btn ghost sm" onclick="vfPrev()" ${VF.stack.length?'':'disabled'}>◀ Página anterior</button>
     <button class="btn ghost sm" onclick="vfNext()" ${items.length<20?'disabled':''}>Próxima ▶</button></div>`;
   $('#view').innerHTML=html;
-  VF.reset=vfPrev;
 }
-let VSTACK=[];
-function vfNext(){ VSTACK.push(VF.last||null); VF.last=null; go('viaturas'); }
-function vfPrev(){ VF.last=VSTACK.pop()||null; go('viaturas'); }
+function vfNext(){ if(VF.end){ VF.stack.push(VF.start); VF.start=VF.end; VF.end=null; go('viaturas'); } }
+function vfPrev(){ if(VF.stack.length){ VF.start=VF.stack.pop(); VF.end=null; go('viaturas'); } }
 
 /* ================= Escala de Horas ================= */
 const ES = { eventoId:null, opmEventoId:null, data:'' };
@@ -479,8 +474,9 @@ function esSetOpm(id){ ES.opmEventoId=num(id); if(!ES.data) ES.data=todayStr(); 
 async function renderEscalaGrid(){
   const oes=(await all('opm_eventos'));
   const oe=oes.find(r=>num(r.opm_evento_id)===ES.opmEventoId);
-  const o=oe?opmOf(oe.opm_id):null;
-  const ev=oe?(await getDocs(col('eventos').where('evento_id','==',num(oe.evento_id))))[0]:null;
+  if(!oe){ ES.opmEventoId=null; return renderEscalaPickOpm(); }
+  const o=opmOf(oe.opm_id);
+  const ev=(await getDocs(col('eventos').where('evento_id','==',num(oe.evento_id))))[0];
   const data=ES.data||todayStr();
   const allRows=await getDocs(col('escalas').where('escala_data','==',data));
   const rows=allRows.filter(r=>num(r.opm_evento_id)===ES.opmEventoId);
@@ -491,7 +487,9 @@ async function renderEscalaGrid(){
     seen[r.matricula].push(r);
   }
   for(const k of Object.keys(seen)){
-    const arr=seen[k].sort((a,b)=>(a.__id===`${ES.opmEventoId}_${k}_${data}`)?-1:0);
+    const arr=seen[k];
+    const ix=arr.findIndex(r=>r.__id===`${ES.opmEventoId}_${k}_${data}`);
+    if(ix>0) arr.unshift(arr.splice(ix,1)[0]);
     list.push(arr[0]);
   }
   list.sort((a,b)=>(a.hora_inicio||'99').localeCompare(b.hora_inicio||'99'));
@@ -598,7 +596,7 @@ async function renderOcorrencias(){
   const eventos=await all('ocorrencia_eventos');
   const datas=[...new Set(eventos.map(r=>r.data_ref))].sort().reverse();
   OC.datas = OC.datas || datas[0] || todayStr();
-  const rows=eventos.filter(r=>r.data_ref===OC.datas).sort((a,b)=>(a.ordem_grupo||b.ordem_grupo||0)-(b.ordem_grupo||a.ordem_grupo||0)||''.localeCompare(a.grupo+String(a.metrica)) );
+  const rows=eventos.filter(r=>r.data_ref===OC.datas).sort((a,b)=>num(a.ordem_grupo)-num(b.ordem_grupo)||String(a.grupo).localeCompare(String(b.grupo))||String(a.metrica).localeCompare(String(b.metrica)));
   let html=`<div class="pagehead"><h2>Ocorrências em Eventos</h2><div class="sub">Matriz de indicadores por data</div></div>
     <div class="tabs">
       <div class="tab ${OC.tab==='ind'?'active':''}" onclick="ocTab('ind')">📊 Indicadores</div>
