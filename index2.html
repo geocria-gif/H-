@@ -1516,6 +1516,8 @@ tbody tr:hover{background:#1c2541}
           <div class="field"><label>Data em destaque</label><select id="occ-date-select" onchange="Ocorrencias.onDateChange()"></select></div>
           <div class="field"><label>Evento vinculado</label><select id="occ-event-link" onchange="Ocorrencias.linkEventChanged()"><option value="">Nenhum</option></select></div>
           <div class="field"><label>Formato do card</label><select id="occ-card-format" onchange="Ocorrencias.onFormatChange()"><option value="feed">Feed / Post (1080×1440)</option><option value="reels">Reels / Stories (1080×1920)</option></select></div>
+          <div class="field"><label>URL do backend (publicação no Instagram)</label><input id="occ-insta-backend" placeholder="https://seu-dominio.com" oninput="Ocorrencias.saveConfigDebounced()" /></div>
+          <div class="field"><label>Token JWT do SISPM</label><input id="occ-insta-token" type="password" placeholder="JWT para a API /api/v1/instagram/publish" oninput="Ocorrencias.saveConfigDebounced()" /></div>
           <div class="field"><label>Fonte das datas na exportação em lote</label><select id="occ-batch-mode" onchange="Ocorrencias.renderSummary()"><option value="todas">Todas as datas da planilha</option><option value="evento">Somente período do evento vinculado</option></select></div>
 
           <div class="field" style="margin-top:4px">
@@ -1557,6 +1559,7 @@ tbody tr:hover{background:#1c2541}
           <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn btn-primary" onclick="Ocorrencias.downloadInstagramCard()">⬇️ Baixar PNG</button>
             <button class="btn" onclick="Ocorrencias.renderInstagramCard()">🔄 Atualizar Preview</button>
+            <button class="btn" onclick="Ocorrencias.publishInstagramCard()" style="background:linear-gradient(135deg,#d62976,#fa7e1e);color:#fff;border-color:transparent">📸 Publicar no Instagram</button>
             <button class="btn" onclick="Ocorrencias.downloadAllCards()">🗂️ Exportar todos</button>
             <button class="btn" onclick="Ocorrencias.downloadConsolidatedEventCard()" style="background:#7c3aed">📊 Card Consolidado do Evento</button>
           </div>
@@ -2280,6 +2283,17 @@ function migrateSchema(){
     addCol("Categoria","TEXT");
     addCol("TipoSanguineo","TEXT");
   } catch(e){ console.warn("migration error (tbEfetivoPM cols):", e); }
+
+  // Garante colunas da tbOPM usadas pelas telas (OpmOrdem em ordem de listagem)
+  try {
+    const cols = exec("PRAGMA table_info(tbOPM)").map(c => c.name);
+    const addCol = (name, type) => { if (!cols.includes(name)) { run(`ALTER TABLE tbOPM ADD COLUMN ${name} ${type}`); console.log("[migration] tbOPM."+name+" adicionada"); } };
+    addCol("OpmOrdem","INTEGER");
+    addCol("OpmAtv","TEXT");
+    addCol("OpmRegiao","TEXT");
+    addCol("OpmBairro","TEXT");
+    addCol("Comandante","TEXT");
+  } catch(e){ console.warn("migration error (tbOPM cols):", e); }
 }
 
 /* Cria as tabelas principais caso o banco esteja completamente vazio */
@@ -2289,7 +2303,13 @@ function createEssentialTables() {
       OpmId INTEGER PRIMARY KEY,
       OpmSigla TEXT,
       OpmDesc TEXT,
-      OpmMunicipio TEXT
+      OpmMunicipio TEXT,
+      OpmOrdem INTEGER DEFAULT 0,
+      OpmAtv TEXT,
+      OpmRegiao TEXT,
+      OpmBairro TEXT,
+      Comandante TEXT,
+      Funcao TEXT
     )`);
 
     run(`CREATE TABLE IF NOT EXISTS tbCargo (
@@ -14256,6 +14276,8 @@ const Ocorrencias = {
     $('occ-card-format').value = this.getConfig('occ_card_format', 'feed');
     $('occ-batch-mode').value = this.getConfig('occ_batch_mode', 'todas');
     $('occ-caption').value = this.getConfig('occ_caption', '');
+    $('occ-insta-backend').value = this.getConfig('occ_insta_backend', '');
+    $('occ-insta-token').value = this.getConfig('occ_insta_token', '');
   },
 
   saveConfigDebounced(){
@@ -14268,6 +14290,8 @@ const Ocorrencias = {
       this.setConfig('occ_obs', $('occ-obs').value.trim());
       this.setConfig('occ_card_format', $('occ-card-format').value);
       this.setConfig('occ_batch_mode', $('occ-batch-mode').value);
+      this.setConfig('occ_insta_backend', $('occ-insta-backend').value.trim());
+      this.setConfig('occ_insta_token', $('occ-insta-token').value.trim());
       this.generateCaption();
       this.renderSummary();
       this.renderInstagramCard();
@@ -14873,6 +14897,43 @@ Observações: ${obs}` : ''}
       canvas.toBlob(blob => downloadFile(blob, `card_ocorrencias_${date || 'evento'}_${format}.png`), 'image/png');
     } catch(e) {
       toast('Erro ao gerar o card: ' + e.message, 'error');
+    }
+  },
+
+  async publishInstagramCard(){
+    const date = this.selectedDate();
+    const format = $('occ-card-format').value || 'feed';
+    const backend = ($('occ-insta-backend').value || '').trim().replace(/\/+$/, '');
+    const token = ($('occ-insta-token').value || '').trim();
+
+    if (!backend || !token){
+      toast('Configure a URL do backend e o token JWT no painel de configuração.', 'error');
+      return;
+    }
+
+    this.populateInstaCardDOM(date);
+    const caption = ($('occ-caption').value || '').trim();
+    try {
+      const canvas = await this.captureCardImage(format);
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      if (!blob){ throw new Error('Falha ao capturar a imagem do card'); }
+
+      const formData = new FormData();
+      formData.append('image', blob, `card_ocorrencias_${date || 'evento'}_${format}.png`);
+      formData.append('caption', caption);
+
+      const res = await fetch(`${backend}/api/v1/instagram/publish`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token },
+        body: formData
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok){
+        throw new Error(data.message || data.error || `HTTP ${res.status}`);
+      }
+      toast(`Publicado no Instagram! Media ID: ${data.media_id || data.id || ''}`, 'success');
+    } catch(e) {
+      toast('Erro ao publicar no Instagram: ' + e.message, 'error');
     }
   },
 
