@@ -183,7 +183,7 @@ function initFirebase(){
       $('#user-label').textContent = user.email || user.uid;
       loadCaches().then(()=>go('dashboard')).catch(e=>toast('Erro: '+e.message,'err'));
     }else{
-      $('#app').hidden=true;
+      $('#app').hidden=true; $('#login-screen').hidden=false;
       $('#login-hint').textContent='Use o e-mail e a senha criados no Firebase Authentication (console).';
     }
   });
