@@ -123,14 +123,10 @@ def _importar_csv(filepath):
                     else:
                         mapped['sit'] = sit_raw[:10]
 
-                existing = d.get_efetivo(raw_matricula)
-                if existing:
-                    d.update_efetivo(raw_matricula, mapped)
+                existed = d.upsert_efetivo(raw_matricula, mapped)
+                if existed:
                     stats['atualizados'] += 1
                 else:
-                    mapped['matricula'] = raw_matricula
-                    mapped['nome'] = (row.get('Nome') or '').strip()
-                    d.add_efetivo(mapped)
                     stats['criados'] += 1
 
             except Exception:

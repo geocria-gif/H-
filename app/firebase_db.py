@@ -268,6 +268,20 @@ def update_doc(collection, doc_id, data, merge=True):
     return Doc(_safe(data), id_=ref.id, collection=collection)
 
 
+def upsert_doc(collection, doc_id, data, merge=True):
+    """Write a doc without a redundant existence read.
+
+    Resolves the natural key once (that read also tells us whether the doc
+    existed) and does a single merged ``set``.  Returns ``True`` if the doc
+    already existed (updated), ``False`` if it was created.
+    """
+    fs = get_fs()
+    real_id, snap = _resolve(collection, doc_id)
+    ref = fs.collection(collection).document(real_id)
+    ref.set(_safe(data), merge=merge)
+    return snap.exists
+
+
 def delete_doc(collection, doc_id):
     fs = get_fs()
     real_id, _ = _resolve(collection, doc_id)

@@ -96,8 +96,15 @@ def list_efetivos(page=1, per_page=20, opm_id=None, cargo=None, sit=None):
     if sit:
         where.append(('sit', '==', sit))
     total = b.count_docs(COL_EFETIVO, where=where)
-    items = b.list_docs(COL_EFETIVO, where=where, order_by='nome',
-                        offset=(page - 1) * per_page, limit=per_page)
+    if where:
+        # Equality filter + order_by on another field would need a composite
+        # index; sort the (small) page in Python instead.
+        items = b.list_docs(COL_EFETIVO, where=where,
+                            offset=(page - 1) * per_page, limit=per_page)
+        items = sorted(items, key=lambda d: (d.get('nome') or ''))
+    else:
+        items = b.list_docs(COL_EFETIVO, order_by='nome',
+                            offset=(page - 1) * per_page, limit=per_page)
     items = [_enrich_efetivo(d) for d in items]
     return b.Page(items, page, per_page, total)
 
@@ -109,13 +116,13 @@ def list_all_efetivos():
 
 
 def list_efetivos_by_opm(opm_id):
-    return [_enrich_efetivo(d) for d in
-            b.list_docs(COL_EFETIVO, where=[('opm_id', '==', opm_id)], order_by='nome')]
+    items = b.list_docs(COL_EFETIVO, where=[('opm_id', '==', opm_id)])
+    return [_enrich_efetivo(d) for d in sorted(items, key=lambda d: d.get('nome') or '')]
 
 
 def list_efetivos_by_cargo(cargo_id):
-    return [_enrich_efetivo(d) for d in
-            b.list_docs(COL_EFETIVO, where=[('cargo', '==', cargo_id)], order_by='nome')]
+    items = b.list_docs(COL_EFETIVO, where=[('cargo', '==', cargo_id)])
+    return [_enrich_efetivo(d) for d in sorted(items, key=lambda d: d.get('nome') or '')]
 
 
 import time as _t
@@ -241,6 +248,11 @@ def add_efetivo(data, matricula=None):
 
 def update_efetivo(matricula, data):
     return b.update_doc(COL_EFETIVO, matricula, data)
+
+
+def upsert_efetivo(matricula, data):
+    """Single-read upsert; returns True if the doc already existed."""
+    return b.upsert_doc(COL_EFETIVO, matricula, data)
 
 
 def delete_efetivo(matricula):

@@ -18,8 +18,8 @@ def list_ocorrencias(page=1, per_page=20, tipo=None, data_inicio=None, data_fim=
     where = []
     if tipo:
         where.append(('tipo', '==', tipo))
-    docs = b.list_docs(COL_OCORRENCIAS, where=where if where else None,
-                       order_by='data_hora', direction='DESC')
+    docs = b.list_docs(COL_OCORRENCIAS, where=where if where else None)
+    docs = sorted(docs, key=lambda d: d.get('data_hora') or '', reverse=True)
     if data_inicio:
         docs = [d for d in docs if (d.get('data_hora') or '') >= data_inicio]
     if data_fim:
@@ -90,9 +90,8 @@ def list_ocorrencia_eventos_todos():
 
 
 def get_ocorrencia_evento(data_ref, grupo, metrica):
-    rows = b.list_docs(COL_OC_EVENTO, where=[('data_ref', '==', data_ref),
-                                             ('grupo', '==', grupo),
-                                             ('metrica', '==', metrica)])
+    rows = [r for r in b.list_docs(COL_OC_EVENTO, where=[('data_ref', '==', data_ref)])
+            if r.get('grupo') == grupo and r.get('metrica') == metrica]
     return rows[0] if rows else None
 
 
@@ -170,13 +169,11 @@ COL_VIATURAS = 'viaturas'
 
 
 def list_viaturas(page=1, per_page=20, situacao=None, municipio=None):
-    where = []
+    docs = b.list_docs(COL_VIATURAS, order_by='prefixo')
     if situacao:
-        where.append(('situacao', '==', situacao))
+        docs = [d for d in docs if d.get('situacao') == situacao]
     if municipio:
-        where.append(('municipio', '==', municipio))
-    docs = b.list_docs(COL_VIATURAS, where=where if where else None,
-                       order_by='prefixo')
+        docs = [d for d in docs if d.get('municipio') == municipio]
     total = len(docs)
     start = (page - 1) * per_page
     return b.Page(docs[start:start + per_page], page, per_page, total)

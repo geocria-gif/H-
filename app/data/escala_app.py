@@ -98,8 +98,8 @@ def list_opm_eventos():
 
 
 def list_opm_eventos_by_evento(evento_id):
-    return b.list_docs(COL_OPM_EVENTO, where=[('evento_id', '==', evento_id)],
-                       order_by='opm_evento_id')
+    return [o for o in list_opm_eventos()
+            if str(o.get('evento_id')) == str(evento_id)]
 
 
 def get_opm_evento(opm_evento_id):
@@ -129,9 +129,9 @@ def next_opm_evento_id():
 
 
 def opm_evento_exists(evento_id, opm_id):
-    rows = b.list_docs(COL_OPM_EVENTO, where=[('evento_id', '==', evento_id),
-                                              ('opm_id', '==', opm_id)])
-    return len(rows) > 0
+    return any(str(o.get('evento_id')) == str(evento_id) and
+               str(o.get('opm_id')) == str(opm_id)
+               for o in b.list_docs(COL_OPM_EVENTO))
 
 
 def list_opm_eventos_dropdown():
@@ -160,13 +160,16 @@ def _escala_key(opm_evento_id, matricula, escala_data):
 
 
 def list_escalas(where=None, order_by=None, direction='ASCENDING', limit=None):
-    return b.list_docs(COL_ESCALAS, where=where, order_by=order_by,
-                       direction=direction, limit=limit)
+    docs = b.list_docs(COL_ESCALAS, where=where, limit=limit)
+    if order_by:
+        reverse = (direction or 'ASCENDING').upper().startswith('DESC')
+        docs = sorted(docs, key=lambda d: d.get(order_by) or '', reverse=reverse)
+    return docs
 
 
 def list_escalas_by_opm_evento(opm_evento_id):
-    return b.list_docs(COL_ESCALAS, where=[('opm_evento_id', '==', int(opm_evento_id))],
-                       order_by='escala_data')
+    return list_escalas(where=[('opm_evento_id', '==', int(opm_evento_id))],
+                        order_by='escala_data')
 
 
 def get_escala(opm_evento_id, matricula, escala_data):
@@ -248,12 +251,12 @@ COL_P2 = 'escala_p2'
 
 
 def list_p2(mes=None, ano=None):
-    where = []
-    if mes:
-        where.append(('mes', '==', int(mes)))
-    if ano:
-        where.append(('ano', '==', int(ano)))
-    return b.list_docs(COL_P2, where=where if where else None, order_by='ordem')
+    docs = b.list_docs(COL_P2, order_by='ordem')
+    if mes is not None:
+        docs = [d for d in docs if d.get('mes') == int(mes)]
+    if ano is not None:
+        docs = [d for d in docs if d.get('ano') == int(ano)]
+    return docs
 
 
 def get_p2(id_):
@@ -376,8 +379,8 @@ def get_escala_salva(id_):
 
 
 def get_escala_salva_ativa(mes, ano):
-    rows = b.list_docs(COL_SALVA, where=[('mes', '==', int(mes)), ('ano', '==', int(ano)),
-                                         ('ativa', '==', 1)])
+    rows = [e for e in list_escalas_salvas_ativas()
+            if e.get('mes') == int(mes) and e.get('ano') == int(ano)]
     return rows[0] if rows else None
 
 
@@ -386,9 +389,9 @@ def set_escala_salva_ativa(id_):
     if not escala:
         return False
     # deactivate same mes/ano
-    for other in b.list_docs(COL_SALVA, where=[('mes', '==', int(escala.get('mes'))),
-                                               ('ano', '==', int(escala.get('ano')))]):
-        if other.get('ativa'):
+    for other in list_all_escalas_salvas():
+        if (other.get('mes') == int(escala.get('mes')) and
+                other.get('ano') == int(escala.get('ano')) and other.get('ativa')):
             b.update_doc(COL_SALVA, other.id, {'ativa': 0})
     b.update_doc(COL_SALVA, id_, {'ativa': 1})
     return True
