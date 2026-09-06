@@ -213,14 +213,14 @@ def add_doc(collection, data, doc_id=None):
     ref = fs.collection(collection).document(doc_id) if doc_id else \
         fs.collection(collection).document()
     ref.set(data)
-    return doc_from(ref.get()) if doc_id else doc_from(ref.get())
+    return Doc(data, id_=ref.id, collection=collection)
 
 
 def update_doc(collection, doc_id, data, merge=True):
     fs = get_fs()
     ref = fs.collection(collection).document(str(doc_id))
     ref.set(_safe(data), merge=merge)
-    return doc_from(ref.get())
+    return Doc(_safe(data), id_=ref.id, collection=collection)
 
 
 def delete_doc(collection, doc_id):
