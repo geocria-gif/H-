@@ -292,6 +292,9 @@ def backup():
         try:
             filepath = _criar_backup(backup_dir)
             flash(f'Backup criado: {filepath}', 'success')
+            flash('Atenção: o backup lê todas as coleções (~30.5k docs de '
+                  'efetivopm) e consome grande parte da quota de leitura '
+                  'diária do Firestore.', 'warning')
             backups = _list_backups(backup_dir)
         except Exception as e:
             flash(f'Erro no backup: {str(e)}', 'danger')
@@ -334,17 +337,15 @@ def efetivo():
     opm_filter = request.args.get('opm', '')
     per_page = 30
 
-    itens = d.list_all_efetivos()
     if search:
-        term = search.lower()
-        itens = [m for m in itens if term in (m.get('nome') or '').lower()
-                 or term in (m.get('matricula') or '').lower()]
-    if opm_filter:
-        itens = [m for m in itens if str(m.get('opm_id')) == str(opm_filter)]
+        pagination = d.search_efetivos(search, page=page, per_page=per_page,
+                                       opm_id=opm_filter or None)
+    elif opm_filter:
+        pagination = d.list_efetivos(page=page, per_page=per_page,
+                                     opm_id=opm_filter)
+    else:
+        pagination = d.list_efetivos(page=page, per_page=per_page)
 
-    total = len(itens)
-    start = (page - 1) * per_page
-    pagination = b.Page(itens[start:start + per_page], page, per_page, total)
     opms = d.list_opms()
     return render_template('admin/efetivo.html', pagination=pagination,
                            search=search, opm_filter=opm_filter, opms=opms)

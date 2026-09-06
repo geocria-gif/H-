@@ -103,6 +103,8 @@ def list_efetivos(page=1, per_page=20, opm_id=None, cargo=None, sit=None):
 
 
 def list_all_efetivos():
+    """Full collection read (~30.5k docs). AVOID in request paths — costs
+    ~30.5k Firestore reads. Prefer list_efetivos()/search_efetivos()."""
     return [_enrich_efetivo(d) for d in b.list_docs(COL_EFETIVO, order_by='nome')]
 
 
@@ -116,26 +118,82 @@ def list_efetivos_by_cargo(cargo_id):
             b.list_docs(COL_EFETIVO, where=[('cargo', '==', cargo_id)], order_by='nome')]
 
 
-def search_efetivos(term, page=1, per_page=20):
-    """Firestore cannot 'LIKE' a string; we filter by collective prefix where
-    possible, then filter in Python. Term may be matricula or name fragment."""
-    term = (term or '').strip()
-    where = []
-    if term.isdigit() and len(term) >= 2:
-        # Matriculas are numeric; approximate with >= prefix scan is not
-        # supported directly, so we filter client-side over a window.
-        prefix = term
-        cand = b.list_docs(COL_EFETIVO, limit=2000)
-        matched = [d for d in cand if
-                   (d.get('matricula') or '').startswith(prefix) or
-                   prefix in (d.get('matricula') or '')]
-        matched = [d for d in matched if d.get('nome')]
-        total = len(matched)
-        items = matched[(page - 1) * per_page: page * per_page]
-        items = [_enrich_efetivo(d) for d in items]
-        return b.Page(items, page, per_page, total)
+import time as _t
 
-    cand = b.list_docs(COL_EFETIVO, limit=5000)
+# Firestore read budget: efetivopm has ~30.5k docs (daily cap 50k reads).
+# Bounded prefix queries keep every search under a couple hundred reads.
+_SEARCH_PREFIX_CAP = 100      # exact-prefix query limit (name/matricula)
+_SEARCH_SWEEP_CAP = 250       # bounded substring sweep when the prefix hits none
+_SEARCH_TTL = 60              # seconds a candidate window is reused
+_search_cache = {}
+
+
+def _candidates(term, opm_id=None):
+    """Bound the Firestore reads a search may trigger.
+
+    Returns a deduplicated candidate Doc list for ``term`` (matricula prefix or
+    name prefix), optionally post-filtered by ``opm_id``.  Reads at most
+    ``_SEARCH_PREFIX_CAP`` docs for the prefix query, plus at most
+    ``_SEARCH_SWEEP_CAP`` on a rare substring fallback — never a full scan.
+    """
+    cache_key = (term, str(opm_id))
+    now = _t.time()
+    hit = _search_cache.get(cache_key)
+    if hit and now - hit[0] < _SEARCH_TTL:
+        return hit[1]
+
+    term = (term or '').strip()
+    seen = set()
+    cand = []
+
+    def _merge(docs):
+        for doc in docs:
+            mid = str(doc.get('matricula') or doc.get('id') or getattr(doc, 'id', ''))
+            if mid and mid not in seen:
+                seen.add(mid)
+                cand.append(doc)
+
+    if term.isdigit():
+        exact = b.get_doc(COL_EFETIVO, term)
+        if exact:
+            _merge([exact])
+        try:
+            _merge(b.list_docs(
+                COL_EFETIVO,
+                where=[('matricula', '>=', term),
+                       ('matricula', '<', term + '\uf8ff')],
+                order_by='matricula', limit=_SEARCH_PREFIX_CAP))
+        except Exception:
+            _merge(b.list_docs(COL_EFETIVO, limit=_SEARCH_PREFIX_CAP))
+    elif term:
+        upper = term.upper()
+        try:
+            _merge(b.list_docs(
+                COL_EFETIVO,
+                where=[('nome', '>=', upper),
+                       ('nome', '<', upper + '\uf8ff')],
+                order_by='nome', limit=_SEARCH_PREFIX_CAP))
+        except Exception:
+            _merge(b.list_docs(COL_EFETIVO, limit=_SEARCH_PREFIX_CAP))
+        if not cand:
+            _merge(b.list_docs(COL_EFETIVO, order_by='nome',
+                               limit=_SEARCH_SWEEP_CAP))
+
+    if opm_id:
+        cand = [d for d in cand if str(d.get('opm_id')) == str(opm_id)]
+    _search_cache[cache_key] = (now, cand)
+    return cand
+
+
+def search_efetivos(term, page=1, per_page=20, opm_id=None):
+    """Search efetivo by matricula/name prefix; reads stay bounded.
+
+    Substring matching runs over a bounded candidate window so one search costs
+    at most ~(PREFIX_CAP + SWEEP_CAP) reads instead of a 30.5k-doc scan.
+    ``total`` counts matches found within that window, not the whole table.
+    """
+    term = (term or '').strip()
+    cand = _candidates(term, opm_id=opm_id)
     term_l = term.lower()
     matched = []
     for d in cand:
@@ -143,24 +201,25 @@ def search_efetivos(term, page=1, per_page=20):
         mat = (d.get('matricula') or '').lower()
         if term_l in nome or term_l in mat:
             matched.append(d)
-    matched.sort(key=lambda d: (d.get('nome') or ''))
     total = len(matched)
-    items = matched[(page - 1) * per_page: page * per_page]
-    items = [_enrich_efetivo(d) for d in items]
+    start = (page - 1) * per_page
+    items = [_enrich_efetivo(d) for d in matched[start:start + per_page]]
     return b.Page(items, page, per_page, total)
 
 
 def search_efetivos_json(term, limit=20):
-    cand = b.list_docs(COL_EFETIVO, limit=5000)
-    term_l = (term or '').strip().lower()
+    if not (term or '').strip():
+        return []
+    cand = _candidates(term)
+    term_l = term.lower()
     matched = []
     for d in cand:
+        if len(matched) >= limit:
+            break
         nome = (d.get('nome') or '').lower()
         mat = (d.get('matricula') or '').lower()
         if term_l in nome or term_l in mat:
             matched.append(d)
-        if len(matched) >= limit:
-            break
     result = []
     for d in matched:
         d = _enrich_efetivo(d)
@@ -192,9 +251,11 @@ def count_efetivos(where=None):
     return b.count_docs(COL_EFETIVO, where=where)
 
 
-def efetivo_matriculas():
-    """Return all matriculas (for bulk client-side joins)."""
-    return [d.get('matricula') for d in b.list_docs(COL_EFETIVO)]
+def efetivo_matriculas(limit=None):
+    """All matriculas for bulk joins. Pass ``limit`` or prefer paginated scans:
+    without a limit this reads the whole ~30.5k collection."""
+    return [d.get('matricula') for d in
+            b.list_docs(COL_EFETIVO, limit=limit)]
 
 
 # --------------------------------------------------------------------------

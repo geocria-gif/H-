@@ -1037,6 +1037,8 @@ def create_backup():
     return jsonify(
         message='Backup Firestore exportado',
         service='firestore',
+        warning='Este backup le todas as colecoes (efetivopm ~30.5k docs) e '
+                'consome grande parte da quota de leitura diaria (50k docs).',
         collections=collections,
         data=backup_data
     ), 200
