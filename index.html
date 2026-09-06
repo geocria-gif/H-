@@ -206,36 +206,28 @@ async function getDocs(q){
 }
 function col(name){ return db.collection(name); }
 function all(name){ return getDocs(col(name)); }
-function toRestVal(v){
-  if(typeof v==='number') return Number.isInteger(v)?{integerValue:String(v)}:{doubleValue:v};
-  return {stringValue:String(v)};
-}
 async function countDocs(collectionName, wheres){
-  const sq={from:[{collectionId:collectionName}],aggregations:[{alias:'cnt',aggregate:{countAll:{}}}]};
-  if(wheres&&wheres.length){
-    const filters=wheres.map(w=>{
-      const [f,op,val]=w;
-      const opMap={'==':'EQUAL','!=':'NOT_EQUAL','>':'GREATER_THAN','<':'LESS_THAN','>=':'GREATER_THAN_OR_EQUAL','<=':'LESS_THAN_OR_EQUAL','in':'IN'};
-      return {fieldFilter:{field:{fieldPath:f},op:opMap[op]||'EQUAL',value:toRestVal(val)}};
-    });
-    sq.where=filters.length===1?filters[0]:{compositeFilter:{op:'AND',filters}};
+  if(collectionName==='efetivopm' && C.efetivopm){
+    let list=C.efetivopm;
+    for(const [f,op,val] of (wheres||[])){
+      if(op==='==') list=list.filter(d=>String(d[f])===String(val));
+    }
+    return list.length;
   }
-  const user=auth.currentUser; if(!user) throw new Error('Não autenticado');
-  const token=await user.getIdToken();
-  const res=await fetch(`https://firestore.googleapis.com/v1/projects/${FIREBASE_CONFIG.projectId}/databases/(default)/documents:runAggregatedQuery`,{
-    method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-    body:JSON.stringify({structuredQuery:sq})
-  });
-  const data=await res.json();
-  if(data.error) throw new Error(data.error.message||'Erro Firestore REST');
-  return parseInt(data.result?.aggregateFields?.cnt?.integerValue||'0',10);
+  let q=db.collection(collectionName);
+  for(const w of (wheres||[])) q=q.where(w[0],w[1],w[2]);
+  const snap=await q.get();
+  return snap.size;
 }
 
 /* ================= cache (coleções pequenas) ================= */
-let C = { opms:[], cargos:[], municipios:[], legendas:[], valores:[] };
+let C = { opms:[], cargos:[], municipios:[], legendas:[], valores:[], efetivopm:null };
 async function loadCaches(){
-  const [o,ca,mu,le,va]=await Promise.all([all('opms'),all('cargos'),all('municipios'),all('escala_p2_legendas'),all('tabela_valores')]);
-  C={opms:o,cargos:ca,municipios:mu,legendas:le,valores:va};
+  const [o,ca,mu,le,va,ef]=await Promise.all([
+    all('opms'), all('cargos'), all('municipios'), all('escala_p2_legendas'), all('tabela_valores'),
+    all('efetivopm')
+  ]);
+  C={opms:o,cargos:ca,municipios:mu,legendas:le,valores:va,efetivopm:ef};
 }
 function opmOf(id){ const o=C.opms.find(x=>String(x.opm_id)===String(id)); return o?o:null; }
 function opmSigla(id){ const o=opmOf(id); return o?(o.opm_sigla||o.opm_desc||id):String(id); }
