@@ -10,6 +10,7 @@ from flask import (
 from flask_login import login_required, current_user
 from app import data as d
 from app.data import base as b
+from app import firebase_db as fdb
 from app.forms import UsuarioForm, CargoForm, TabelaValoresForm, EfetivoPMForm
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -299,7 +300,36 @@ def backup():
         except Exception as e:
             flash(f'Erro no backup: {str(e)}', 'danger')
 
-    return render_template('admin/backup.html', form=form, backups=backups)
+    gcs_uri = current_app.config.get('BACKUP_GCS_URI') or ''
+    return render_template('admin/backup.html', form=form, backups=backups,
+                           gcs_uri=gcs_uri)
+
+
+@admin_bp.route('/backup/export-gcs', methods=['POST'])
+@login_required
+def backup_export_gcs():
+    if not current_user.is_admin:
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('dashboard.index'))
+
+    gcs_uri = current_app.config.get('BACKUP_GCS_URI') or ''
+    if not gcs_uri:
+        flash('Configure BACKUP_GCS_URI (ex.: gs://meu-bucket/backups) e as '
+              'permissões de IAM (datastore.importExportAdmin + storage).',
+              'warning')
+        return redirect(url_for('admin.backup'))
+
+    try:
+        sa_path = current_app.config.get('FIREBASE_SERVICE_ACCOUNT') or \
+            os.environ.get('FIREBASE_SERVICE_ACCOUNT')
+        operation = fdb.trigger_managed_export(gcs_uri, sa_path=sa_path)
+        name = operation.get('name') or 'operacao'
+        flash(f'Export gerenciado iniciado: {name}', 'success')
+        flash('A exportação roda no lado do Google (0 leituras da quota). '
+              'Acompanhe o bucket GCS até a conclusão.', 'info')
+    except Exception as e:
+        flash(f'Erro no export gerenciado: {str(e)}', 'danger')
+    return redirect(url_for('admin.backup'))
 
 
 @admin_bp.route('/logs')

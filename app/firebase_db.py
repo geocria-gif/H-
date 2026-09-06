@@ -314,5 +314,49 @@ def delete_all(collection):
         snap.reference.delete()
 
 
+def trigger_managed_export(output_uri, sa_path=None):
+    """Firestore managed export to Cloud Storage (runs server-side).
+
+    Returns the operation dict from the v1 ``documents:exportDocuments`` API.
+    A managed export reads NO app quota (the workload runs on Google's side),
+    but the service account needs roles/datastore.importExportAdmin plus
+    storage write access on the target bucket.
+
+    Args:
+        output_uri: gs://bucket/path/ prefix (a timestamp suffix is appended).
+        sa_path:    path to the service-account JSON (default env config).
+    """
+    import json as _json
+    import os as _os
+    import urllib.request as _request
+
+    from google.auth.transport import requests as _greq
+    from google.oauth2 import service_account as _sa
+
+    sa_path = sa_path or _os.environ.get('FIREBASE_SERVICE_ACCOUNT')
+    if not sa_path or not _os.path.exists(sa_path):
+        raise RuntimeError('FIREBASE_SERVICE_ACCOUNT nao encontrada')
+    with open(sa_path, 'r', encoding='utf-8') as f:
+        sa_data = _json.load(f)
+    project = sa_data.get('project_id') or _os.environ.get('GOOGLE_CLOUD_PROJECT')
+    if not project:
+        raise RuntimeError('project_id desconhecido (defina GOOGLE_CLOUD_PROJECT)')
+
+    creds = _sa.Credentials.from_service_account_file(
+        sa_path, scopes=['https://www.googleapis.com/auth/datastore'])
+    creds.refresh(_greq.Request())
+
+    ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+    url = ('https://firestore.googleapis.com/v1/projects/'
+           f'{project}/databases/(default)/documents:exportDocuments')
+    body = _json.dumps({'outputUriPrefix': f'{output_uri.rstrip("/")}/{ts}'})
+    req = _request.Request(
+        url, data=body.encode('utf-8'), method='POST',
+        headers={'Content-Type': 'application/json',
+                 'Authorization': f'Bearer {creds.token}'})
+    with _request.urlopen(req, timeout=90) as resp:
+        return _json.loads(resp.read().decode())
+
+
 def doc_from(snap):
     return Doc(snap.to_dict() or {}, id_=snap.id, collection=snap.reference._path[-2] if len(snap.reference._path) >= 2 else None)

@@ -20,6 +20,27 @@
                         {{ form.hidden_tag() }}
                         {{ form.submit(class='btn btn-success btn-lg w-100') }}
                     </form>
+                    {% if gcs_uri %}
+                    <hr>
+                    <h6 class="mb-2"><i class="bi bi-cloud-arrow-up me-1"></i>Export gerenciado (GCS)</h6>
+                    <p class="text-muted small">
+                        Roda no servidor do Google: <code>0</code> leituras da quota diária.
+                        Destino: <code>{{ gcs_uri }}</code>
+                    </p>
+                    <form method="POST" action="{{ url_for('admin.backup_export_gcs') }}" novalidate>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn btn-outline-primary w-100" type="submit">
+                            <i class="bi bi-cloud-upload me-1"></i>Exportar para o GCS
+                        </button>
+                    </form>
+                    {% else %}
+                    <hr>
+                    <p class="text-muted small mb-0">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Export gerenciado indisponível: defina
+                        <code>BACKUP_GCS_URI</code> (gs://bucket/...) para habilitar.
+                    </p>
+                    {% endif %}
                 </div>
             </div>
         </div>

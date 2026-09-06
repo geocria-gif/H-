@@ -41,6 +41,9 @@ class Config:
     
     BACKUP_DIR = os.environ.get('BACKUP_DIR') or os.path.join(basedir, 'backups')
     BACKUP_RETENTION_DAYS = int(os.environ.get('BACKUP_RETENTION_DAYS', 30))
+    # Cloud Storage bucket for Firestore managed exports (gs://bucket/path).
+    # Empty means the "Export gerenciado" feature stays hidden.
+    BACKUP_GCS_URI = os.environ.get('BACKUP_GCS_URI', '')
     
     MAIL_SERVER = os.environ.get('MAIL_SERVER')
     MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
