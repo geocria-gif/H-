@@ -357,10 +357,10 @@ COL_SALVA = 'escalas_salvas'
 
 
 def list_escalas_salvas(page=1, per_page=20):
-    items = b.list_docs(COL_SALVA, order_by='data_salva', direction='DESC')
-    total = len(items)
-    start = (page - 1) * per_page
-    return b.Page(items[start:start + per_page], page, per_page, total)
+    total = b.count_docs(COL_SALVA)
+    items = b.list_docs(COL_SALVA, order_by='data_salva', direction='DESC',
+                        offset=(page - 1) * per_page, limit=per_page)
+    return b.Page(items, page, per_page, total)
 
 
 def list_all_escalas_salvas():
@@ -368,7 +368,7 @@ def list_all_escalas_salvas():
 
 
 def list_escalas_salvas_ativas():
-    return [e for e in list_all_escalas_salvas() if e.get('ativa')]
+    return b.list_docs(COL_SALVA, where=[('ativa', '==', 1)])
 
 
 def get_escala_salva(id_):

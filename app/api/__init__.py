@@ -1060,7 +1060,7 @@ def list_backups():
     ]
     summary = []
     for col in collections:
-        count = len(list(fs.collection(col).stream()))
+        count = d.base.count_docs(col)
         summary.append({'collection': col, 'count': count})
     return jsonify(summary)
 

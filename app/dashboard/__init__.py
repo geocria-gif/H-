@@ -13,7 +13,7 @@ def index():
         'total_eventos': d.count_eventos(),
         'total_ocorrencias': d.count_ocorrencias(),
         'total_viaturas': len(d.list_all_viaturas()),
-        'escalas_ativas': len(d.list_all_escalas_salvas_ativas()),
+        'escalas_ativas': len(d.list_escalas_salvas_ativas()),
     }
 
     ocorrencias_recentes = d.list_ocorrencias_recentes(5)
