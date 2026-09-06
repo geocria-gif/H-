@@ -6,6 +6,14 @@ Usage:
 - Copies every table under tb* into a Firestore collection using the project's
   natural keys as document ids where possible.
 - Creates Firebase Auth users from tbUsuario (email = <matricula>@gestoper.local).
+
+WARNING: the first run (2026-07) wrote every doc under fallback ids
+(``tbEfetivoPM_0``, ``tbOPM_1``, ...) because the doc_id callbacks received the
+renamed rows but used raw column keys. app.firebase_db resolves natural keys via
+a field query for those collections, so re-running THIS script is NOT safe for
+the big tables: it would re-insert ~30.5k efetivopm rows under the natural ids
+and blow the daily write quota. Only re-run with --limit for genuinely new rows,
+or rename the collection to natural ids out-of-band.
 """
 import os
 import sys
@@ -24,24 +32,25 @@ DEFAULT_SA = os.path.join(ROOT, "gestoper-4ba86-firebase-adminsdk-fbsvc-aa0f68e3
 
 COLLECTIONS = [
     # (table, collection, doc_id_fn)  doc_id_fn(row dict) -> document id
-    ("tbCargo",          "cargos",           lambda r: str(r["CargoId"])),
-    ("tbOPM",            "opms",             lambda r: str(r["OpmId"])),
-    ("tbEfetivoPM",      "efetivopm",        lambda r: str(r["Matricula"])),
-    ("tbEvento",         "eventos",          lambda r: str(r["EventoId"])),
-    ("tbOpmEvento",      "opm_eventos",      lambda r: str(r["OpmEventoId"])),
-    ("tbEscala",         "escalas",          lambda r: f"{r['OpmEventoId']}_{r['Matricula']}_{r['EscalaData']}"),
-    ("tbTabelaValores",  "tabela_valores",   lambda r: str(r["Id"])),
-    ("tbEscalaP2",       "escala_p2",        lambda r: str(r["Id"])),
-    ("tbEscalaP2Meta",   "escala_p2_meta",   lambda r: str(r["Id"])),
-    ("tbEscalaP2Legenda","escala_p2_legendas", lambda r: str(r["Id"])),
-    ("tbOcorrencia",     "ocorrencias",      lambda r: str(r["Id"])),
+    # doc_id_fn receives the MAPPED row (snake_case fields, see FIELD_MAP).
+    ("tbCargo",          "cargos",           lambda r: str(r.get('cargo_id') or '')),
+    ("tbOPM",            "opms",             lambda r: str(r.get('opm_id') or '')),
+    ("tbEfetivoPM",      "efetivopm",        lambda r: str(r.get('matricula') or '')),
+    ("tbEvento",         "eventos",          lambda r: str(r.get('evento_id') or '')),
+    ("tbOpmEvento",      "opm_eventos",      lambda r: str(r.get('opm_evento_id') or '')),
+    ("tbEscala",         "escalas",          lambda r: f"{r.get('opm_evento_id')}_{r.get('matricula')}_{r.get('escala_data')}"),
+    ("tbTabelaValores",  "tabela_valores",   lambda r: str(r.get('id') or '')),
+    ("tbEscalaP2",       "escala_p2",        lambda r: str(r.get('id') or '')),
+    ("tbEscalaP2Meta",   "escala_p2_meta",   lambda r: str(r.get('id') or '')),
+    ("tbEscalaP2Legenda","escala_p2_legendas", lambda r: str(r.get('id') or '')),
+    ("tbOcorrencia",     "ocorrencias",      lambda r: str(r.get('id') or '')),
     ("tbOcorrenciaEvento","ocorrencia_eventos",
-        lambda r: f"{r['DataRef']}_{r['Grupo']}_{r['Metrica']}"),
-    ("tbOcorrenciaMeta", "ocorrencia_meta",  lambda r: str(r["DataRef"])),
-    ("tbOcorrenciaConfig","ocorrencia_config", lambda r: str(r["Chave"])),
-    ("tbMunicipio",      "municipios",       lambda r: str(r["Id"])),
-    ("tbViatura",        "viaturas",         lambda r: str(r["Prefixo"])),
-    ("tbUsuario",        "usuarios",         lambda r: str(r.get('matricula') or r.get('Matricula') or '')),
+        lambda r: f"{r.get('data_ref')}_{r.get('grupo')}_{r.get('metrica')}"),
+    ("tbOcorrenciaMeta", "ocorrencia_meta",  lambda r: str(r.get('data_ref') or '')),
+    ("tbOcorrenciaConfig","ocorrencia_config", lambda r: str(r.get('chave') or '')),
+    ("tbMunicipio",      "municipios",       lambda r: str(r.get('id') or '')),
+    ("tbViatura",        "viaturas",         lambda r: str(r.get('prefixo') or '')),
+    ("tbUsuario",        "usuarios",         lambda r: str(r.get('matricula') or '')),
 ]
 
 # Source DB column -> Firestore field (snake_case, matching the app model attributes)

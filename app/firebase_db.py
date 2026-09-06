@@ -175,6 +175,51 @@ class Page:
 # Low-level Firestore helpers
 # ---------------------------------------------------------------------------
 
+# Collections keyed by a natural field (not the document id). The first
+# Firestore migration stored docs under fallback ids like "tbEfetivoPM_0", so
+# keyed lookups must fall back to an equality query when the doc-id lookup
+# misses. (ocorrencia_eventos is always queried by fields; escalas were
+# renamed to their composite keys.)
+NATURAL_KEYS = {
+    'usuarios': 'matricula',
+    'efetivopm': 'matricula',
+    'cargos': 'cargo_id',
+    'opms': 'opm_id',
+    'tabela_valores': 'id',
+    'municipios': 'id',
+    'viaturas': 'prefixo',
+    'eventos': 'evento_id',
+    'opm_eventos': 'opm_evento_id',
+    'escala_p2': 'id',
+    'escala_p2_meta': 'id',
+    'escala_p2_legendas': 'id',
+    'escalas_salvas': 'escala_salva_id',
+    'ocorrencias': 'id',
+    'ocorrencia_meta': 'data_ref',
+    'ocorrencia_config': 'chave',
+}
+
+
+def _resolve(collection, value):
+    """Return (doc_id, snapshot) for a natural key.
+
+    Tries the doc-id lookup first; if it misses and ``collection`` has a
+    natural field configured, falls back to an equality query on that field
+    (legacy fallback ids like ``tbEfetivoPM_0`` live on the value, not the id).
+    """
+    fs = get_fs()
+    ref = fs.collection(collection).document(str(value))
+    snap = ref.get()
+    if snap.exists:
+        return ref.id, snap
+    field = NATURAL_KEYS.get(collection)
+    if field:
+        found = fs.collection(collection).where(field, '==', _safe(value)).limit(1).get()
+        if len(found):
+            return found[0].id, found[0]
+    return ref.id, snap
+
+
 def list_docs(collection, where=None, order_by=None, direction='ASCENDING',
               limit=None, offset=None):
     """where: list of (field, op, value) tuples. op in ==, !=, >, <, >=, <=, in, array_contains."""
@@ -200,8 +245,7 @@ def list_docs(collection, where=None, order_by=None, direction='ASCENDING',
 
 
 def get_doc(collection, doc_id, default=None):
-    fs = get_fs()
-    snap = fs.collection(collection).document(str(doc_id)).get()
+    _, snap = _resolve(collection, doc_id)
     if snap.exists:
         return doc_from(snap)
     return default
@@ -218,14 +262,16 @@ def add_doc(collection, data, doc_id=None):
 
 def update_doc(collection, doc_id, data, merge=True):
     fs = get_fs()
-    ref = fs.collection(collection).document(str(doc_id))
+    real_id, _ = _resolve(collection, doc_id)
+    ref = fs.collection(collection).document(real_id)
     ref.set(_safe(data), merge=merge)
     return Doc(_safe(data), id_=ref.id, collection=collection)
 
 
 def delete_doc(collection, doc_id):
     fs = get_fs()
-    fs.collection(collection).document(str(doc_id)).delete()
+    real_id, _ = _resolve(collection, doc_id)
+    fs.collection(collection).document(real_id).delete()
 
 
 def count_docs(collection, where=None):
