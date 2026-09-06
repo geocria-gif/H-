@@ -206,11 +206,29 @@ async function getDocs(q){
 }
 function col(name){ return db.collection(name); }
 function all(name){ return getDocs(col(name)); }
-async function countDocs(ref, wheres){
-  let q = db.collection(ref);
-  for(const w of (wheres||[])) q = q.where(w[0],w[1],w[2]);
-  const s = await q.count().get();
-  return s.data().count;
+function toRestVal(v){
+  if(typeof v==='number') return Number.isInteger(v)?{integerValue:String(v)}:{doubleValue:v};
+  return {stringValue:String(v)};
+}
+async function countDocs(collectionName, wheres){
+  const sq={from:[{collectionId:collectionName}],aggregations:[{alias:'cnt',aggregate:{countAll:{}}}]};
+  if(wheres&&wheres.length){
+    const filters=wheres.map(w=>{
+      const [f,op,val]=w;
+      const opMap={'==':'EQUAL','!=':'NOT_EQUAL','>':'GREATER_THAN','<':'LESS_THAN','>=':'GREATER_THAN_OR_EQUAL','<=':'LESS_THAN_OR_EQUAL','in':'IN'};
+      return {fieldFilter:{field:{fieldPath:f},op:opMap[op]||'EQUAL',value:toRestVal(val)}};
+    });
+    sq.where=filters.length===1?filters[0]:{compositeFilter:{op:'AND',filters}};
+  }
+  const user=auth.currentUser; if(!user) throw new Error('Não autenticado');
+  const token=await user.getIdToken();
+  const res=await fetch(`https://firestore.googleapis.com/v1/projects/${FIREBASE_CONFIG.projectId}/databases/(default)/documents:runAggregatedQuery`,{
+    method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+    body:JSON.stringify({structuredQuery:sq})
+  });
+  const data=await res.json();
+  if(data.error) throw new Error(data.error.message||'Erro Firestore REST');
+  return parseInt(data.result?.aggregateFields?.cnt?.integerValue||'0',10);
 }
 
 /* ================= cache (coleções pequenas) ================= */
