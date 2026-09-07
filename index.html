@@ -151,9 +151,11 @@ const FIREBASE_READY = FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.startsW
     <h1>GestOper CPR-CN</h1>
     <p class="sub">Acesso restrito ao efetivo — dados no Firebase</p>
     <div id="login-err" class="err" style="color:#f85149;font-size:12px;margin-bottom:10px;display:none"></div>
-    <div class="login-field"><label>E-mail</label><input id="login-email" type="email" inputmode="email" autocomplete="username" placeholder="voce@pmba.ba.gov.br" /></div>
-    <div class="login-field"><label>Senha</label><input id="login-pass" type="password" autocomplete="current-password" placeholder="••••••••" /></div>
-    <button class="btn" style="width:100%" id="login-btn" onclick="doLogin()">Entrar</button>
+    <form id="login-form" onsubmit="doLogin(event)">
+      <div class="login-field"><label>E-mail</label><input id="login-email" type="email" inputmode="email" autocomplete="username" placeholder="voce@pmba.ba.gov.br" /></div>
+      <div class="login-field"><label>Senha</label><input id="login-pass" type="password" autocomplete="current-password" placeholder="••••••••" /></div>
+      <button class="btn" style="width:100%" id="login-btn" type="submit">Entrar</button>
+    </form>
     <p class="sub mt" id="login-hint" style="margin-top:14px"></p>
   </div>
 </div>
@@ -233,7 +235,8 @@ function initFirebase(){
   });
 }
 
-async function doLogin(){
+async function doLogin(e){
+  e && e.preventDefault();
   const email=$('#login-email').value.trim(), pass=$('#login-pass').value;
   const err=$('#login-err');
   if(!email||!pass){ err.style.display='block'; err.textContent='Informe e-mail e senha.'; return; }
@@ -264,39 +267,94 @@ function LEAFLET(){ return loadCSS('https://unpkg.com/leaflet@1.9.4/dist/leaflet
 function CHARTJS(){ return loadScript('https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js'); }
 function XLSX(){ return window.XLSX?Promise.resolve():loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'); }
 
-/* Contagem via REST runAggregationQuery: custa 1 "small read" por query,
-   NÃO 1 leitura por documento — essencial para a cota do Firebase (Spark).
-   Cache em memória (120 s) + fila throttle (max 3 concorrentes, 350 ms gap)
-   evita 429 no Spark (limite ~10 aggregation/s). */
+/* ============================================================
+   Contagem/agregação via REST runAggregationQuery: custa ~1
+   "small read" por query (NÃO 1 leitura por documento) — essencial
+   para a cota do Firebase (Spark). Estratégia anti-429:
+     • Fila serial (máx 3 concorrentes, 400 ms de intervalo)
+       mantém média abaixo de ~10 agg/s.
+     • Cache em memória + localStorage (TTL por tipo de coleção)
+       para não repetir a mesma contagem a cada render/navegação.
+     • Dedupe in-flight: chamadas iguais concorrentes dividem 1 query.
+     • Disjuntor global: no 429 pausa TODA a fila com backoff
+       exponencial (1.5s→3s→6s→12s…) em vez de "tempestade" de
+       reintentos; quando o disjuntor está aberto, conta usa o
+       cache (ou 0) e NÃO dispara novas requisições.
+     • countDocs/aggDocs NUNCA rejeitam (devolvem cache/valores
+       antigos/0), então o dashboard nunca quebra por quota.
+   ============================================================ */
 function _val2fs(v){
   if(typeof v==='number') return Number.isInteger(v)?{integerValue:String(v)}:{doubleValue:String(v)};
   return {stringValue:String(v)};
 }
-const _countCache=new Map(), COUNT_CACHE_TTL=120000;
+const _countCache=new Map();
+const _countLSKey='gestoper_count_cache_v1';
+const COUNT_TTL_DEFAULT=5*60*1000;      // 5 min padrão
+const COUNT_TTL_STATIC=3*3600*1000;     // 3 h p/ coleções estáticas (efetivopm, opms, cargos…)
+const COUNT_TTL_ESCALAS=60*1000;        // 1 min p/ escalas (mudam com frequência)
+function _countTtlFor(name){
+  if(name==='escalas'||name==='escalas_salvas'||name==='escala_p2') return COUNT_TTL_ESCALAS;
+  if(['efetivopm','opms','cargos','municipios','viaturas','tabela_valores','escala_p2_legendas'].includes(name)) return COUNT_TTL_STATIC;
+  return COUNT_TTL_DEFAULT;
+}
 const _restQ=[]; let _restActive=0;
-function _restEnqueue(fn){return new Promise((ok,no)=>{_restQ.push({fn,ok,no});_restDrain();});}
-function _restDrain(){while(_restActive<3&&_restQ.length){const{fn,ok,no}=_restQ.shift();_restActive++;fn().then(ok,no).finally(()=>{_restActive--;setTimeout(_restDrain,350);});}}
-async function _countDocsRaw(collectionName,wheres){
-  const u=auth&&auth.currentUser;
-  if(u){for(let att=0;att<3;att++){
-    try{const token=await u.getIdToken();
-      const api='https://firestore.googleapis.com/v1/projects/'+FIREBASE_CONFIG.projectId+'/databases/(default)/documents:runAggregationQuery';
-      const filters=((wheres||[]).filter(w=>w&&w.length>=3&&w[1]==='=='))
-        .map(w=>({fieldFilter:{field:{fieldPath:String(w[0])},op:'EQUAL',value:_val2fs(w[2])}}));
-      const sq={from:[{collectionId:collectionName}],aggregations:[{count:{},alias:'n'}]};
-      if(filters.length===1) sq.where=filters[0];
-      else if(filters.length>1) sq.where={compositeFilter:{op:'AND',filters:filters}};
-      const res=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({structuredAggregationQuery:{structuredQuery:{from:sq.from,where:sq.where},aggregations:sq.aggregations}})});
-      if(res.status===429){console.warn('[count] 429 — aguardando '+(800*(att+1))+'ms');await new Promise(r=>setTimeout(r,800*(att+1)));continue;}
-      const j=await res.json();
-      const agg=j&&j.batch&&j.batch[0]&&j.batch[0].aggregateFields&&j.batch[0].aggregateFields.n;
-      if(agg) return parseInt(agg.integerValue!=null?agg.integerValue:agg.doubleValue,10)||0;
-    }catch(e){console.warn('[count] REST falhou:',e.message);break;}}
+let _restCooldownUntil=0, _restCooldownMs=1500;
+const REST_MAX_CONC=3, REST_GAP=400, REST_COOLDOWN_MAX=30000, REST_COOLDOWN_BASE=1500;
+const _inFlight=new Map(); // key -> Promise (dedupe)
+
+function _countCacheGet(key,name){
+  const now=Date.now(), e=_countCache.get(key);
+  if(e && now-e.ts<_countTtlFor(name)) return {val:e.val,stale:false};
+  if(e) return {val:e.val,stale:true};
+  return null;
+}
+function _countCacheSet(key,val){ _countCache.set(key,{val,ts:Date.now()}); _countLSPersist(); }
+function _countLSPersist(){
+  try{
+    const o={}; _countCache.forEach((e,k)=>{ if(Date.now()-e.ts<3*24*3600*1000) o[k]={val:e.val,ts:e.ts}; });
+    const s=JSON.stringify(o); if(s.length<2000000) localStorage.setItem(_countLSKey,s);
+  }catch(err){}
+}
+function _countLSLoad(){
+  try{ const raw=localStorage.getItem(_countLSKey); if(!raw) return;
+    const o=JSON.parse(raw); for(const k in o){ const e=o[k]; if(e&&typeof e.val!=='undefined') _countCache.set(k,{val:e.val,ts:e.ts}); }
+  }catch(err){}
+}
+function _restEnqueue(fn){ return new Promise((ok,no)=>{ _restQ.push({fn,ok,no}); _restDrain(); }); }
+function _restDrain(){
+  if(_restCooldownUntil>Date.now()){ setTimeout(_restDrain,800); return; }
+  while(_restActive<REST_MAX_CONC && _restQ.length){
+    const {fn,ok,no}=_restQ.shift(); _restActive++;
+    fn().then(ok,no).finally(()=>{ _restActive--; setTimeout(_restDrain,REST_GAP); });
   }
-  let q=col(collectionName);
-  for(const w of(wheres||[])) q=q.where(w[0],w[1],w[2]);
-  const snap=await q.get();
-  return snap.size;
+}
+function _restOpenCooldown(){
+  _restCooldownMs=Math.min(REST_COOLDOWN_MAX,_restCooldownMs*2);
+  _restCooldownUntil=Date.now()+_restCooldownMs;
+  console.warn('[dest] 429 — disjuntor aberto por '+Math.round(_restCooldownMs/1000)+'s');
+}
+function _restResetCooldown(){ _restCooldownMs=REST_COOLDOWN_BASE; _restCooldownUntil=0; }
+
+async function _countDocsREST(collectionName,wheres){
+  if(_restCooldownUntil>Date.now()) return null;
+  const u=auth&&auth.currentUser;
+  if(!u) return null;
+  const filters=((wheres||[]).filter(w=>w&&w.length>=3&&w[1]==='=='))
+    .map(w=>({fieldFilter:{field:{fieldPath:String(w[0])},op:'EQUAL',value:_val2fs(w[2])}}));
+  const sq={from:[{collectionId:collectionName}],aggregations:[{count:{},alias:'n'}]};
+  if(filters.length===1) sq.where=filters[0];
+  else if(filters.length>1) sq.where={compositeFilter:{op:'AND',filters:filters}};
+  try{
+    const token=await u.getIdToken();
+    const api='https://firestore.googleapis.com/v1/projects/'+FIREBASE_CONFIG.projectId+'/databases/(default)/documents:runAggregationQuery';
+    const res=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({structuredAggregationQuery:{structuredQuery:{from:sq.from,where:sq.where},aggregations:sq.aggregations}})});
+    if(res.status===429){ _restOpenCooldown(); return null; }
+    if(!res.ok){ return null; }
+    const j=await res.json();
+    const agg=j&&j.batch&&j.batch[0]&&j.batch[0].aggregateFields&&j.batch[0].aggregateFields.n;
+    if(agg){ _restResetCooldown(); return parseInt(agg.integerValue!=null?agg.integerValue:agg.doubleValue,10)||0; }
+    return null;
+  }catch(e){ console.warn('[dest] REST falhou:',e.message); return null; }
 }
 async function countDocs(collectionName,wheres){
   if(collectionName==='opms'&&C.opms) return C.opms.length;
@@ -305,61 +363,76 @@ async function countDocs(collectionName,wheres){
   if(collectionName==='escala_p2_legendas'&&C.legendas) return C.legendas.length;
   if(collectionName==='tabela_valores'&&C.valores) return C.valores.length;
   const key=collectionName+'|'+JSON.stringify(wheres||[]);
-  const c=_countCache.get(key);
-  if(c&&Date.now()-c.ts<COUNT_CACHE_TTL) return c.val;
-  const val=await _restEnqueue(()=>_countDocsRaw(collectionName,wheres));
-  _countCache.set(key,{val,ts:Date.now()});
-  return val;
+  const hit=_countCacheGet(key,collectionName);
+  if(hit) return hit.val;
+  const ip=_inFlight.get(key);
+  if(ip) return ip;
+  const p=(async()=>{
+    let val=null;
+    try{ const r=await _restEnqueue(()=>_countDocsREST(collectionName,wheres));
+      if(r!=null){ val=r; _countCacheSet(key,val); }
+    }catch(e){ val=null; }
+    const stale=_countCacheGet(key,collectionName);
+    if(val==null && stale) val=stale.val;
+    if(val==null) val=0;
+    _inFlight.delete(key);
+    return val;
+  })();
+  _inFlight.set(key,p);
+  return p;
 }
 
-/* Agregação geral via REST runAggregationQuery: count + soma de campos em UMA
-   query (1 "small read"). Mesma fila throttle + cache 120 s + retry 429.
-   wheres suportam '==' e 'in'; retorna {n, <campo>: soma, ...}. */
-const _aggCache=new Map();
+/* Agregação geral via REST: count + soma de campos em UMA query (1 "small read").
+   Mesma fila + cache + disjuntor 429. wheres suportam '==' e 'in'; retorna {n, campo: soma}. */
 async function aggDocs(collectionName,wheres,sums){
   sums=sums||[];
   const key=collectionName+'|'+JSON.stringify(wheres||[])+'|'+JSON.stringify(sums);
-  const c=_aggCache.get(key);
-  if(c&&Date.now()-c.ts<COUNT_CACHE_TTL) return c.val;
-  const val=await _restEnqueue(()=>_aggDocsRaw(collectionName,wheres,sums));
-  _aggCache.set(key,{val,ts:Date.now()});
-  return val;
-}
-async function _aggDocsRaw(collectionName,wheres,sums){
-  sums=sums||[];
-  const u=auth&&auth.currentUser;
-  if(u){for(let att=0;att<3;att++){
-    try{const token=await u.getIdToken();
-      const api='https://firestore.googleapis.com/v1/projects/'+FIREBASE_CONFIG.projectId+'/databases/(default)/documents:runAggregationQuery';
-      const filters=((wheres||[]).filter(w=>w&&w.length>=3)).map(w=>{
-        const opName=w[1]==='=='?'EQUAL':(String(w[1]).toLowerCase()==='in'?'IN':String(w[1]));
-        if(opName==='IN') return {fieldFilter:{field:{fieldPath:String(w[0])},op:'IN',value:{arrayValue:{values:(w[2]||[]).map(_val2fs)}}}};
-        return {fieldFilter:{field:{fieldPath:String(w[0])},op:opName,value:_val2fs(w[2])}};
-      });
-      const aggregations=[{count:{},alias:'n'}].concat(sums.map((f,i)=>({sum:{field:{fieldPath:f}},alias:'s'+i})));
-      const sq={from:[{collectionId:collectionName}],aggregations};
-      if(filters.length===1) sq.where=filters[0];
-      else if(filters.length>1) sq.where={compositeFilter:{op:'AND',filters:filters}};
-      const res=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({structuredAggregationQuery:{structuredQuery:{from:sq.from,where:sq.where},aggregations:sq.aggregations}})});
-      if(res.status===429){console.warn('[agg] 429 — aguardando '+(800*(att+1))+'ms');await new Promise(r=>setTimeout(r,800*(att+1)));continue;}
-      const j=await res.json();
-      const af=j&&j.batch&&j.batch[0]&&j.batch[0].aggregateFields;
-      if(af){
-        const out={n:0};
-        const gi=af.n&&af.n.integerValue, gd=af.n&&af.n.doubleValue;
-        out.n=parseInt(gi!=null?gi:gd,10)||0;
-        sums.forEach((f,i)=>{const v=af['s'+i];const a=v&&v.integerValue,b=v&&v.doubleValue;out[f]=parseFloat(a!=null?a:b)||0;});
-        return out;
+  const hit=_countCacheGet(key,collectionName);
+  if(hit) return hit.val;
+  const ip=_inFlight.get(key);
+  if(ip) return ip;
+  const p=(async()=>{
+    let r=null;
+    try{
+      if(!(_restCooldownUntil>Date.now())){
+        const u=auth&&auth.currentUser;
+        if(u){
+          const filters=((wheres||[]).filter(w=>w&&w.length>=3)).map(w=>{
+            const opName=w[1]==='=='?'EQUAL':(String(w[1]).toLowerCase()==='in'?'IN':String(w[1]));
+            if(opName==='IN') return {fieldFilter:{field:{fieldPath:String(w[0])},op:'IN',value:{arrayValue:{values:(w[2]||[]).map(_val2fs)}}}};
+            return {fieldFilter:{field:{fieldPath:String(w[0])},op:opName,value:_val2fs(w[2])}};
+          });
+          const aggregations=[{count:{},alias:'n'}].concat(sums.map((f,i)=>({sum:{field:{fieldPath:f}},alias:'s'+i})));
+          const sq={from:[{collectionId:collectionName}],aggregations};
+          if(filters.length===1) sq.where=filters[0];
+          else if(filters.length>1) sq.where={compositeFilter:{op:'AND',filters:filters}};
+          const token=await u.getIdToken();
+          const api='https://firestore.googleapis.com/v1/projects/'+FIREBASE_CONFIG.projectId+'/databases/(default)/documents:runAggregationQuery';
+          const res=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({structuredAggregationQuery:{structuredQuery:{from:sq.from,where:sq.where},aggregations:sq.aggregations}})});
+          if(res.status===429){ _restOpenCooldown(); }
+          else if(res.ok){
+            const j=await res.json();
+            const af=j&&j.batch&&j.batch[0]&&j.batch[0].aggregateFields;
+            if(af){
+              const out={n:0};
+              const gi=af.n&&af.n.integerValue, gd=af.n&&af.n.doubleValue;
+              out.n=parseInt(gi!=null?gi:gd,10)||0;
+              sums.forEach((f,i)=>{const v=af['s'+i];const a=v&&v.integerValue,b=v&&v.doubleValue;out[f]=parseFloat(a!=null?a:b)||0;});
+              r=out; _restResetCooldown();
+            }
+          }
+        }
       }
-      console.warn('[agg] resposta inesperada:',collectionName,j&&j.error);
-    }catch(e){console.warn('[agg] REST falhou:',e.message);break;}}
-  }
-  let q=col(collectionName);
-  for(const w of(wheres||[])) q=q.where(w[0],w[1],w[2]);
-  const snap=await q.get();
-  const out={n:snap.size}; sums.forEach(f=>out[f]=0);
-  snap.forEach(d=>{const x=d.data();sums.forEach(f=>out[f]+=Number(x[f])||0);});
-  return out;
+    }catch(e){ console.warn('[dest] agg falhou:',e.message); }
+    const stale=_countCacheGet(key,collectionName);
+    if(!r&&stale) r=stale.val;
+    if(!r){ r={n:0}; sums.forEach(f=>r[f]=0); }
+    else _countCacheSet(key,r);
+    _inFlight.delete(key);
+    return r;
+  })();
+  _inFlight.set(key,p);
+  return p;
 }
 async function aggIn(collectionName,field,ids,sums){
   sums=sums||[];
@@ -371,6 +444,7 @@ async function aggIn(collectionName,field,ids,sums){
   }
   return out;
 }
+_countLSLoad();
 
 /* ================= cache (coleções pequenas) =================
    IMPORTANTE: efetivopm (30k) NÃO é mais cacheado no boot — 30 mil leituras
@@ -665,32 +739,26 @@ async function renderDashboard(){
     all('eventos'),all('opm_eventos'),all('ocorrencias')
   ]);
   eventos.sort((a,b)=>(b.evento_dta_inicio||'').localeCompare(a.evento_dta_inicio||''));
-  const [ec,mc,vc,escn]=await Promise.all([
-    countDocs('efetivopm'),countDocs('municipios'),countDocs('viaturas'),countDocs('escalas')
-  ]);
   const carc=C.cargos.length,ocvs=C.opms.length,occ=ocorrencias.length,evc=eventos.length;
-  const oeCounts={};
-  await Promise.all(oeRows.map(async oe=>{ oeCounts[oe.opm_evento_id]=await countDocs('escalas',[['opm_evento_id','==',num(oe.opm_evento_id)]]); }));
+  const ativos=C.opms.filter(o=>o.opm_atv!=='FIM').length;
   const porTipo={};
   for(const o of ocorrencias){ const t=o.tipo||'OUTRO'; porTipo[t]=(porTipo[t]||0)+1; }
-  const ativos=C.opms.filter(o=>o.opm_atv!=='FIM').length;
-  const efOpm=[];
-  for(const o of C.opms) efOpm.push([o, o.opm_atv==='FIM'?0:await countDocs('efetivopm',[['opm_id','==',o.opm_id]])]);
-  efOpm.sort((a,b)=>b[1]-a[1]);
+  const cached=(name,w)=>{ const key=name+'|'+JSON.stringify(w||[]); const e=_countCache.get(key); return (e&&Date.now()-e.ts<_countTtlFor(name))?e.val:null; };
+  const ec=cached('efetivopm'), mc=cached('municipios'), vc=cached('viaturas'), escn=cached('escalas');
   let cards = `
     <div class="pagehead"><h2>Dashboard</h2><div class="sub">Visão geral do efetivo, unidades, eventos e ocorrências — Firestore</div></div>
     <div class="stat-row mb">
-      <div class="stat"><div class="v">${fmt(ec)}</div><div class="l">Efetivo PM</div></div>
+      <div class="stat"><div class="v" id="st-ef">${ec==null?'…':fmt(ec)}</div><div class="l">Efetivo PM</div></div>
       <div class="stat"><div class="v">${ocvs}</div><div class="l">OPMs (${ativos} ativas)</div></div>
-      <div class="stat"><div class="v">${fmt(escn)}</div><div class="l">Escalas lançadas</div></div>
-      <div class="stat"><div class="v">${fmt(mc)}</div><div class="l">Municípios</div></div>
-      <div class="stat"><div class="v">${fmt(vc)}</div><div class="l">Viaturas</div></div>
+      <div class="stat"><div class="v" id="st-es">${escn==null?'…':fmt(escn)}</div><div class="l">Escalas lançadas</div></div>
+      <div class="stat"><div class="v" id="st-mu">${mc==null?'…':fmt(mc)}</div><div class="l">Municípios</div></div>
+      <div class="stat"><div class="v" id="st-vi">${vc==null?'…':fmt(vc)}</div><div class="l">Viaturas</div></div>
       <div class="stat"><div class="v">${evc}</div><div class="l">Eventos</div></div>
       <div class="stat"><div class="v">${fmt(occ)}</div><div class="l">Ocorrências</div></div>
       <div class="stat"><div class="v">${fmt(carc)}</div><div class="l">Postos/Grads</div></div>
     </div>`;
   cards += `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr))">
-      <div class="card"><h3>Efetivo por OPM (ativas)</h3><div style="height:260px"><canvas id="cv-efopm"></canvas></div></div>
+      <div class="card"><h3>Efetivo por OPM (ativas)</h3><div style="height:260px"><canvas id="cv-efopm"></canvas></div><div class="muted" id="efopm-note" style="font-size:11px"></div></div>
       <div class="card"><h3>Ocorrências por Tipo</h3><div style="height:260px"><canvas id="cv-occt"></canvas></div></div>
     </div>`;
   cards += `<div class="card"><h3>Mapa Operacional CPR-CN</h3><div id="map-dash"></div>
@@ -700,12 +768,12 @@ async function renderDashboard(){
       <table><thead><tr><th>Evento</th><th>Início</th><th>Fim</th><th>Tipo</th><th>OPMs</th><th>Escalados</th></tr></thead><tbody>`;
     for(const ev of eventos){
       const oes=oeRows.filter(r=>String(r.evento_id)===String(ev.evento_id));
-      const escTotal=oes.reduce((s,r)=>s+(oeCounts[r.opm_evento_id]||0),0);
+      const escCached=oes.reduce((s,r)=>s+(cached('escalas',[['opm_evento_id','==',num(r.opm_evento_id)]])||0),0);
       cards += `<tr><td>${esc(ev.evento_desc||ev.evento_nome||'')}</td>
         <td class="muted">${esc(ev.evento_dta_inicio||'—')}</td><td class="muted">${esc(ev.evento_dta_fim||'—')}</td>
         <td>${esc(ev.tipo_pagamento||'')}</td>
         <td>${oes.map(x=>'<span class="pill">'+esc(opmSigla(x.opm_id))+'</span>').join('')||'<span class="muted">—</span>'}</td>
-        <td><b>${escTotal}</b></td></tr>`;
+        <td><b id="evt-${ev.evento_id}">${oes.length?escCached:'—'}</b></td></tr>`;
     }
     cards += `</tbody></table></div>`;
   }
@@ -716,13 +784,36 @@ async function renderDashboard(){
   } else cards += `<div class="notice">Nenhuma ocorrência registrada.</div>`;
   cards += `</div>`;
   $('#view').innerHTML=cards;
-  await CHARTJS();
-  const act=efOpm.filter(x=>x[1]>0);
-  makeChart('cv-efopm','bar',act.map(x=>esc(x[0].opm_sigla||x[0].opm_id)),act.map(x=>x[1]),'rgba(59,130,246,.75)',{border:'#3b82f6',label:'Efetivo'});
-  const tipos=Object.keys(porTipo).sort();
-  makeChart('cv-occt','doughnut',tipos,tipos.map(t=>porTipo[t]),tipos.map(t=>OCORR_COLORS[t]||'#9ca3af'),{noScales:true,label:'Ocorrências'});
   MAP_DATA={municipios:C.municipios,ocorrencias:ocorrencias};
   buildMap('map-dash');
+  CHARTJS().then(()=>{
+    const tipos=Object.keys(porTipo).sort();
+    makeChart('cv-occt','doughnut',tipos,tipos.map(t=>porTipo[t]),tipos.map(t=>OCORR_COLORS[t]||'#9ca3af'),{noScales:true,label:'Ocorrências'});
+  }).catch(()=>{});
+  refreshDashboardStats(eventos,oeRows,porTipo);
+}
+const _neg=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=fmt(v); };
+async function refreshDashboardStats(eventos,oeRows,porTipo){
+  const set=(id,p)=>p.then(v=>{ if(v!=null) _neg(id,v); }).catch(()=>{});
+  const [ec,mc,vc,escn]=[countDocs('efetivopm'),countDocs('municipios'),countDocs('viaturas'),countDocs('escalas')];
+  set('st-ef',ec); set('st-mu',mc); set('st-vi',vc); set('st-es',escn);
+  const oeCounts={};
+  const oesP=oeRows.map(async oe=>{ const v=await countDocs('escalas',[['opm_evento_id','==',num(oe.opm_evento_id)]]); oeCounts[oe.opm_evento_id]=v; return [oe,v]; });
+  const oesRes=await Promise.allSettled(oesP);
+  for(const r of oesRes){ if(r.status==='fulfilled'){ const [oe,v]=r.value; const el=document.getElementById('evt-'+oe.evento_id); if(el) el.textContent=v; } }
+  for(const ev of eventos){
+    const oes=oeRows.filter(r=>String(r.evento_id)===String(ev.evento_id));
+    const el=document.getElementById('evt-'+ev.evento_id);
+    if(el){ const tot=oes.reduce((s,r)=>s+(oeCounts[r.opm_evento_id]||0),0); el.textContent=tot; }
+  }
+  const ativas=C.opms.filter(o=>o.opm_atv!=='FIM');
+  const pairs=await Promise.all(ativas.map(async o=>[o,await countDocs('efetivopm',[['opm_id','==',o.opm_id]])]));
+  pairs.sort((a,b)=>b[1]-a[1]);
+  try{
+    await CHARTJS();
+    const act=pairs.filter(x=>x[1]>0);
+    makeChart('cv-efopm','bar',act.map(x=>esc(x[0].opm_sigla||x[0].opm_id)),act.map(x=>x[1]),'rgba(59,130,246,.75)',{border:'#3b82f6',label:'Efetivo'});
+  }catch(err){}
 }
 
 /* ================= Efetivo PM ================= */
