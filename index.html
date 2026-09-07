@@ -379,14 +379,40 @@ function nearcidade(lat,lng){
   });
   return best;
 }
+function fmtCoord(n){ const x=Number(n); return isNaN(x)?'':String(x).replace('.',','); }
+async function reverseAddr(lat,lng){
+  // Tenta Nominatim; se indisponível/bloqueado, monta endereço com o município mais próximo.
+  try{
+    const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),6000);
+    const r=await fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lng+'&zoom=16&accept-language=pt',{signal:ctrl.signal});
+    clearTimeout(t);
+    const j=await r.json();
+    const d=j&&j.display_name;
+    if(d) return String(d);
+  }catch(e){ /* nominaatim indisponível — fallback abaixo */ }
+  const c=nearcidade(lat,lng);
+  return 'Aprox. '+(c&&c.nome?c.nome:'')+(lat!=null&&lng!=null?' — '+fmtCoord(lat)+', '+fmtCoord(lng):'');
+}
+async function ocPegaEndereco(){
+  const lat=parseFloat($('#oc-lat').value), lng=parseFloat($('#oc-lng').value);
+  if(isNaN(lat)||isNaN(lng)){ toast('Preencha Latitude e Longitude primeiro.','err'); return; }
+  $('#oc-end').value='Buscando endereço…';
+  try{
+    const end=await reverseAddr(lat,lng);
+    $('#oc-end').value=end;
+    const c=C.municipios.find(m=>end&&end.toLowerCase().indexOf(String(m.nome).toLowerCase())>-1);
+    if(c&&!$('#oc-cid').value){ $('#oc-cid').value=c.nome; }
+    toast('Endereço preenchido.','ok');
+  }catch(e){ toast('Não foi possível buscar o endereço.','err'); }
+}
 function mapaRegistrarOcorrenciaRaw(pre,lat,lng){
   const near=nearcidade(lat,lng);
   OC.tab='nova';
-  OC.prefill={tipo:pre.tipo||'',cidade:pre.cidade||(near&&near.nome?near.nome:''),lat:lat,lng:lng,descricao:pre.descricao||''};
+  OC.prefill={tipo:pre.tipo||'',cidade:pre.cidade||(near&&near.nome?near.nome:''),lat:lat,lng:lng,descricao:pre.descricao||'',endereco:pre.endereco||''};
   go('ocorrencias');
 }
 function mapaRegistrarBtn(btn){
-  mapaRegistrarOcorrenciaRaw({tipo:btn.dataset.tt,cidade:btn.dataset.cc,descricao:btn.dataset.desc||''},parseFloat(btn.dataset.la),parseFloat(btn.dataset.ln));
+  mapaRegistrarOcorrenciaRaw({tipo:btn.dataset.tt,cidade:btn.dataset.cc,endereco:btn.dataset.ed||'',descricao:btn.dataset.desc||''},parseFloat(btn.dataset.la),parseFloat(btn.dataset.ln));
 }
 async function buildMap(mapId){
   await LEAFLET();
@@ -438,11 +464,11 @@ async function buildMap(mapId){
       if(o.latitude==null||o.longitude==null) return;
       const c=OCORR_COLORS[o.tipo]||'#9ca3af';
       const m=L.circleMarker([o.latitude,o.longitude],{radius:ocrRadius(o.tipo),color:c,fillColor:c,fillOpacity:.7,weight:2,opacity:.9})
-        .bindPopup('<b>'+esc(o.tipo)+'</b><br>'+(o.data_hora||'').replace('T',' ')+'<br>'+esc(o.cidade||'')+(o.vtr?'<br><b>VTR:</b> '+esc(o.vtr):'')+(o.descricao?'<br><i>'+esc(o.descricao)+'</i>':'')+
-          '<br><button class="btn primary sm" style="margin-top:6px" data-tt="'+esc(o.tipo)+'" data-cc="'+esc(o.cidade||'')+'" data-desc="'+esc(o.descricao||'')+'" data-la="'+o.latitude+'" data-ln="'+o.longitude+'" onclick="mapaRegistrarBtn(this)">✏️ Registrar novo no local</button>');
+        .bindPopup('<b>'+esc(o.tipo)+'</b><br>'+(o.data_hora||'').replace('T',' ')+'<br>'+esc(o.cidade||'')+(o.endereco?'<br><b>📍 '+esc(o.endereco)+'</b>':'')+(o.vtr?'<br><b>VTR:</b> '+esc(o.vtr):'')+(o.descricao?'<br><i>'+esc(o.descricao)+'</i>':'')+
+          '<br><button class="btn primary sm" style="margin-top:6px" data-tt="'+esc(o.tipo)+'" data-cc="'+esc(o.cidade||'')+'" data-ed="'+esc(o.endereco||'')+'" data-desc="'+esc(o.descricao||'')+'" data-la="'+o.latitude+'" data-ln="'+o.longitude+'" onclick="mapaRegistrarBtn(this)">✏️ Registrar novo no local</button>');
       m.on('click',function(e){
         if(e.originalEvent){ try{e.originalEvent._stopMapClick=true;}catch(_){} if(typeof e.originalEvent.stopPropagation==='function') e.originalEvent.stopPropagation(); }
-        mapaRegistrarOcorrenciaRaw({tipo:o.tipo,cidade:o.cidade||'',descricao:o.descricao||''},o.latitude,o.longitude);
+        mapaRegistrarOcorrenciaRaw({tipo:o.tipo,cidade:o.cidade||'',endereco:o.endereco||'',descricao:o.descricao||''},o.latitude,o.longitude);
       });
       m.addTo(ocorrenciaLayer);
     });
@@ -608,8 +634,8 @@ async function renderDashboard(){
   }
   cards += `<div class="card"><h3>Ocorrências recentes</h3>`;
   if(ocorrencias.length){
-    cards += `<table class="mt"><thead><tr><th>Data/Hora</th><th>Tipo</th><th>Cidade</th><th>VTR</th></tr></thead><tbody>`+
-      ocorrencias.slice(0,8).map(o=>`<tr><td class="muted">${esc((o.data_hora||'').replace('T',' '))}</td><td>${esc(o.tipo)}</td><td>${esc(o.cidade||'—')}</td><td>${esc(o.vtr||'—')}</td></tr>`).join('')+`</tbody></table>`;
+    cards += `<table class="mt"><thead><tr><th>Data/Hora</th><th>Tipo</th><th>Cidade</th><th>Endereço</th><th>VTR</th></tr></thead><tbody>`+
+      ocorrencias.slice(0,8).map(o=>`<tr><td class="muted">${esc((o.data_hora||'').replace('T',' '))}</td><td>${esc(o.tipo)}</td><td>${esc(o.cidade||'—')}</td><td>${esc(o.endereco||'—')}</td><td>${esc(o.vtr||'—')}</td></tr>`).join('')+`</tbody></table>`;
   } else cards += `<div class="notice">Nenhuma ocorrência registrada.</div>`;
   cards += `</div>`;
   $('#view').innerHTML=cards;
@@ -950,27 +976,76 @@ async function renderOcorrenciaNova(){
       <div class="tab ${OC.tab==='nova'?'active':''}" onclick="ocTab('nova')">🆕 Registrar ocorrência</div>
     </div>`;
   if(pf.lat!=null||pf.lng!=null){
-    html+=`<div class="notice">📍 Ponto selecionado no mapa: <b>${Number(pf.lat).toFixed(5)}, ${Number(pf.lng).toFixed(5)}</b>${pf.cidade?' — <b>'+esc(pf.cidade)+'</b>':''} <a href="#" class="muted" onclick="go('dashboard');return false">(ver mapa)</a></div>`;
+    html+=`<div class="notice">📍 Ponto selecionado: <b>${fmtCoord(pf.lat)}, ${fmtCoord(pf.lng)}</b>${pf.cidade?' — <b>'+esc(pf.cidade)+'</b>':''}</div>`;
   }
   html+=`<div class="card"><div class="grid" style="grid-template-columns:1fr 1fr;gap:10px">
       <div><label class="muted">Tipo de Ocorrência *</label>
         <select id="oc-tipo">${['Homicídio','Feminicídio','Tentativa de Homicídio','Latrocínio','Estupro','Estupro de Vulnerável','Violência Doméstica','Lesão Corporal','Roubo','Roubo a Banco','Roubo de Veículo','Furto','Furto de Veículo','Tráfico de Drogas','Porte de Drogas','Porte Ilegal de Arma','Sequestro','Extorsão','Dano ao Patrimônio','Ameaça','Direção Perigosa','Perturbação do Sossego','Receptação','Estelionato','Desaparecimento de Pessoa','Suicídio / Tentativa','Incêndio Criminoso','Violação de Domicílio','Atentado ao Pudor','Corrupção de Menores','Crime Cibernético','Acidente de Trânsito','Atropelamento','Achado de Cadáver','Outros'].map(t=>`<option value="${esc(t)}" ${pf.tipo===t?'selected':''}>${t}</option>`).join('')}</select></div>
-      <div><label class="muted">Data e Hora *</label><input id="oc-dh" type="datetime-local" value="${todayStr().replace(/-/g,'-')}T00:00" /></div>
+      <div><label class="muted">Data e Hora *</label><input id="oc-dh" type="datetime-local" value="${pf.dh||(todayStr().replace(/-/g,'-')+'T00:00')}" /></div>
       <div><label class="muted">Cidade</label>
         <select id="oc-cid"><option value="">—</option>${C.municipios.slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')).map(m=>`<option value="${esc(m.nome)}" ${pf.cidade===m.nome?'selected':''}>${esc(m.nome)}</option>`).join('')}${pf.cidade&&!C.municipios.some(m=>m.nome===pf.cidade)?`<option value="${esc(pf.cidade)}" selected>${esc(pf.cidade)}</option>`:''}</select></div>
       <div><label class="muted">VTR que atendeu</label><input id="oc-vtr" type="text" placeholder="ex: 33415" /></div>
-      <div><label class="muted">Latitude</label><input id="oc-lat" type="number" step="any" value="${pf.lat!=null?pf.lat:''}" placeholder="ex: -11.66891" /></div>
-      <div><label class="muted">Longitude</label><input id="oc-lng" type="number" step="any" value="${pf.lng!=null?pf.lng:''}" placeholder="ex: -41.75302" /></div>
+      <div style="grid-column:1/-1"><label class="muted">Endereço da Ocorrência</label>
+        <div style="display:flex;gap:8px;align-items:start">
+          <input id="oc-end" type="text" style="flex:1" value="${esc(pf.endereco||'')}" placeholder="ex: Rua 1º de Maio, 45 — Centro, Irecê-BA" />
+          <button class="btn ghost" title="Buscar endereço a partir de lat/lng" onclick="ocPegaEndereco()">🔎 Buscar</button>
+        </div></div>
+      <div><label class="muted">Latitude</label><input id="oc-lat" type="number" step="any" value="${pf.lat!=null?pf.lat:''}" placeholder="ex: -11.30494" onchange="ocAutoCidade()" /></div>
+      <div><label class="muted">Longitude</label><input id="oc-lng" type="number" step="any" value="${pf.lng!=null?pf.lng:''}" placeholder="ex: -41.85582" onchange="ocAutoCidade()" /></div>
+      <div style="grid-column:1/-1"><label class="muted">Local no Mapa <span style="color:var(--muted)">(clique para marcar o ponto)</span></label>
+        <div id="oc-map" style="height:320px;border-radius:10px;background:#dfe6ec;z-index:0"></div>
+        <div class="toolbar mt"><button class="btn ghost sm" onclick="ocLimparPonto()">✖ Remover ponto</button></div></div>
       <div style="grid-column:1/-1"><label class="muted">Descrição dos Fatos</label><textarea id="oc-desc" rows="4">${esc(pf.descricao||'')}</textarea></div>
       <div style="grid-column:1/-1"><label class="muted">Dados Relevantes</label><textarea id="oc-dados" rows="2"></textarea></div>
     </div><button class="btn mt" onclick="ocSalvar()">💾 Salvar ocorrência</button></div>`;
   $('#view').innerHTML=html;
   OC.prefill=null;
+  ocMontarMapa();
+  if((!isNaN(parseFloat($('#oc-lat').value))&&$('#oc-lat').value!=='')&&!$('#oc-end').value){
+    ocPegaEndereco();
+  }
+}
+function ocAutoCidade(){
+  const lat=parseFloat($('#oc-lat').value), lng=parseFloat($('#oc-lng').value);
+  if(isNaN(lat)||isNaN(lng)) return;
+  const c=nearcidade(lat,lng);
+  if(c&&!$('#oc-cid').value){ $('#oc-cid').value=c.nome; }
+}
+function ocLimparPonto(){
+  $('#oc-lat').value=''; $('#oc-lng').value=''; $('#oc-end').value='';
+  if(OC._ocMap){ try{ OC._ocMap.eachLayer(function(l){ if(l._ocPick){ OC._ocMap.removeLayer(l); } }); }catch(e){} }
+}
+let OC_PICK=null;
+async function ocMontarMapa(){
+  if(OC_PICK){ try{OC_PICK.remove();}catch(e){} OC_PICK=null; }
+  await LEAFLET();
+  const el=document.getElementById('oc-map');
+  if(!el||typeof L==='undefined') return;
+  const latini=parseFloat($('#oc-lat').value), lngini=parseFloat($('#oc-lng').value);
+  const hasPoint=!isNaN(latini)&&!isNaN(lngini);
+  const map=L.map('oc-map',{zoomControl:true}).setView(hasPoint?[latini,lngini]:[-11.3,-41.9],hasPoint?14:8);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
+  let mk=null;
+  function setPoint(lat,lng){
+    if(mk){ map.removeLayer(mk); }
+    mk=L.marker([lat,lng],{draggable:true}).addTo(map);
+    const near=nearcidade(lat,lng);
+    $('#oc-lat').value=(Math.round(lat*1e5)/1e5).toString();
+    $('#oc-lng').value=(Math.round(lng*1e5)/1e5).toString();
+    if(near&&near.nome&&!$('#oc-cid').value){ $('#oc-cid').value=near.nome; }
+    mk.on('dragend',function(){ const p=mk.getLatLng(); $('#oc-lat').value=(Math.round(p.lat*1e5)/1e5).toString(); $('#oc-lng').value=(Math.round(p.lng*1e5)/1e5).toString(); });
+  }
+  map.on('click',function(e){
+    setPoint(e.latlng.lat,e.latlng.lng);
+  });
+  if(hasPoint){ setPoint(latini,lngini); }
+  OC_PICK=map;
 }
 
 async function ocSalvar(){
   const tipo=$('#oc-tipo').value, dh=$('#oc-dh').value;
   const cid=$('#oc-cid').value, vtr=$('#oc-vtr').value.trim();
+  const end=$('#oc-end').value.trim();
   const desc=$('#oc-desc').value.trim(), dados=$('#oc-dados').value.trim();
   const lta=parseFloat($('#oc-lat').value), lna=parseFloat($('#oc-lng').value);
   if(!tipo||!dh){ toast('Informe tipo e data/hora.','err'); return; }
@@ -978,7 +1053,7 @@ async function ocSalvar(){
   if(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(ra)) dataISO=ra.replace(' ','T')+':00';
   const max=(await getDocs(col('ocorrencias').orderBy('id','desc').limit(1)))[0];
   const next=(max&&num(max.id))?num(max.id)+1:1;
-  const payload={ id:next, tipo, data_hora:dataISO, cidade:cid||'', vtr, descricao:desc, dados_relevantes:dados };
+  const payload={ id:next, tipo, data_hora:dataISO, cidade:cid||'', endereco:end||'', vtr, descricao:desc, dados_relevantes:dados };
   payload.latitude=isNaN(lta)?null:lta;
   payload.longitude=isNaN(lna)?null:lna;
   await col('ocorrencias').doc(String(next)).set(payload);
