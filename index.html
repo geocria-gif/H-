@@ -358,7 +358,36 @@ function makeChart(canvasId,type,labels,data,colors,extra){
       plugins:{legend:{labels:{color:dark?'#e6edf3':'#1a1d21',boxWidth:14}}},
       scales:extra&&extra.noScales?{}:{y:{beginAtZero:true,ticks:{color:dark?'#8b949e':'#666'},grid:{color:dark?'#2d333b':'#eee'}},x:{ticks:{color:dark?'#8b949e':'#666',maxRotation:45,autoSkip:false},grid:{display:false}}}}});
 }
-let MAP_OBJ=null;
+let MAP_OBJ=null, MAP_GEO=null, TURF_P=null;
+function ensTurf(){
+  if(window.turf) return Promise.resolve(true);
+  if(TURF_P) return TURF_P;
+  TURF_P=Promise.race([
+    loadScript('https://cdn.jsdelivr.net/npm/@turf/turf@6.5.0/turf.min.js').then(()=>true),
+    new Promise((_,rej)=>setTimeout(()=>rej('timeout'),12000))
+  ]).catch(()=>false);
+  return TURF_P;
+}
+const OCORR_RADIUS={"Homicídio":10,"Feminicídio":11,"Tentativa de Homicídio":9,"Latrocínio":10,"Estupro":9,"Estupro de Vulnerável":9,"Sequestro":8,"Incêndio Criminoso":8,"ACIDENTE":9,"HOMICIDIO":10,"ASSALTO":8,"ROUBO":8};
+function ocrRadius(t){ return OCORR_RADIUS[t]||7; }
+function nearcidade(lat,lng){
+  let best=null,bd=Infinity;
+  (C.municipios||[]).forEach(m=>{
+    if(m.latitude==null||m.longitude==null) return;
+    const d=Math.pow(Number(m.latitude)-lat,2)+Math.pow(Number(m.longitude)-lng,2);
+    if(d<bd){ bd=d; best=m; }
+  });
+  return best;
+}
+function mapaRegistrarOcorrenciaRaw(pre,lat,lng){
+  const near=nearcidade(lat,lng);
+  OC.tab='nova';
+  OC.prefill={tipo:pre.tipo||'',cidade:pre.cidade||(near&&near.nome?near.nome:''),lat:lat,lng:lng,descricao:pre.descricao||''};
+  go('ocorrencias');
+}
+function mapaRegistrarBtn(btn){
+  mapaRegistrarOcorrenciaRaw({tipo:btn.dataset.tt,cidade:btn.dataset.cc,descricao:btn.dataset.desc||''},parseFloat(btn.dataset.la),parseFloat(btn.dataset.ln));
+}
 async function buildMap(mapId){
   await LEAFLET();
   const el=document.getElementById(mapId);
@@ -366,23 +395,163 @@ async function buildMap(mapId){
   if(MAP_OBJ){ try{MAP_OBJ.remove();}catch(e){} MAP_OBJ=null; }
   const munis=MAP_DATA.municipios||[], occs=MAP_DATA.ocorrencias||[];
   const dir={}; OPM_GROUPS.forEach(g=>g.names.forEach(n=>dir[normName(n)]=g));
-  const latlngs=[];
-  const map=L.map(mapId,{zoomControl:true}).setView([-11.3,-41.9],8);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap'}).addTo(map);
-  munis.forEach(m=>{
-    if(m.latitude==null||m.longitude==null) return;
-    const g=dir[normName(m.nome||'')];
-    latlngs.push([m.latitude,m.longitude]);
-    L.circleMarker([m.latitude,m.longitude],{radius:7,color:g?g.color:'#888',fillColor:g?g.color:'#888',fillOpacity:.65,weight:2})
-      .bindPopup('<b>'+esc(m.nome)+'</b><br><b>OPM:</b> '+esc(g?g.label:'—')+'<br><b>População:</b> '+fmt(m.populacao||0)).addTo(map);
+  const munDir={}; munis.forEach(m=>munDir[normName(m.nome||'')]=m);
+  const OPACITY=0.45;
+  const map=L.map(mapId,{zoomControl:true,attributionControl:true}).setView([-11.3,-41.9],8);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
+  const municLayer=L.layerGroup().addTo(map);
+  const outlineLayer=L.layerGroup().addTo(map);
+  const ocorrenciaLayer=L.layerGroup().addTo(map);
+  let legendCtrl=null, occLegendCtrl=null;
+
+  function addLegend(){
+    if(legendCtrl){ map.removeControl(legendCtrl); legendCtrl=null; }
+    const div=L.control({position:'bottomright'});
+    div.onAdd=function(){
+      const elx=L.DomUtil.create('div','');
+      elx.style.cssText='background:#fff;padding:10px 14px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.18);font:13px/1.6 Inter,system-ui,sans-serif;color:#222';
+      let html='<div style="font-weight:700;margin-bottom:5px;font-size:14px">OPM / CPR-CN</div>';
+      OPM_GROUPS.forEach(g=>{ html+='<div style="display:flex;align-items:center;gap:7px;margin:2px 0"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:'+g.color+'"></span> '+esc(g.label)+'</div>'; });
+      html+='<div style="display:flex;align-items:center;gap:7px;margin-top:5px;padding-top:5px;border-top:1px solid #ccc"><span style="display:inline-block;width:22px;height:0;border-top:3px dashed #000"></span> CPR-CN</div>';
+      elx.innerHTML=html;
+      return elx;
+    };
+    legendCtrl=div.addTo(map);
+  }
+  function addOcorrenciaLegend(tipos){
+    if(occLegendCtrl){ map.removeControl(occLegendCtrl); occLegendCtrl=null; }
+    if(!tipos||!tipos.length) return;
+    const div=L.control({position:'bottomleft'});
+    div.onAdd=function(){
+      const elx=L.DomUtil.create('div','');
+      elx.style.cssText='background:#fff;padding:8px 12px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.18);font:12px/1.5 Inter,system-ui,sans-serif;color:#222;max-height:200px;overflow-y:auto';
+      let html='<div style="font-weight:700;margin-bottom:4px;font-size:13px">🚨 Tipos Visíveis</div>';
+      tipos.forEach(t=>{ const c=OCORR_COLORS[t]||'#9ca3af'; html+='<div style="display:flex;align-items:center;gap:6px;margin:1px 0"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+c+'"></span> '+esc(t)+'</div>'; });
+      elx.innerHTML=html;
+      return elx;
+    };
+    occLegendCtrl=div.addTo(map);
+  }
+  function addOcorrencias(){
+    ocorrenciaLayer.clearLayers();
+    occs.forEach(o=>{
+      if(o.latitude==null||o.longitude==null) return;
+      const c=OCORR_COLORS[o.tipo]||'#9ca3af';
+      const m=L.circleMarker([o.latitude,o.longitude],{radius:ocrRadius(o.tipo),color:c,fillColor:c,fillOpacity:.7,weight:2,opacity:.9})
+        .bindPopup('<b>'+esc(o.tipo)+'</b><br>'+(o.data_hora||'').replace('T',' ')+'<br>'+esc(o.cidade||'')+(o.vtr?'<br><b>VTR:</b> '+esc(o.vtr):'')+(o.descricao?'<br><i>'+esc(o.descricao)+'</i>':'')+
+          '<br><button class="btn primary sm" style="margin-top:6px" data-tt="'+esc(o.tipo)+'" data-cc="'+esc(o.cidade||'')+'" data-desc="'+esc(o.descricao||'')+'" data-la="'+o.latitude+'" data-ln="'+o.longitude+'" onclick="mapaRegistrarBtn(this)">✏️ Registrar novo no local</button>');
+      m.on('click',function(e){
+        if(e.originalEvent){ try{e.originalEvent._stopMapClick=true;}catch(_){} if(typeof e.originalEvent.stopPropagation==='function') e.originalEvent.stopPropagation(); }
+        mapaRegistrarOcorrenciaRaw({tipo:o.tipo,cidade:o.cidade||'',descricao:o.descricao||''},o.latitude,o.longitude);
+      });
+      m.addTo(ocorrenciaLayer);
+    });
+    const seen={},tipos=[];
+    occs.forEach(o=>{ if(o.latitude!=null&&o.longitude!=null&&!seen[o.tipo]){ seen[o.tipo]=true; tipos.push(o.tipo); } });
+    tipos.sort();
+    addOcorrenciaLegend(tipos);
+  }
+  function fallbackMarkers(){
+    municLayer.clearLayers();
+    const latlngs=[];
+    munis.forEach(r=>{
+      if(r.latitude==null||r.longitude==null) return;
+      const g=dir[normName(r.nome||'')];
+      const color=g?g.color:'#888', label=g?g.label:'Sem OPM';
+      latlngs.push([r.latitude,r.longitude]);
+      L.circleMarker([r.latitude,r.longitude],{radius:8,color:color,fillColor:color,fillOpacity:.6,weight:2})
+        .bindPopup('<b>Município:</b> '+esc(r.nome)+'<br><b>OPM:</b> '+esc(label)+'<br><b>População:</b> '+(r.populacao!=null?Number(r.populacao).toLocaleString('pt-BR'):'-')).addTo(municLayer);
+    });
+    if(latlngs.length) map.fitBounds(latlngs,{padding:[30,30]});
+    addLegend();
+  }
+  function extractIbge(f){ const p=(f&&f.properties)||{}; return String((f&&(f.id||p.codarea||p.id||p.codigo_ibge))||'').trim(); }
+  function opmDe(feature){
+    const props=(feature&&feature.properties)||{};
+    if(extractIbge(feature)){
+      const row=Object.values(munDir).find(x=>x.codigo_ibge&&String(x.codigo_ibge).trim()===extractIbge(feature));
+      if(row&&dir[normName(row.nome)]) return dir[normName(row.nome)];
+    }
+    return dir[normName(props.name||'')]||null;
+  }
+  function geojsonStyle(feature){
+    const g=opmDe(feature);
+    if(g) return {color:g.color,weight:1,fillColor:g.color,fillOpacity:OPACITY};
+    return {color:'#ccc',weight:.5,fillColor:'#e0e0e0',fillOpacity:.15};
+  }
+  async function renderGeojson(fc){
+    municLayer.clearLayers();
+    outlineLayer.clearLayers();
+    if(fc.type==='Feature') fc={type:'FeatureCollection',features:[fc]};
+    if(!fc.features||!fc.features.length){ fallbackMarkers(); return; }
+    const matched=[];
+    const layer=L.geoJSON(fc,{
+      style:geojsonStyle,
+      onEachFeature:function(feature,l){
+        const props=(feature&&feature.properties)||{};
+        const g=opmDe(feature);
+        const row=munDir[normName(props.name||'')];
+        const nome=row?row.nome:(props.name||'');
+        const cc=l.getBounds().getCenter();
+        l.bindPopup('<b>'+esc(nome)+'</b><br><b>OPM:</b> '+esc(g?g.label:'Sem OPM')+'<br><b>População:</b> '+(row&&row.populacao!=null?Number(row.populacao).toLocaleString('pt-BR'):'-')+
+          '<br><button class="btn primary sm" style="margin-top:6px" data-la="'+cc.lat+'" data-ln="'+cc.lng+'" onclick="mapaRegistrarBtn(this)">✏️ Registrar ocorrência aqui</button>');
+        l.on({
+          mouseover:function(e){ const t=e.target; t.setStyle({color:g?g.color:'#ccc',weight:3,fillColor:g?g.color:'#e0e0e0',fillOpacity:Math.min(OPACITY+.3,1)}); t.bringToFront(); },
+          mouseout:function(e){ e.target.setStyle(geojsonStyle(feature)); },
+          click:function(e){
+            if(e.originalEvent){ try{e.originalEvent._stopMapClick=true;}catch(_){} if(typeof e.originalEvent.stopPropagation==='function') e.originalEvent.stopPropagation(); }
+            mapaRegistrarOcorrenciaRaw({},cc.lat,cc.lng);
+          }
+        });
+        if(g) matched.push(feature);
+      }
+    });
+    municLayer.addLayer(layer);
+    await ensTurf();
+    if(window.turf&&matched.length>1){
+      try{
+        const merged=matched.reduce((a,b)=>turf.union(a,b));
+        if(merged) L.geoJSON(merged,{style:{color:'#000',weight:3,dashArray:'10,8',fillOpacity:0},interactive:false}).addTo(outlineLayer);
+      }catch(e){ console.warn('[map] dissolve:',e); }
+    }
+    if(matched.length){
+      try{ map.fitBounds(L.geoJSON({type:'FeatureCollection',features:matched}).getBounds(),{padding:[30,30]}); }catch(e){}
+    }
+    addLegend();
+  }
+  function tryFetchGeojson(idx){
+    const urls=[
+      'https://cdn.jsdelivr.net/gh/tbrugz/geodata-br@master/geojson/geojs-29-mun.json',
+      'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-29-mun.json'
+    ];
+    if(idx>=urls.length){ fallbackMarkers(); return; }
+    Promise.race([
+      fetch(urls[idx]).then(r=>r.ok?r.json():Promise.reject(r.status)),
+      new Promise((_,rej)=>setTimeout(()=>rej('timeout'),15000))
+    ]).then(data=>{
+      if(!data||!data.features||!data.features.length) throw 'empty';
+      MAP_GEO=data;
+      renderGeojson(data);
+    }).catch(()=>tryFetchGeojson(idx+1));
+  }
+  function toggleMunic(){
+    const z=map.getZoom();
+    if(z>=13){
+      if(map.hasLayer(municLayer)) map.removeLayer(municLayer);
+      if(map.hasLayer(outlineLayer)) map.removeLayer(outlineLayer);
+    }else{
+      if(!map.hasLayer(municLayer)) municLayer.addTo(map);
+      if(!map.hasLayer(outlineLayer)) outlineLayer.addTo(map);
+    }
+  }
+  map.on('zoomend',toggleMunic);
+  map.on('click',function(e){
+    if(e.originalEvent&&e.originalEvent._stopMapClick) return;
+    mapaRegistrarOcorrenciaRaw({},e.latlng.lat,e.latlng.lng);
   });
-  occs.forEach(o=>{
-    if(o.latitude==null||o.longitude==null) return;
-    const c=OCORR_COLORS[o.tipo]||'#9ca3af';
-    L.circleMarker([o.latitude,o.longitude],{radius:9,color:c,fillColor:c,fillOpacity:.8,weight:2})
-      .bindPopup('<b>'+esc(o.tipo)+'</b><br>'+(o.data_hora||'').replace('T',' ')+'<br>'+esc(o.cidade||'')+(o.vtr?'<br><b>VTR:</b> '+esc(o.vtr):'')).addTo(map);
-  });
-  if(latlngs.length) map.fitBounds(latlngs,{padding:[30,30]});
+  if(MAP_GEO){ renderGeojson(MAP_GEO); } else { fallbackMarkers(); tryFetchGeojson(0); }
+  addOcorrencias();
+  setTimeout(toggleMunic,300);
   MAP_OBJ=map;
 }
 let MAP_DATA={municipios:[],ocorrencias:[]};
@@ -744,7 +913,7 @@ async function esRemover(docId){
 }
 
 /* ================= Ocorrências ================= */
-const OC = { tab:'ind' };
+const OC = { tab:'ind', prefill:null };
 async function renderOcorrencias(){
   if(OC.tab==='nova') return renderOcorrenciaNova();
   const eventos=await all('ocorrencia_eventos');
@@ -774,34 +943,44 @@ function ocTab(t){ OC.tab=t; go('ocorrencias'); }
 function ocData(d){ OC.datas=d; go('ocorrencias'); }
 
 async function renderOcorrenciaNova(){
+  const pf=OC.prefill||{};
   let html=`<div class="pagehead"><h2>Registrar Ocorrência</h2><div class="sub">Novo registro direto no Firestore</div></div>
     <div class="tabs">
       <div class="tab ${OC.tab==='ind'?'active':''}" onclick="ocTab('ind')">📊 Indicadores</div>
       <div class="tab ${OC.tab==='nova'?'active':''}" onclick="ocTab('nova')">🆕 Registrar ocorrência</div>
-    </div>
-    <div class="card"><div class="grid" style="grid-template-columns:1fr 1fr;gap:10px">
+    </div>`;
+  if(pf.lat!=null||pf.lng!=null){
+    html+=`<div class="notice">📍 Ponto selecionado no mapa: <b>${Number(pf.lat).toFixed(5)}, ${Number(pf.lng).toFixed(5)}</b>${pf.cidade?' — <b>'+esc(pf.cidade)+'</b>':''} <a href="#" class="muted" onclick="go('dashboard');return false">(ver mapa)</a></div>`;
+  }
+  html+=`<div class="card"><div class="grid" style="grid-template-columns:1fr 1fr;gap:10px">
       <div><label class="muted">Tipo de Ocorrência *</label>
-        <select id="oc-tipo">${['Homicídio','Feminicídio','Tentativa de Homicídio','Latrocínio','Estupro','Estupro de Vulnerável','Violência Doméstica','Lesão Corporal','Roubo','Roubo a Banco','Roubo de Veículo','Furto','Furto de Veículo','Tráfico de Drogas','Porte de Drogas','Porte Ilegal de Arma','Sequestro','Extorsão','Dano ao Patrimônio','Ameaça','Direção Perigosa','Perturbação do Sossego','Receptação','Estelionato','Desaparecimento de Pessoa','Suicídio / Tentativa','Incêndio Criminoso','Violação de Domicílio','Atentado ao Pudor','Corrupção de Menores','Crime Cibernético','Acidente de Trânsito','Atropelamento','Achado de Cadáver','Outros'].map(t=>`<option>${t}</option>`).join('')}</select></div>
+        <select id="oc-tipo">${['Homicídio','Feminicídio','Tentativa de Homicídio','Latrocínio','Estupro','Estupro de Vulnerável','Violência Doméstica','Lesão Corporal','Roubo','Roubo a Banco','Roubo de Veículo','Furto','Furto de Veículo','Tráfico de Drogas','Porte de Drogas','Porte Ilegal de Arma','Sequestro','Extorsão','Dano ao Patrimônio','Ameaça','Direção Perigosa','Perturbação do Sossego','Receptação','Estelionato','Desaparecimento de Pessoa','Suicídio / Tentativa','Incêndio Criminoso','Violação de Domicílio','Atentado ao Pudor','Corrupção de Menores','Crime Cibernético','Acidente de Trânsito','Atropelamento','Achado de Cadáver','Outros'].map(t=>`<option value="${esc(t)}" ${pf.tipo===t?'selected':''}>${t}</option>`).join('')}</select></div>
       <div><label class="muted">Data e Hora *</label><input id="oc-dh" type="datetime-local" value="${todayStr().replace(/-/g,'-')}T00:00" /></div>
       <div><label class="muted">Cidade</label>
-        <select id="oc-cid"><option value="">—</option>${C.municipios.slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')).map(m=>`<option value="${esc(m.nome)}">${esc(m.nome)}</option>`).join('')}</select></div>
+        <select id="oc-cid"><option value="">—</option>${C.municipios.slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')).map(m=>`<option value="${esc(m.nome)}" ${pf.cidade===m.nome?'selected':''}>${esc(m.nome)}</option>`).join('')}${pf.cidade&&!C.municipios.some(m=>m.nome===pf.cidade)?`<option value="${esc(pf.cidade)}" selected>${esc(pf.cidade)}</option>`:''}</select></div>
       <div><label class="muted">VTR que atendeu</label><input id="oc-vtr" type="text" placeholder="ex: 33415" /></div>
-      <div style="grid-column:1/-1"><label class="muted">Descrição dos Fatos</label><textarea id="oc-desc" rows="4"></textarea></div>
+      <div><label class="muted">Latitude</label><input id="oc-lat" type="number" step="any" value="${pf.lat!=null?pf.lat:''}" placeholder="ex: -11.66891" /></div>
+      <div><label class="muted">Longitude</label><input id="oc-lng" type="number" step="any" value="${pf.lng!=null?pf.lng:''}" placeholder="ex: -41.75302" /></div>
+      <div style="grid-column:1/-1"><label class="muted">Descrição dos Fatos</label><textarea id="oc-desc" rows="4">${esc(pf.descricao||'')}</textarea></div>
       <div style="grid-column:1/-1"><label class="muted">Dados Relevantes</label><textarea id="oc-dados" rows="2"></textarea></div>
     </div><button class="btn mt" onclick="ocSalvar()">💾 Salvar ocorrência</button></div>`;
   $('#view').innerHTML=html;
+  OC.prefill=null;
 }
 
 async function ocSalvar(){
   const tipo=$('#oc-tipo').value, dh=$('#oc-dh').value;
   const cid=$('#oc-cid').value, vtr=$('#oc-vtr').value.trim();
   const desc=$('#oc-desc').value.trim(), dados=$('#oc-dados').value.trim();
+  const lta=parseFloat($('#oc-lat').value), lna=parseFloat($('#oc-lng').value);
   if(!tipo||!dh){ toast('Informe tipo e data/hora.','err'); return; }
   const ra=dh.replace('T',' '); let dataISO=ra+':00';
   if(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(ra)) dataISO=ra.replace(' ','T')+':00';
   const max=(await getDocs(col('ocorrencias').orderBy('id','desc').limit(1)))[0];
   const next=(max&&num(max.id))?num(max.id)+1:1;
   const payload={ id:next, tipo, data_hora:dataISO, cidade:cid||'', vtr, descricao:desc, dados_relevantes:dados };
+  payload.latitude=isNaN(lta)?null:lta;
+  payload.longitude=isNaN(lna)?null:lna;
   await col('ocorrencias').doc(String(next)).set(payload);
   toast('Ocorrência #'+next+' salva no Firestore.','ok');
   OC.tab='ind'; go('ocorrencias');
