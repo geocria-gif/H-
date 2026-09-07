@@ -739,20 +739,26 @@ async function renderEfetivo(){
   if(EF.start) q=q.startAfter(EF.start);
   const items=await getDocs(q);
   EF.end = items.length ? col('efetivopm').doc(items[items.length-1].__id) : null;
-  let html=`<div class="pagehead"><h2>Efetivo PM</h2><div class="sub">Lista paginada direto do Firestore (30.5 mil militares)</div></div>
+  let html=`<div class="pagehead"><h2>Efetivo PM</h2><div class="sub">CRUD direto no Firestore (30.5 mil militares)</div></div>
     <div class="toolbar">
       <div class="searchbox"><input id="ef-term" type="text" placeholder="Buscar por nome ou matrícula…" value="${esc(term)}" onkeydown="if(event.key==='Enter')efBuscar()" />
       </div>
       <button class="btn ghost" onclick="efSetTerm('')">Limpar</button>
+      <div style="flex:1"></div>
+      <button class="btn primary" onclick="efForm(null)">＋ Novo Militar</button>
     </div>
     <div class="card" style="padding:0;overflow:auto"><table>
-    <thead><tr><th>Matrícula</th><th>Nome</th><th>Posto/Grad</th><th>OPM</th><th>Situação</th><th>Telefone</th></tr></thead><tbody>`;
-  if(!items.length) html+=`<tr><td colspan="6" class="center muted">Nada encontrado.</td></tr>`;
+    <thead><tr><th>Matrícula</th><th>Nome</th><th>Posto/Grad</th><th>OPM</th><th>Situação</th><th>Telefone</th><th></th></tr></thead><tbody>`;
+  if(!items.length) html+=`<tr><td colspan="7" class="center muted">Nada encontrado.</td></tr>`;
   for(const it of items){
     html+=`<tr><td>${esc(it.matricula)}</td><td>${esc(it.nome)}</td><td>${esc(cargoNome(it.cargo))}</td>
       <td>${esc(opmSigla(it.opm_id))}</td>
       <td><span class="pill ${String(it.sit||'').toUpperCase()==='AT'?'alt':''}">${esc(it.sit||'—')}</span></td>
-      <td>${esc(it.telefone||'—')}</td></tr>`;
+      <td>${esc(it.telefone||'—')}</td>
+      <td style="white-space:nowrap">
+        <button class="btn ghost sm" onclick="efForm('${esc(it.matricula)}')">✏️</button>
+        <button class="btn danger sm" onclick="efExcluir('${esc(it.matricula)}')">🗑</button>
+      </td></tr>`;
   }
   html+=`</tbody></table></div>`;
   html+=`<div class="pager">
@@ -767,6 +773,72 @@ function efSetTerm(t){ EF.term=t; EF.stack=[]; EF.start=null; EF.end=null; go('e
 function efBuscar(){ const t=$('#ef-term').value.trim(); if(t!==EF.term){ EF.term=t; EF.stack=[]; EF.start=null; EF.end=null; } go('efetivo'); }
 function efNext(){ if(EF.end){ EF.stack.push(EF.start); EF.start=EF.end; EF.end=null; go('efetivo'); } }
 function efPrev(){ if(EF.stack.length){ EF.start=EF.stack.pop(); EF.end=null; go('efetivo'); } }
+async function efForm(id){
+  const a=id?await getDoc('efetivopm',id):null;
+  if(id&&!a){ toast('Militar não encontrado.','err'); return; }
+  const cargos=C.cargos.slice().sort((x,y)=>(x.posto_grad||'').localeCompare(y.posto_grad||''));
+  const cOpts=cargos.map(c=>`<option value="${esc(c.cargo_id)}" ${a&&String(a.cargo)===String(c.cargo_id)?'selected':''}>${esc(c.posto_grad||c.cargo_id)}</option>`).join('');
+  const ops=[...C.opms].sort((x,y)=>(x.opm_sigla||'').localeCompare(y.opm_sigla||''));
+  const oOpts=ops.map(o=>`<option value="${esc(o.opm_id)}" ${a&&String(a.opm_id)===String(o.opm_id)?'selected':''}>${esc(o.opm_sigla||o.opm_id)} - ${esc(o.opm_desc||'')}</option>`).join('');
+  const sel=(k,label,opts)=>`<div><label class="muted">${label}</label><select id="ef-${k}">${opts}</select></div>`;
+  const sitOpts=['ATIVO','RESERVA','LICENCA','AFASTADO'].map(s=>`<option value="${s}" ${a&&String(a.sit||'')===s?'selected':''}>${s.charAt(0)+s.slice(1).toLowerCase()}</option>`).join('');
+  const f6Opts=['NAO','SIM'].map(s=>`<option value="${s}" ${a&&String(a.f6||'NAO')===s?'selected':''}>${s.charAt(0)+s.slice(1).toLowerCase()}</option>`).join('');
+  const compOpts=['BOM','REGULAR','RUIM'].map(s=>`<option value="${s}" ${a&&String(a.comportamento||'BOM')===s?'selected':''}>${s.charAt(0)+s.slice(1).toLowerCase()}</option>`).join('');
+  const tsOpts=[['','Selecione'],['A+','A+'],['A-','A-'],['B+','B+'],['B-','B-'],['AB+','AB+'],['AB-','AB-'],['O+','O+'],['O-','O-']].map(s=>`<option value="${s[0]}" ${a&&String(a.tipo_sanguineo||'')===s[0]?'selected':''}>${s[1]}</option>`).join('');
+  const inp=(k,label,ph,type)=>{ const e=a?(a[k]||''):''; return `<div><label class="muted">${label}</label><input id="ef-${k}" type="${type||'text'}" value="${esc(e)}" placeholder="${ph||''}" ${(k==='matricula'&&id)?'readonly':''}></div>`; };
+  const body=`
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px">
+      ${inp('matricula','Matrícula *','Ex.: 2077...', 'text')}
+      ${inp('nome','Nome *','Nome do militar')}
+      ${sel('cargo','Posto/Graduação',cOpts)}
+      ${sel('opm_id','OPM',oOpts)}
+      ${inp('funcao','Função','Ex.: Comandante')}
+      ${sel('sit','Situação',sitOpts)}
+      ${sel('f6','F6',f6Opts)}
+      ${sel('tipo_sanguineo','Tipo Sanguíneo',tsOpts)}
+      ${inp('lc_trab_desc','Local de Trabalho','Ex.: CPR-CN')}
+      ${inp('telefone','Telefone','(00) 00000-0000')}
+      ${inp('cpf','CPF','000.000.000-00')}
+      ${inp('rg','RG','')}
+      ${inp('titulo','Título','')}
+      ${inp('cnh','CNH','')}
+      ${inp('categoria','Categoria CNH','Ex.: B')}
+      ${inp('admissao','Admissão (AAAA-MM-DD)','2020-01-01')}
+      ${inp('data_nascimento','Data Nasc. (AAAA-MM-DD)','1990-01-01')}
+      ${sel('comportamento','Comportamento',compOpts)}
+    </div>`;
+  openModal(id?'Editar Militar — '+a.nome:'Novo Militar', body, async ()=>{
+    const v=k=>{ const e=$('#ef-'+k); return e?(e.value||'').trim():''; };
+    const nome=v('nome');
+    if(id&&!nome){ toast('Informe o nome do militar.','err'); return; }
+    if(!id){
+      const mat=v('matricula');
+      if(!mat){ toast('Informe a matrícula.','err'); return; }
+      if(await getDoc('efetivopm',mat)){ toast('Já existe militar com esta matrícula.','err'); return; }
+    }
+    const docId=id?String(a.matricula):v('matricula');
+    const data={
+      matricula:String(docId), nome:nome,
+      cargo:$('#ef-cargo').value||'', opm_id:$('#ef-opm_id').value||'',
+      funcao:v('funcao'), sit:$('#ef-sit').value||'ATIVO', f6:$('#ef-f6').value||'NAO',
+      tipo_sanguineo:$('#ef-tipo_sanguineo').value||'',
+      lc_trab_desc:v('lc_trab_desc'), local_trabalho:v('lc_trab_desc'),
+      telefone:v('telefone'), cpf:v('cpf'), rg:v('rg'), titulo:v('titulo'),
+      cnh:v('cnh'), categoria:v('categoria'),
+      admissao:v('admissao'), data_nascimento:v('data_nascimento'),
+      comportamento:$('#ef-comportamento').value||'BOM'
+    };
+    await col('efetivopm').doc(docId).set(data,{merge:false});
+    closeModal(); toast(id?'Militar atualizado!':'Militar cadastrado!','ok'); go('efetivo');
+  });
+}
+async function efExcluir(id){
+  const a=await getDoc('efetivopm',id);
+  if(!a){ toast('Militar não encontrado.','err'); return; }
+  if(!confirm('Excluir o militar '+String(a.matricula)+' — '+String(a.nome||'')+'?')) return;
+  await col('efetivopm').doc(String(id)).delete();
+  toast('Militar excluído!','ok'); go('efetivo');
+}
 
 /* ================= OPMs ================= */
 async function renderOPMs(){
@@ -1939,7 +2011,13 @@ html+='</tbody></table>'; imp.innerHTML=html; setTimeout(()=>window.print(),50);
 
 /* ================= Escalas Salvas ================= */
 async function renderSalvas(){
-  let cards=await all('escalas_salvas');
+  let cards=[];
+  try{ cards=await all('escalas_salvas'); }
+  catch(e){
+    $('#view').innerHTML=`<div class="pagehead"><h2>💾 Escalas Salvas</h2><div class="sub">⚠️ Falha ao carregar</div></div>
+      <div class="card"><div class="notice">Não foi possível ler as escalas salvas (${esc(e.message||e)}).<br>Verifique a conexão com o Firestore ou tente novamente em instantes.</div></div>`;
+    return;
+  }
   cards.sort((a,b)=>(b.data_salva||'').localeCompare(a.data_salva||''));
   let html=`<div class="pagehead"><h2>💾 Escalas Salvas</h2><div class="sub">${cards.length} escala(s) salva(s)</div></div>
     <div class="card" style="padding:0;overflow:auto"><table>
