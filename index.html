@@ -989,19 +989,96 @@ async function opmExcluir(id){
   toast('OPM excluída!','ok'); go('opms');
 }
 
-/* ================= Municípios ================= */
+/* ================= Municípios (CRUD) ================= */
+const MUN = { busca:'', last:[] };
 async function renderMunicipios(){
-  const ms=[...C.municipios].sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
-  let html=`<div class="pagehead"><h2>Municípios</h2><div class="sub">${ms.length} municípios cadastrados</div></div>
+  const term=MUN.busca.toLowerCase().trim();
+  MUN.last=[...C.municipios]
+    .filter(m=>!term||[m.nome,m.uf,m.regiao,m.prefeito,m.partido].some(x=>String(x||'').toLowerCase().includes(term)))
+    .sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
+  let html=`<div class="pagehead"><h2>Municípios</h2><div class="sub">${C.municipios.length} município(s) cadastrado(s) · exibindo ${MUN.last.length}</div></div>
+    <div class="toolbar">
+      <input placeholder="Buscar por nome, UF, região, prefeito…" style="max-width:280px" value="${esc(MUN.busca)}" oninput="MUN.busca=this.value;renderMunicipios()">
+      <div style="flex:1"></div>
+      <button class="btn" onclick="munExportarCsv()">⬇ CSV</button>
+      <button class="btn primary" onclick="munForm()">＋ Novo Município</button>
+    </div>
     <div class="card" style="padding:0;overflow:auto"><table>
-    <thead><tr><th>Nome</th><th>UF</th><th>Região</th><th>População</th><th>Dist. Irecê (km)</th><th>Prefeito</th><th>Partido</th></tr></thead><tbody>`;
-  for(const m of ms){
-    html+=`<tr><td>${esc(m.nome)}</td><td>${esc(m.uf||'')}</td><td>${esc(m.regiao||'—')}</td>
-      <td>${m.populacao?fmt(m.populacao):'—'}</td><td>${m.dist_irece!=null?num(m.dist_irece).toFixed(1):'—'}</td>
-      <td>${esc(m.prefeito||'—')}</td><td>${esc(m.partido||'—')}</td></tr>`;
-  }
+    <thead><tr><th>Nome</th><th>UF</th><th>Região</th><th>IBGE</th><th>População</th><th>Dist. Irecê (km)</th><th>OPMs</th><th>Prefeito</th><th>Partido</th><th></th></tr></thead><tbody>`;
+  if(!MUN.last.length) html+=`<tr><td colspan="10" class="center muted">${C.municipios.length?'Nenhum município corresponde à busca.':'Nenhum município cadastrado.'}</td></tr>`;
+  MUN.last.forEach((m,i)=>{
+    const nOpm=(C.opms||[]).filter(o=>String(o.opm_municipio||'').toLowerCase()===String(m.nome||'').toLowerCase()).length;
+    html+=`<tr><td><b>${esc(m.nome)}</b></td><td>${esc(m.uf||'—')}</td><td>${esc(m.regiao||'—')}</td>
+      <td>${esc(m.codigo_ibge||'—')}</td><td>${m.populacao?fmt(m.populacao):'—'}</td>
+      <td>${m.dist_irece!=null?num(m.dist_irece).toFixed(1):'—'}</td><td><b>${nOpm}</b></td>
+      <td>${esc(m.prefeito||'—')}</td><td>${esc(m.partido||'—')}</td>
+      <td style="white-space:nowrap">
+        <button class="btn ghost sm" onclick="munForm(${i})">✏️</button>
+        <button class="btn danger sm" onclick="munExcluir(${i})">🗑</button>
+      </td></tr>`;
+  });
   html+=`</tbody></table></div>`;
   $('#view').innerHTML=html;
+}
+function munOf(nome){ return C.municipios.find(m=>String(m.id||m.nome).toLowerCase()===String(nome||'').toLowerCase()); }
+function munForm(i){
+  const m=i!=null?MUN.last[num(i)]:null;
+  const a=m||{nome:'',uf:'BA',regiao:'',codigo_ibge:'',area:'',cep:'',populacao:'',dist_irece:'',prefeito:'',partido:'',latitude:'',longitude:''};
+  const inp=(k,label,ph,type,step)=>{ const e=a[k]!=null?a[k]:''; return `<div><label class="muted">${label}</label><input id="mu-${k}" type="${type||'text'}" value="${esc(String(e))}" placeholder="${ph||''}" ${step?'step="'+step+'"':''}></div>`; };
+  const body=`<div class="grid" style="grid-template-columns:1fr 1fr;gap:10px">
+    ${inp('nome','Nome *','Ex.: Irecê')}
+    ${inp('uf','UF','BA')}
+    <div style="grid-column:1/-1">${inp('regiao','Região','Ex.: Irecê')}</div>
+    ${inp('codigo_ibge','Código IBGE','Ex.: 2910706')}
+    ${inp('populacao','População','','number')}
+    ${inp('dist_irece','Dist. Irecê (km)','','number','0.1')}
+    ${inp('latitude','Latitude','-11.3042','number','0.000001')}
+    ${inp('longitude','Longitude','-41.8558','number','0.000001')}
+    ${inp('area','Área (km²)','','number','0.01')}
+    ${inp('cep','CEP','')}
+    ${inp('prefeito','Prefeito','')}
+    ${inp('partido','Partido','')}
+  </div>`;
+  openModal(m?'Editar Município — '+a.nome:'Novo Município', body, async ()=>{
+    const v=k=>{ const e=$('#mu-'+k); return e?String(e.value||'').trim():''; };
+    const nome=v('nome');
+    if(!nome){ toast('Informe o nome do município.','err'); return; }
+    if(!m&&munOf(nome)){ toast('Já existe município com este nome.','err'); return; }
+    const numK=k=>{ const s=v(k); if(s==='') return null; return Number(s.replace(',','.')); };
+    const data={ nome, uf:v('uf')||'BA', regiao:v('regiao'), codigo_ibge:v('codigo_ibge'),
+      populacao:numK('populacao'), dist_irece:numK('dist_irece'),
+      latitude:numK('latitude'), longitude:numK('longitude'),
+      area:numK('area'), cep:v('cep'), prefeito:v('prefeito'), partido:v('partido') };
+    const oldId=m?String(m.id||m.nome):'';
+    if(m&&oldId!==nome){ await col('municipios').doc(oldId).delete(); }
+    await col('municipios').doc(nome).set(data,{merge:true});
+    const mu=Object.assign({},data,{id:nome});
+    if(m){ C.municipios=C.municipios.map(x=>String(x.id||x.nome)===oldId?mu:x); }
+    else { C.municipios.push(mu); }
+    _countCache.delete('municipios|[]'); _countLSPersist();
+    closeModal(); toast(m?'Município atualizado!':'Município cadastrado!','ok'); go('municipios');
+  });
+}
+async function munExcluir(i){
+  const m=MUN.last[num(i)];
+  if(!m) return;
+  const nOpm=(C.opms||[]).filter(o=>String(o.opm_municipio||'').toLowerCase()===String(m.nome||'').toLowerCase()).length;
+  let msg='Excluir o município "'+m.nome+'"?';
+  if(nOpm) msg+=`\nAtenção: ${nOpm} OPM(s) mantêm "${m.nome}" como município (vínculo por nome, não será alterado).`;
+  if(!confirm(msg)) return;
+  await col('municipios').doc(String(m.id||m.nome)).delete();
+  C.municipios=C.municipios.filter(x=>String(x.id||x.nome)!==String(m.id||m.nome));
+  _countCache.delete('municipios|[]'); _countLSPersist();
+  toast('Município excluído!','ok'); go('municipios');
+}
+function munExportarCsv(){
+  const rows=[...C.municipios].sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
+  if(!rows.length){ toast('Nada para exportar','err'); return; }
+  const cols=['nome','uf','regiao','codigo_ibge','populacao','dist_irece','latitude','longitude','area','cep','prefeito','partido'];
+  let csv=cols.join(';')+'\n';
+  for(const r of rows) csv+=cols.map(c=>escapeCsv(r[c])).join(';')+'\n';
+  downloadText('municipios.csv',csv);
+  toast('CSV exportado!','ok');
 }
 
 /* ================= Eventos (CRUD) ================= */
@@ -1385,30 +1462,131 @@ EE.updTipo=async function(id,val){
   EE.body();
 };
 
-/* ================= Viaturas ================= */
-const VF = { start:null, end:null, stack:[] };
+/* ================= Viaturas (CRUD) ================= */
+const VF = { rows:null, busca:'', sit:'', mun:'', page:1, last:[] };
+const VF_PAGE=25;
+const VF_SITUACOES=['DISPONIVEL','MANUTENCAO','INSERVIVEL','OUTRO'];
+function vfSitLabel(s){ return s==='DISPONIVEL'?'DISPONÍVEL':s==='MANUTENCAO'?'MANUTENÇÃO':s==='INSERVIVEL'?'INSERVÍVEL':(s||'—'); }
+function vfSort(){ (VF.rows||[]).sort((a,b)=>(a.prefixo||'').localeCompare(b.prefixo||'',undefined,{numeric:true})); }
 async function renderViaturas(){
-  let q=col('viaturas').orderBy('prefixo').limit(20);
-  if(VF.start) q=q.startAfter(VF.start);
-  const items=await getDocs(q);
-  VF.end=items.length?col('viaturas').doc(items[items.length-1].__id):null;
-  let html=`<div class="pagehead"><h2>Viaturas</h2><div class="sub">Página ${VF.stack.length+1} · ordem por prefixo</div></div>
+  if(!VF.rows){ VF.rows=await getDocs(col('viaturas').orderBy('prefixo')); vfSort(); }
+  const term=VF.busca.toLowerCase().trim();
+  const filtra=VF.rows.filter(v=>{
+    if(VF.sit&&String(v.situacao||'')!==VF.sit) return false;
+    if(VF.mun&&String(v.municipio||'')!==VF.mun) return false;
+    if(!term) return true;
+    return [v.prefixo,v.placa,v.marca,v.modelo,v.municipio,v.unidade,v.chassi,v.renavam]
+      .some(x=>String(x||'').toLowerCase().includes(term));
+  });
+  VF.last=filtra;
+  const pages=Math.max(1,Math.ceil(filtra.length/VF_PAGE));
+  if(VF.page>pages) VF.page=pages;
+  const rows=filtra.slice((VF.page-1)*VF_PAGE,VF.page*VF_PAGE);
+  const munOpts=[...new Set((VF.rows||[]).map(v=>String(v.municipio||'').trim()).filter(Boolean))].sort();
+  let html=`<div class="pagehead"><h2>Viaturas</h2><div class="sub">${VF.rows.length} viatura(s) cadastrada(s) · exibindo ${filtra.length} · página ${VF.page}/${pages}</div></div>
+    <div class="toolbar">
+      <input placeholder="Buscar por prefixo, placa, marca, modelo, município…" style="max-width:300px" value="${esc(VF.busca)}" oninput="VF.busca=this.value;VF.page=1;renderViaturas()">
+      <select onchange="VF.sit=this.value;VF.page=1;renderViaturas()"><option value="">Situação: todas</option>${VF_SITUACOES.map(s=>`<option value="${s}" ${VF.sit===s?'selected':''}>${vfSitLabel(s)}</option>`).join('')}</select>
+      <select onchange="VF.mun=this.value;VF.page=1;renderViaturas()"><option value="">Município: todos</option>${munOpts.map(m=>`<option value="${esc(m)}" ${VF.mun===m?'selected':''}>${esc(m)}</option>`).join('')}</select>
+      <div style="flex:1"></div>
+      <button class="btn" onclick="viaturaExportarCsv()">⬇ CSV</button>
+      <button class="btn primary" onclick="viaturaForm()">＋ Nova Viatura</button>
+    </div>
     <div class="card" style="padding:0;overflow:auto"><table>
-    <thead><tr><th>Prefixo</th><th>Placa</th><th>Marca/Modelo</th><th>Município</th><th>Unidade</th><th>Situação</th></tr></thead><tbody>`;
-  if(!items.length) html+=`<tr><td colspan="6" class="center muted">Vazio.</td></tr>`;
-  for(const v of items){
+    <thead><tr><th>Prefixo</th><th>Placa</th><th>Marca/Modelo</th><th>Ano</th><th>Município</th><th>Unidade</th><th>Situação</th><th></th></tr></thead><tbody>`;
+  if(!rows.length) html+=`<tr><td colspan="8" class="center muted">${VF.rows.length?'Nenhuma viatura corresponde aos filtros.':'Nenhuma viatura cadastrada.'}</td></tr>`;
+  rows.forEach((v,i)=>{
+    const idx=VF.last.indexOf(v);
     html+=`<tr><td><b>${esc(v.prefixo)}</b></td><td>${esc(v.placa||'—')}</td>
       <td>${esc((v.marca||'')+' '+(v.modelo||''))||'—'}</td>
+      <td>${esc(v.ano_modelo||'—')}</td>
       <td>${esc(v.municipio||'—')}</td><td>${esc(v.unidade||'—')}</td>
-      <td><span class="pill ${String(v.situacao||'').toUpperCase()==='ATIVA'?'alt':''}">${esc(v.situacao||'—')}</span></td></tr>`;
-  }
+      <td><span class="pill ${String(v.situacao||'').toUpperCase()==='DISPONIVEL'?'alt':String(v.situacao||'').toUpperCase()==='MANUTENCAO'?'warn':''}">${esc(vfSitLabel(v.situacao))}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn ghost sm" onclick="viaturaForm(${idx})">✏️</button>
+        <button class="btn danger sm" onclick="viaturaExcluir(${idx})">🗑</button>
+      </td></tr>`;
+  });
   html+=`</tbody></table></div>
-    <div class="pager"><button class="btn ghost sm" onclick="vfPrev()" ${VF.stack.length?'':'disabled'}>◀ Página anterior</button>
-    <button class="btn ghost sm" onclick="vfNext()" ${items.length<20?'disabled':''}>Próxima ▶</button></div>`;
+    <div class="pager"><button class="btn ghost sm" onclick="vfPage(-1)" ${VF.page<=1?'disabled':''}>◀ Anterior</button>
+    <span class="muted">${VF.page}/${pages}</span>
+    <button class="btn ghost sm" onclick="vfPage(1)" ${VF.page>=pages?'disabled':''}>Próxima ▶</button></div>`;
   $('#view').innerHTML=html;
 }
-function vfNext(){ if(VF.end){ VF.stack.push(VF.start); VF.start=VF.end; VF.end=null; go('viaturas'); } }
-function vfPrev(){ if(VF.stack.length){ VF.start=VF.stack.pop(); VF.end=null; go('viaturas'); } }
+function vfPage(d){ VF.page+=d; renderViaturas(); }
+function viaturaOf(pref){ return (VF.rows||[]).find(v=>String(v.prefixo)===String(pref)); }
+function viaturaForm(i){
+  const v=i!=null?VF.last[num(i)]:null;
+  const a=v||{prefixo:'',placa:'',marca:'',modelo:'',ano_modelo:'',ano_fabricacao:'',cor:'',chassi:'',renavam:'',patrimonio:'',cod_secretaria:'',cod_unidade_gestora:'',municipio:'',unidade:'',situacao:'',combustivel:'',propriedade:'',telefone:''};
+  const munOpts=C.municipios.slice().sort((x,y)=>(x.nome||'').localeCompare(y.nome||'')).map(m=>`<option value="${esc(m.nome)}" ${String(a.municipio||'')===m.nome?'selected':''}>${esc(m.nome)}</option>`).join('');
+  const unidOpts=C.opms.filter(o=>o.opm_sigla).sort((x,y)=>(x.opm_sigla||'').localeCompare(y.opm_sigla||'')).map(o=>`<option value="${esc(o.opm_sigla)}" ${String(a.unidade||'')===o.opm_sigla?'selected':''}>${esc(o.opm_sigla)}</option>`).join('');
+  const sitOpts=[''].concat(VF_SITUACOES).map(s=>`<option value="${s}" ${String(a.situacao||'')===s?'selected':''}>${s?vfSitLabel(s):'—'}</option>`).join('');
+  const combOpts=[''].concat(['GASOLINA','DIESEL','FLEX','ALCOOL','GNV','OUTRO']).map(s=>`<option value="${s}" ${String(a.combustivel||'')===s?'selected':''}>${s||'—'}</option>`).join('');
+  const anos=Array.from({length:37},(_,k)=>new Date().getFullYear()-k);
+  const anoOpts=val=>[''].concat(anos).map(y=>`<option value="${y}" ${String(val||'')===String(y)?'selected':''}>${y||'—'}</option>`).join('');
+  const inp=(k,label,ph,up)=>{ const e=a[k]!=null?a[k]:''; return `<div><label class="muted">${label}</label><input id="vt-${k}" value="${esc(String(e))}" placeholder="${ph||''}" ${up?'style="text-transform:uppercase"':''}></div>`; };
+  const body=`
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px">
+      <div><label class="muted">Prefixo *</label><input id="vt-prefixo" value="${esc(String(a.prefixo||''))}" ${v?'readonly':''} placeholder="Ex.: VTR-001" style="text-transform:uppercase"></div>
+      ${inp('placa','Placa','Ex.: ABC-1234',true)}
+      ${inp('marca','Marca','Ex.: TOYOTA',true)}
+      ${inp('modelo','Modelo','Ex.: COROLLA',true)}
+      <div><label class="muted">Ano Modelo</label><select id="vt-ano_modelo">${anoOpts(a.ano_modelo)}</select></div>
+      <div><label class="muted">Ano Fabricação</label><select id="vt-ano_fabricacao">${anoOpts(a.ano_fabricacao)}</select></div>
+      ${inp('cor','Cor','Ex.: BRANCA',true)}
+      ${inp('chassi','Chassi','',true)}
+      ${inp('renavam','Renavam','')}
+      ${inp('patrimonio','Patrimônio','')}
+      ${inp('cod_secretaria','Cód. Secretaria','')}
+      ${inp('cod_unidade_gestora','Cód. Unid. Gestora','')}
+      <div><label class="muted">Município</label><select id="vt-municipio"><option value="">—</option>${munOpts}${a.municipio&&!C.municipios.some(m=>m.nome===a.municipio)?'<option value="'+esc(a.municipio)+'" selected>'+esc(a.municipio)+'</option>':''}</select></div>
+      <div><label class="muted">Unidade (OPM)</label><select id="vt-unidade"><option value="">—</option>${unidOpts}${a.unidade&&!C.opms.some(o=>o.opm_sigla===a.unidade)?'<option value="'+esc(a.unidade)+'" selected>'+esc(a.unidade)+'</option>':''}</select></div>
+      <div><label class="muted">Situação</label><select id="vt-situacao">${sitOpts}</select></div>
+      <div><label class="muted">Combustível</label><select id="vt-combustivel">${combOpts}</select></div>
+      ${inp('propriedade','Propriedade','Ex.: ESTADO',true)}
+      ${inp('telefone','Telefone','')}
+    </div>`;
+  openModal(v?'Editar Viatura — '+v.prefixo:'Nova Viatura', body, async ()=>{
+    const g=k=>{ const e=$('#vt-'+k); return e?String(e.value||'').trim():''; };
+    const pref=g('prefixo');
+    if(!pref){ toast('Informe o prefixo da viatura.','err'); return; }
+    if(!v&&viaturaOf(pref)){ toast('Já existe viatura com este prefixo.','err'); return; }
+    const ani=k=>{ const s=g(k); return s===''?null:num(s); };
+    const data={ prefixo:pref, placa:g('placa'), marca:g('marca'), modelo:g('modelo'),
+      ano_modelo:ani('ano_modelo'), ano_fabricacao:ani('ano_fabricacao'),
+      cor:g('cor'), chassi:g('chassi'), renavam:g('renavam'), patrimonio:g('patrimonio'),
+      cod_secretaria:g('cod_secretaria'), cod_unidade_gestora:g('cod_unidade_gestora'),
+      municipio:g('municipio'), unidade:g('unidade'), situacao:g('situacao'),
+      combustivel:g('combustivel'), propriedade:g('propriedade'), telefone:g('telefone') };
+    const oldId=v?String(v.prefixo):'';
+    if(v&&oldId!==pref){ await col('viaturas').doc(oldId).delete(); }
+    await col('viaturas').doc(pref).set(data,{merge:true});
+    if(v){ VF.rows=VF.rows.map(x=>String(x.prefixo)===oldId?data:x); }
+    else { VF.rows.push(data); }
+    vfSort(); vfInvalidarContagem();
+    closeModal(); toast(v?'Viatura atualizada!':'Viatura cadastrada!','ok'); go('viaturas');
+  });
+}
+async function viaturaExcluir(i){
+  const v=VF.last[num(i)];
+  if(!v) return;
+  if(!confirm('Excluir a viatura "'+String(v.prefixo)+'" ('+String(v.placa||'')+')?')) return;
+  await col('viaturas').doc(String(v.prefixo)).delete();
+  VF.rows=VF.rows.filter(x=>String(x.prefixo)!==String(v.prefixo));
+  vfInvalidarContagem();
+  toast('Viatura excluída!','ok'); go('viaturas');
+}
+function vfInvalidarContagem(){ _countCache.delete('viaturas|[]'); _countLSPersist(); }
+function viaturaExportarCsv(){
+  if(!VF.rows) return;
+  const rows=[...VF.rows].sort((a,b)=>(a.prefixo||'').localeCompare(b.prefixo||'',undefined,{numeric:true}));
+  if(!rows.length){ toast('Nada para exportar','err'); return; }
+  const cols=['prefixo','placa','marca','modelo','ano_modelo','ano_fabricacao','cor','chassi','renavam','patrimonio','cod_secretaria','cod_unidade_gestora','municipio','unidade','situacao','combustivel','propriedade','telefone'];
+  let csv=cols.join(';')+'\n';
+  for(const r of rows) csv+=cols.map(c=>escapeCsv(r[c])).join(';')+'\n';
+  downloadText('viaturas.csv',csv);
+  toast('CSV exportado!','ok');
+}
 
 /* ================= Escala de Horas ================= */
 const ES = { eventoId:null, opmEventoId:null, data:'' };
