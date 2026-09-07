@@ -817,7 +817,7 @@ async function refreshDashboardStats(eventos,oeRows,porTipo){
 }
 
 /* ================= Efetivo PM ================= */
-const EF = { term:'', stack:[], start:null, end:null };
+const EF = { term:'', stack:[], start:null, end:null, rows:{} };
 async function renderEfetivo(){
   EF.term=$('#ef-term')?$('#ef-term').value.trim():EF.term;
   const term=EF.term;
@@ -830,6 +830,7 @@ async function renderEfetivo(){
   if(EF.start) q=q.startAfter(EF.start);
   const items=await getDocs(q);
   EF.end = items.length ? col('efetivopm').doc(items[items.length-1].__id) : null;
+  EF.rows={}; for(const it of items) EF.rows[it.__id]=it;
   let html=`<div class="pagehead"><h2>Efetivo PM</h2><div class="sub">CRUD direto no Firestore (30.5 mil militares)</div></div>
     <div class="toolbar">
       <div class="searchbox"><input id="ef-term" type="text" placeholder="Buscar por nome ou matrícula…" value="${esc(term)}" onkeydown="if(event.key==='Enter')efBuscar()" />
@@ -847,8 +848,8 @@ async function renderEfetivo(){
       <td><span class="pill ${String(it.sit||'').toUpperCase()==='AT'?'alt':''}">${esc(it.sit||'—')}</span></td>
       <td>${esc(it.telefone||'—')}</td>
       <td style="white-space:nowrap">
-        <button class="btn ghost sm" onclick="efForm('${esc(it.matricula)}')">✏️</button>
-        <button class="btn danger sm" onclick="efExcluir('${esc(it.matricula)}')">🗑</button>
+        <button class="btn ghost sm" onclick="efForm('${esc(it.__id)}')">✏️</button>
+        <button class="btn danger sm" onclick="efExcluir('${esc(it.__id)}')">🗑</button>
       </td></tr>`;
   }
   html+=`</tbody></table></div>`;
@@ -864,8 +865,18 @@ function efSetTerm(t){ EF.term=t; EF.stack=[]; EF.start=null; EF.end=null; go('e
 function efBuscar(){ const t=$('#ef-term').value.trim(); if(t!==EF.term){ EF.term=t; EF.stack=[]; EF.start=null; EF.end=null; } go('efetivo'); }
 function efNext(){ if(EF.end){ EF.stack.push(EF.start); EF.start=EF.end; EF.end=null; go('efetivo'); } }
 function efPrev(){ if(EF.stack.length){ EF.start=EF.stack.pop(); EF.end=null; go('efetivo'); } }
+async function efQueryMat(mat){
+  const s=String(mat==null?'':mat).trim(); if(!s) return null;
+  const cand=[];
+  try{ cand.push(...await getDocs(col('efetivopm').where('matricula','==',s).limit(2))); }catch(e){}
+  if(/^\d+$/.test(s)){ try{ cand.push(...await getDocs(col('efetivopm').where('matricula','==',Number(s)).limit(2))); }catch(e){} }
+  const seen=new Set();
+  for(const d of cand){ const k=String(d.__id||d.id||''); if(k&&!seen.has(k)) return d; }
+  return null;
+}
 async function efForm(id){
-  const a=id?await getDoc('efetivopm',id):null;
+  let a=id?(EF.rows&&EF.rows[id])||null:null;
+  if(id&&!a) a=await getDoc('efetivopm',id)||await efQueryMat(id);
   if(id&&!a){ toast('Militar não encontrado.','err'); return; }
   const cargos=C.cargos.slice().sort((x,y)=>(x.posto_grad||'').localeCompare(y.posto_grad||''));
   const cOpts=cargos.map(c=>`<option value="${esc(c.cargo_id)}" ${a&&String(a.cargo)===String(c.cargo_id)?'selected':''}>${esc(c.posto_grad||c.cargo_id)}</option>`).join('');
@@ -907,9 +918,10 @@ async function efForm(id){
       if(!mat){ toast('Informe a matrícula.','err'); return; }
       if(await getDoc('efetivopm',mat)){ toast('Já existe militar com esta matrícula.','err'); return; }
     }
-    const docId=id?String(a.matricula):v('matricula');
+    const docId=id&&a?(a.__id||a.matricula):v('matricula');
+    const matField=id&&a?String(a.matricula):String(docId);
     const data={
-      matricula:String(docId), nome:nome,
+      matricula:matField, nome:nome,
       cargo:$('#ef-cargo').value||'', opm_id:$('#ef-opm_id').value||'',
       funcao:v('funcao'), sit:$('#ef-sit').value||'ATIVO', f6:$('#ef-f6').value||'NAO',
       tipo_sanguineo:$('#ef-tipo_sanguineo').value||'',
@@ -924,10 +936,11 @@ async function efForm(id){
   });
 }
 async function efExcluir(id){
-  const a=await getDoc('efetivopm',id);
+  let a=id?(EF.rows&&EF.rows[id])||null:null;
+  if(!a) a=await getDoc('efetivopm',id)||await efQueryMat(id);
   if(!a){ toast('Militar não encontrado.','err'); return; }
   if(!confirm('Excluir o militar '+String(a.matricula)+' — '+String(a.nome||'')+'?')) return;
-  await col('efetivopm').doc(String(id)).delete();
+  await col('efetivopm').doc(String(a.__id||a.matricula)).delete();
   toast('Militar excluído!','ok'); go('efetivo');
 }
 
