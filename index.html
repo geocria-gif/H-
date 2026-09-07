@@ -164,6 +164,7 @@ const FIREBASE_READY = FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.startsW
     <nav>
       <div class="nav-group">Principal</div>
       <div class="nav-item" data-page="dashboard" onclick="go('dashboard')">📊 Dashboard</div>
+      <div class="nav-item" data-page="escala_eventos" onclick="go('escala_eventos')">🚨 Escala de Eventos</div>
       <div class="nav-item" data-page="escala" onclick="go('escala')">🎯 Escala de Horas</div>
       <div class="nav-item" data-page="p2" onclick="go('p2')">🗓️ Escala P2</div>
       <div class="nav-item" data-page="salvas" onclick="go('salvas')">💾 Escalas Salvas</div>
@@ -331,7 +332,8 @@ function munNome(id){ const m=C.municipios.find(x=>String(x.id)===String(id)||x.
 const RENDER = {
   dashboard: renderDashboard, efetivo: renderEfetivo, opms: renderOPMs,
   municipios: renderMunicipios, eventos: renderEventos, viaturas: renderViaturas,
-  escala: renderEscala, ocorrencias: renderOcorrencias,
+  escala: renderEscala, escala_eventos: renderEscalaEventos,
+  ocorrencias: renderOcorrencias,
   p2: renderP2, salvas: renderSalvas, valores: renderValores,
   relatorio: renderRelatorio, cards: renderCards, usuarios: renderUsuarios,
   backup: renderBackup
@@ -339,7 +341,8 @@ const RENDER = {
 const PAGE_TITLE = {
   dashboard:'Dashboard', efetivo:'Efetivo PM', opms:'OPMs — Unidades',
   municipios:'Municípios', eventos:'Eventos', viaturas:'Viaturas',
-  escala:'Escala de Horas', ocorrencias:'Ocorrências',
+  escala:'Escala de Horas', escala_eventos:'Escala de Eventos',
+  ocorrencias:'Ocorrências',
   p2:'Escala P2', salvas:'Escalas Salvas', valores:'Tabela de Valores',
   relatorio:'Relatório de Horas', cards:'Cards Instagram', usuarios:'Usuários',
   backup:'Backup / Exportar'
@@ -754,6 +757,264 @@ async function renderEventos(){
   if(!eventos.length) html+=`<div class="notice">Nenhum evento cadastrado.</div>`;
   $('#view').innerHTML=html;
 }
+
+/* ================= Escala de Eventos ================= */
+const EE = { eventoId:null, opmEventoId:null };
+async function renderEscalaEventos(){
+  const [eventos,oes,escalas]=await Promise.all([all('eventos'),all('opm_eventos'),all('escalas')]);
+  eventos.sort((a,b)=>(b.evento_dta_inicio||'').localeCompare(a.evento_dta_inicio||''));
+  EE._evs=eventos; EE._oes=oes; EE._esc=escalas;
+  const escLocal={};
+  for(const s of escalas){const k=String(s.opm_evento_id);escLocal[k]=(escLocal[k]||0)+1;}
+  EE._escLocal=escLocal;
+  const sel=EE.eventoId!==null?EE.eventoId:(eventos.length?num(eventos[0].evento_id):null);
+  EE.eventoId=sel;
+  if(sel===null){
+    $('#view').innerHTML=`<div class="pagehead"><h2>Escala de Eventos</h2><div class="sub">Registro de horários de policiais por evento e OPM</div></div>
+      <div class="notice">Nenhum evento cadastrado. Crie um evento na tela <b>Eventos</b>.</div>`;
+    return;
+  }
+  if(EE.opmEventoId===null){
+    const first=oes.filter(r=>String(r.evento_id)===String(sel))[0];
+    EE.opmEventoId=first?num(first.opm_evento_id):null;
+  }
+  EE.body();
+}
+EE.body=function(){
+  const eventos=EE._evs,oes=EE._oes,escLocal=EE._escLocal;
+  const ev=eventos.find(e=>String(e.evento_id)===String(EE.eventoId));
+  const evOes=oes.filter(r=>String(r.evento_id)===String(EE.eventoId)).sort((a,b)=>(opmSigla(a.opm_id)||'').localeCompare(opmSigla(b.opm_id)||''));
+  const polTot=evOes.reduce((s,oe)=>s+(escLocal[String(oe.opm_evento_id)]||0),0);
+  let html=`<div class="pagehead"><h2>Escala de Eventos</h2>
+    <div class="sub">1️⃣ Selecione o evento · 2️⃣ Escolha a OPM · 3️⃣ Lance as horas dos policiais</div></div>
+    <div class="card">
+      <div class="grid" style="grid-template-columns:1fr auto;gap:10px;align-items:end">
+        <div><label class="muted">Evento</label>
+          <select id="ee-evento" onchange="EE.setEvento(this.value)">
+            ${eventos.map(e=>`<option value="${esc(e.evento_id)}" ${String(e.evento_id)===String(EE.eventoId)?'selected':''}>${esc(e.evento_desc||e.evento_nome||'')} — ${esc(e.evento_dta_inicio||'')}</option>`).join('')}
+          </select></div>
+        <div class="muted" style="white-space:nowrap">
+          ${ev?`<span class="pill">${esc(ev.evento_dta_inicio||'—')} → ${esc(ev.evento_dta_fim||'—')}</span>`:''}
+          <span class="pill">${evOes.length} OPM(s)</span>
+          <span class="pill">${polTot} policial(is)</span>
+        </div>
+      </div>
+    </div>`;
+  // 2. OPMs alocadas
+  html+=`<div class="card"><div class="toolbar" style="margin-bottom:8px">
+      <h3 style="margin:0">2. OPMs Alocadas</h3><div style="flex:1"></div>
+      <select id="ee-opm-add" style="width:220px"><option value="">— selecione uma OPM —</option>
+        ${C.opms.filter(o=>o.opm_atv!=='FIM'&&!evOes.some(oe=>String(oe.opm_id)===String(o.opm_id)))
+          .sort((a,b)=>(a.opm_sigla||'').localeCompare(b.opm_sigla||''))
+          .map(o=>`<option value="${esc(o.opm_id)}">${esc(o.opm_sigla||o.opm_id)}</option>`).join('')}
+      </select>
+      <button class="btn sm" onclick="EE.addOpm()">+ Adicionar</button>
+    </div>
+    <div style="overflow:auto"><table>
+      <thead><tr><th>Sigla</th><th>Descrição</th><th>Município</th><th>Policiais</th><th>Ações</th></tr></thead><tbody>`;
+  if(!evOes.length) html+=`<tr><td colspan="5" class="center muted">Nenhuma OPM alocada a este evento.</td></tr>`;
+  for(const oe of evOes){
+    const o=opmOf(oe.opm_id);
+    const n=escLocal[String(oe.opm_evento_id)]||0;
+    const isSel=String(oe.opm_evento_id)===String(EE.opmEventoId);
+    html+=`<tr style="${isSel?'background:rgba(59,130,246,.12)':''}">
+      <td><span class="badge">${esc(o?o.opm_sigla:oe.opm_id)}</span></td>
+      <td>${esc(o?o.opm_desc:'')}</td>
+      <td>${esc(o?o.opm_municipio:'—')}</td>
+      <td><b>${n}</b></td>
+      <td style="white-space:nowrap">
+        <button class="btn ${isSel?'':'ghost'} sm" onclick="EE.setOpm(${num(oe.opm_evento_id)})">${isSel?'▶ Ativa':'Policiais'}</button>
+        <button class="btn danger sm" onclick="EE.delOpm(${num(oe.opm_evento_id)})">Excluir</button>
+      </td></tr>`;
+  }
+  html+=`</tbody></table></div></div>`;
+  // 3. Lançamento
+  if(EE.opmEventoId!==null){
+    const oe=evOes.find(r=>String(r.opm_evento_id)===String(EE.opmEventoId));
+    const o=oe?opmOf(oe.opm_id):null;
+    html+=EE.policial(oe,o);
+  }
+  $('#view').innerHTML=html;
+};
+EE.setEvento=function(id){
+  EE.eventoId=id===''?EE.eventoId:num(id);
+  EE.opmEventoId=null;
+  EE.body();
+};
+EE.setOpm=function(id){
+  EE.opmEventoId=num(id);
+  EE.body();
+  const el=document.getElementById('ee-pol-card');
+  if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+};
+EE.addOpm=async function(){
+  const opmId=$('#ee-opm-add').value;
+  if(!opmId){ toast('Selecione uma OPM para adicionar.','err'); return; }
+  if(EE._oes.some(r=>String(r.evento_id)===String(EE.eventoId)&&String(r.opm_id)===String(opmId))){ toast('OPM já alocada a este evento.','err'); return; }
+  const max=EE._oes.reduce((a,r)=>Math.max(a,num(r.opm_evento_id)),0);
+  const nid=max+1;
+  await col('opm_eventos').doc(String(nid)).set({opm_evento_id:nid,evento_id:EE.eventoId,opm_id:num(opmId)});
+  EE._oes.push({opm_evento_id:nid,evento_id:EE.eventoId,opm_id:num(opmId)});
+  toast('OPM alocada ao evento!','ok');
+  EE.body();
+};
+EE.delOpm=async function(id){
+  if(!confirm('Remover esta OPM do evento? Todos os horários lançados serão excluídos.')) return;
+  const oe=EE._oes.find(r=>String(r.opm_evento_id)===String(id));
+  if(oe&&EE._esc.length){
+    const victims=EE._esc.filter(s=>String(s.opm_evento_id)===String(num(id)));
+    for(const s of victims){ await col('escalas').doc(s.__id).delete(); }
+  }
+  await col('opm_eventos').doc(String(id)).delete();
+  EE._oes=EE._oes.filter(r=>String(r.opm_evento_id)!==String(id));
+  EE._esc=EE._esc.filter(s=>String(s.opm_evento_id)!==String(id));
+  if(EE.opmEventoId===num(id)) EE.opmEventoId=null;
+  toast('OPM removida do evento.','ok');
+  EE.body();
+};
+/* busca militar (reuso do padrão de esBuscar/p2Buscar) */
+EE.buscar=async function(qo){
+  const q=(qo||'').trim(); const t2=q.replace(/\D/g,'');
+  let found=[];
+  if(t2.length>=4){ found=await getDocs(col('efetivopm').orderBy('matricula').startAt(t2).endAt(t2+'\uf8ff').limit(12)); }
+  const n=await getDocs(col('efetivopm').orderBy('nome').startAt(q).endAt(q+'\uf8ff').limit(12));
+  const seen={},merged=[];
+  for(const x of n){ if(!seen[x.matricula]){seen[x.matricula]=1;merged.push(x);} }
+  for(const x of found){ if(!seen[x.matricula]){seen[x.matricula]=1;merged.push(x);} }
+  const box=$('#ee-res');
+  if(!box) return;
+  box.hidden=false;
+  const mk=i=>`<div class="r-item" onclick="EE.pick(${i})">`;
+  EE._res=merged;
+  box.innerHTML=merged.slice(0,12).map((x,i)=>mk(i)+`<b>${esc(x.matricula)}</b> — ${esc(x.nome)} <span class="muted">${esc(cargoNome(x.cargo))}</span></div>`).join('')||'<div class="r-item muted">Nada encontrado.</div>';
+};
+EE.pick=function(i){
+  const x=EE._res[i]; if(!x) return;
+  $('#ee-mat').value=x.matricula;
+  $('#ee-mat2').value=x.matricula;
+  $('#ee-search').value=x.matricula+' — '+x.nome;
+  $('#ee-res').hidden=true;
+  toast('Policial selecionado: '+x.nome,'ok');
+};
+EE.calcCH=function(hi,hf){
+  if(!hi||!hf) return {d:0,n:0};
+  const toMin=s=>{const p=s.split(':');return (+p[0])*60+(+p[1]||0);};
+  let a=toMin(hi),b=toMin(hf); if(b<=a)b+=1440;
+  let d=0,n=0;
+  for(let m=a;m<b;m++){const hm=m%1440;if(hm>=300&&hm<1320)d++;else n++;}
+  return {d:d/60,n:n/60};
+};
+EE.policial=function(oe,o){
+  const oeid=EE.opmEventoId;
+  const rows=EE._esc.filter(s=>String(s.opm_evento_id)===String(oeid))
+    .sort((a,b)=>(a.escala_data||'').localeCompare(b.escala_data||'')||(a.nome||'').localeCompare(b.nome||''));
+  let td=0,tn=0; for(const r of rows){td+=num(r.escala_ch_diurna);tn+=num(r.escala_ch_noturna);}
+  let html=`<div class="card" id="ee-pol-card"><div class="toolbar" style="margin-bottom:8px">
+      <h3 style="margin:0">3. Lançamento de Horas — <span class="badge">${esc(o?(o.opm_sigla||o.opm_desc):'')}</span></h3>
+      <div style="flex:1"></div>
+      <span class="pill">${rows.length} policial(is)</span>
+      <span class="pill">Diurnas ${td}h</span>
+      <span class="pill">Noturnas ${tn}h</span>
+      <span class="pill">Total ${td+tn}h</span>
+    </div>
+    <div class="grid" style="grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr;gap:8px;align-items:end">
+      <div><label class="muted">Policial (matrícula/nome)</label>
+        <div class="searchbox"><input id="ee-search" placeholder="digite e tecle Enter…" onkeydown="if(event.key==='Enter')EE.buscar(this.value)" />
+        <div class="results" id="ee-res" hidden></div></div>
+        <input type="hidden" id="ee-mat" /></div>
+      <div><label class="muted">Matrícula</label><input id="ee-mat2" readonly value="" /></div>
+      <div><label class="muted">Data</label><input id="ee-data" type="date" value="${todayStr()}" /></div>
+      <div><label class="muted">Início</label><input id="ee-hi" type="time" value="07:00" onchange="EE.prev()" /></div>
+      <div><label class="muted">Fim</label><input id="ee-hf" type="time" value="19:00" onchange="EE.prev()" /></div>
+      <div><label class="muted">Tipo</label><select id="ee-tipo"><option value="HE">HE</option><option value="VD">VD</option></select></div>
+    </div>
+    <div class="toolbar mt">
+      <span class="pill">CH: <span id="ee-calc">D 12h · N 0h</span></span>
+      <div style="flex:1"></div>
+      <button class="btn" onclick="EE.add()">＋ Lançar</button>
+    </div>
+    <div style="overflow:auto" class="mt"><table>
+      <thead><tr><th>Mat.</th><th>Nome</th><th>Posto</th><th>Tipo</th><th>Data</th><th>Início</th><th>Fim</th><th>CH D</th><th>CH N</th><th>Total</th><th></th></tr></thead><tbody>`;
+  if(!rows.length) html+=`<tr><td colspan="11" class="center muted">Nenhum policial lançado nesta OPM.</td></tr>`;
+  for(const r of rows){
+    const tot=(num(r.escala_ch_diurna)+num(r.escala_ch_noturna));
+    html+=`<tr>
+      <td><b>${esc(r.matricula)}</b></td>
+      <td>${esc(r.nome||'')}</td>
+      <td><span class="badge alt">${esc(cargoNome(r.cargo!=null?r.cargo:''))}</span></td>
+      <td><select style="width:70px" onchange="EE.updTipo('${esc(r.__id)}',this.value)">${['HE','VD'].map(t=>`<option ${(r.tipo_pagamento||'HE')===t?'selected':''}>${t}</option>`).join('')}</select></td>
+      <td><input type="date" value="${esc(r.escala_data||'')}" style="width:140px" onchange="EE.updData('${esc(r.__id)}',this.value)" /></td>
+      <td><input type="time" value="${esc(r.hora_inicio||'')}" style="width:90px" onchange="EE.updHor('${esc(r.__id)}','hora_inicio',this.value)" /></td>
+      <td><input type="time" value="${esc(r.hora_fim||'')}" style="width:90px" onchange="EE.updHor('${esc(r.__id)}','hora_fim',this.value)" /></td>
+      <td>${num(r.escala_ch_diurna)}</td>
+      <td>${num(r.escala_ch_noturna)}</td>
+      <td><b>${tot} h</b></td>
+      <td><button class="btn danger sm" onclick="EE.del('${esc(r.__id)}')">✕</button></td>
+    </tr>`;
+  }
+  html+=`</tbody></table></div></div>`;
+  return html;
+};
+EE.prev=function(){EE.calcPreview();};
+EE.calcPreview=function(){
+  const c=EE.calcCH($('#ee-hi')?$('#ee-hi').value:'07:00',$('#ee-hf')?$('#ee-hf').value:'19:00');
+  const el=$('#ee-calc'); if(el) el.textContent='D '+c.d+'h · N '+c.n+'h';
+};
+EE.add=async function(){
+  const mat=$('#ee-mat').value||$('#ee-mat2').value;
+  if(!mat){ toast('Selecione um policial.','err'); return; }
+  const hi=$('#ee-hi').value,hf=$('#ee-hf').value,data=$('#ee-data').value;
+  if(!hi||!hf){ toast('Informe hora início e fim.','err'); return; }
+  const c=EE.calcCH(hi,hf);
+  const per=(await getDocs(col('efetivopm').where('matricula','==',String(mat)).limit(1)))[0];
+  const docId=EE.opmEventoId+'_'+mat+'_'+data;
+  const body={
+    opm_evento_id:EE.opmEventoId,matricula:String(mat),escala_data:data,
+    hora_inicio:hi,hora_fim:hf,escala_ch_diurna:c.d,escala_ch_noturna:c.n,
+    tipo_pagamento:$('#ee-tipo').value,
+    nome:per?per.nome:'',telefone:per?per.telefone||'':'',cargo:per?per.cargo:null
+  };
+  await col('escalas').doc(docId).set(body,{merge:true});
+  body.__id=docId;
+  const ix=EE._esc.findIndex(x=>x.__id===docId);
+  if(ix>=0) EE._esc[ix]=body; else EE._esc.push(body);
+  $('#ee-mat').value='';$('#ee-mat2').value='';$('#ee-search').value='';
+  $('#ee-hi').value='';$('#ee-hf').value='';
+  toast('Horário lançado para '+mat+'!','ok');
+  EE.body();
+};
+EE.del=async function(id){
+  if(!confirm('Remover este lançamento?')) return;
+  await col('escalas').doc(id).delete();
+  EE._esc=EE._esc.filter(x=>x.__id!==id);
+  toast('Lançamento removido.','ok');
+  EE.body();
+};
+EE.updHor=async function(id,campo,val){
+  const r=EE._esc.find(x=>x.__id===id); if(!r) return;
+  const hi=campo==='hora_inicio'?val:(r.hora_inicio||'');
+  const hf=campo==='hora_fim'?val:(r.hora_fim||'');
+  const cc=EE.calcCH(hi,hf);
+  await col('escalas').doc(id).update({[campo]:val,escala_ch_diurna:cc.d,escala_ch_noturna:cc.n});
+  r[campo]=val;r.escala_ch_diurna=cc.d;r.escala_ch_noturna=cc.n;
+  EE.body();
+};
+EE.updData=async function(id,val){
+  const r=EE._esc.find(x=>x.__id===id); if(!r) return;
+  const newId=EE.opmEventoId+'_'+r.matricula+'_'+val;
+  if(newId!==id){
+    const body=Object.assign({},r,{escala_data:val}); delete body.__id;
+    await col('escalas').doc(newId).set(body);
+    await col('escalas').doc(id).delete();
+    r.escala_data=val;r.__id=newId;
+  }
+  EE.body();
+};
+EE.updTipo=async function(id,val){
+  await col('escalas').doc(id).update({tipo_pagamento:val});
+  const r=EE._esc.find(x=>x.__id===id); if(r) r.tipo_pagamento=val;
+  EE.body();
+};
 
 /* ================= Viaturas ================= */
 const VF = { start:null, end:null, stack:[] };
