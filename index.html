@@ -166,7 +166,7 @@ const FIREBASE_READY = FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.startsW
       <div class="nav-item" data-page="dashboard" onclick="go('dashboard')">📊 Dashboard</div>
       <div class="nav-item" data-page="escala_eventos" onclick="go('escala_eventos')">🚨 Escala de Eventos</div>
       <div class="nav-item" data-page="escala" onclick="go('escala')">🎯 Escala de Horas</div>
-      <div class="nav-item" data-page="p2" onclick="go('p2')">🗓️ Escala P2</div>
+      <div class="nav-item" data-page="p2" onclick="go('p2')">🗓️ Escala Mensal</div>
       <div class="nav-item" data-page="salvas" onclick="go('salvas')">💾 Escalas Salvas</div>
       <div class="nav-group">Cadastros</div>
       <div class="nav-item" data-page="efetivo" onclick="go('efetivo')">👮 Efetivo PM</div>
@@ -403,7 +403,7 @@ const PAGE_TITLE = {
   municipios:'Municípios', eventos:'Eventos', viaturas:'Viaturas',
   escala:'Escala de Horas', escala_eventos:'Escala de Eventos',
   ocorrencias:'Ocorrências',
-  p2:'Escala P2', salvas:'Escalas Salvas', valores:'Tabela de Valores',
+  p2:'Escala Mensal', salvas:'Escalas Salvas', valores:'Tabela de Valores',
   relatorio:'Relatório de Horas', cards:'Cards Instagram', usuarios:'Usuários',
   backup:'Backup / Exportar'
 };
@@ -772,15 +772,58 @@ function efPrev(){ if(EF.stack.length){ EF.start=EF.stack.pop(); EF.end=null; go
 async function renderOPMs(){
   const rows=await Promise.all(C.opms.map(async o=>[o,await countDocs('efetivopm',[['opm_id','==',o.opm_id]])]));
   rows.sort((a,b)=>(a[0].opm_sigla||'').localeCompare(b[0].opm_sigla||''));
-  let html=`<div class="pagehead"><h2>OPMs — Unidades</h2><div class="sub">Unidades com efetivo vinculado (contagens agregadas)</div></div>
+  const ativas=C.opms.filter(o=>o.opm_atv!=='FIM').length;
+  let html=`<div class="pagehead"><h2>OPMs — Unidades</h2><div class="sub">${C.opms.length} unidade(s) cadastrada(s) · ${ativas} em atividade</div></div>
+    <div class="toolbar"><button class="btn primary" onclick="opmForm(null)">＋ Nova OPM</button></div>
     <div class="card" style="padding:0;overflow:auto"><table>
-    <thead><tr><th>Sigla</th><th>Descrição</th><th>Município</th><th>Comandante</th><th>Efetivo</th></tr></thead><tbody>`;
+    <thead><tr><th>Sigla</th><th>Descrição</th><th>Município</th><th>Região</th><th>Comandante</th><th>Função</th><th>Atividade</th><th>Efetivo</th><th></th></tr></thead><tbody>`;
+  if(!rows.length){ html+=`<tr><td colspan="9" class="center muted">Nenhuma OPM cadastrada.</td></tr>`; }
   for(const [o,n] of rows){
     html+=`<tr><td><b>${esc(o.opm_sigla||o.opm_id)}</b></td><td>${esc(o.opm_desc||'')}</td>
-      <td>${esc(o.opm_municipio||'—')}</td><td>${esc(o.comandante||'—')}</td><td><b>${fmt(n)}</b></td></tr>`;
+      <td>${esc(o.opm_municipio||'—')}</td><td>${esc(o.opm_regiao||'—')}</td><td>${esc(o.comandante||'—')}</td><td>${esc(o.funcao||'—')}</td>
+      <td>${o.opm_atv==='FIM'?'<span class="badge">FIM</span>':'<span class="badge ok">ATIVA</span>'}</td><td><b>${fmt(n)}</b></td>
+      <td style="white-space:nowrap">
+        <button class="btn ghost sm" onclick="opmForm('${esc(o.opm_id)}')">✏️</button>
+        <button class="btn danger sm" onclick="opmExcluir('${esc(o.opm_id)}')">🗑</button>
+      </td></tr>`;
   }
   html+=`</tbody></table></div>`;
   $('#view').innerHTML=html;
+}
+function opmForm(id){
+  const o=id?opmOf(id):null;
+  const a=o?o:{opm_id:'',opm_sigla:'',opm_desc:'',opm_municipio:'',opm_regiao:'',opm_ordem:'',opm_atv:'MEIO',opm_bairro:'',comandante:'',funcao:''};
+  const body=`
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px">
+      <div><label class="muted">Código OPM *</label><input id="o-id" value="${esc(a.opm_id)}" ${o?'disabled':''} placeholder="Ex.: 10"></div>
+      <div><label class="muted">Sigla *</label><input id="o-sigla" value="${esc(a.opm_sigla)}" placeholder="Ex.: 20ª CIPM"></div>
+      <div style="grid-column:1/-1"><label class="muted">Descrição *</label><input id="o-desc" value="${esc(a.opm_desc)}" placeholder="Nome da unidade"></div>
+      <div><label class="muted">Município</label><input id="o-munic" value="${esc(a.opm_municipio)}"></div>
+      <div><label class="muted">Região</label><input id="o-regiao" value="${esc(a.opm_regiao)}"></div>
+      <div><label class="muted">Atividade</label><select id="o-atv"><option value="MEIO" ${a.opm_atv!=='FIM'?'selected':''}>Meio</option><option value="FIM" ${a.opm_atv==='FIM'?'selected':''}>Fim</option></select></div>
+      <div><label class="muted">Ordem</label><input id="o-ordem" type="number" value="${num(a.opm_ordem)||''}"></div>
+      <div><label class="muted">Bairro</label><input id="o-bairro" value="${esc(a.opm_bairro)}"></div>
+      <div><label class="muted">Comandante</label><input id="o-cmd" value="${esc(a.comandante)}"></div>
+      <div><label class="muted">Função</label><input id="o-funcao" value="${esc(a.funcao)}"></div>
+    </div>`;
+  openModal(o?'Editar OPM':'Nova OPM', body, async ()=>{
+    const v=x=>{const e=$('#o-'+x); return e?(e.value||'').trim():'';};
+    const opmId=o?String(a.opm_id):v('id');
+    const sigla=v('sigla'), desc=v('desc');
+    if(!opmId||!sigla||!desc){ toast('Informe Código OPM, Sigla e Descrição.','err'); return; }
+    if(!o&&opmOf(opmId)){ toast('Já existe OPM com este código.','err'); return; }
+    const data={opm_id:num(opmId)||String(opmId), opm_sigla:sigla, opm_desc:desc, opm_municipio:v('munic'), opm_regiao:v('regiao'), opm_atv:$('#o-atv').value, opm_ordem:num(v('ordem'))||0, opm_bairro:v('bairro'), comandante:v('cmd'), funcao:v('funcao')};
+    await col('opms').doc(String(data.opm_id)).set(data,{merge:true});
+    if(o){ C.opms=C.opms.map(x=>String(x.opm_id)===String(data.opm_id)?data:x); }
+    else { C.opms.push(data); }
+    closeModal(); toast(o?'OPM atualizada!':'OPM cadastrada!','ok'); go('opms');
+  });
+}
+async function opmExcluir(id){
+  if(!confirm('Excluir a OPM "'+(opmSigla(id)||id)+'"? O efetivo vinculado a ela não será removido.')) return;
+  await col('opms').doc(String(id)).delete();
+  C.opms=C.opms.filter(x=>String(x.opm_id)!==String(id));
+  toast('OPM excluída!','ok'); go('opms');
 }
 
 /* ================= Municípios ================= */
@@ -858,7 +901,7 @@ async function evtForm(id,onDone){
     oes=await getDocs(col('opm_eventos').where('evento_id','==',num(id)));
   }
   const sel=new Set(oes.map(o=>String(o.opm_id)));
-  const opms=C.opms.filter(o=>o.opm_atv!=='FIM').sort((a,b)=>(a.opm_sigla||'').localeCompare(b.opm_sigla||''));
+  const opms=C.opms.slice().sort((a,b)=>(a.opm_sigla||'').localeCompare(b.opm_sigla||''));
   const body=`
     <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px">
       <div style="grid-column:1/-1"><label class="muted">Descrição *</label><input id="ev-desc" value="${esc(ev?ev.evento_desc||'':'')}" placeholder="Descrição do evento"></div>
@@ -967,7 +1010,7 @@ EE.body=function(){
   html+=`<div class="card"><div class="toolbar" style="margin-bottom:8px">
       <h3 style="margin:0">2. OPMs Alocadas</h3><div style="flex:1"></div>
       <select id="ee-opm-add" style="width:220px"><option value="">— selecione uma OPM —</option>
-        ${C.opms.filter(o=>o.opm_atv!=='FIM'&&!evOes.some(oe=>String(oe.opm_id)===String(o.opm_id)))
+        ${C.opms.filter(o=>!evOes.some(oe=>String(oe.opm_id)===String(o.opm_id)))
           .sort((a,b)=>(a.opm_sigla||'').localeCompare(b.opm_sigla||''))
           .map(o=>`<option value="${esc(o.opm_id)}">${esc(o.opm_sigla||o.opm_id)}</option>`).join('')}
       </select>
@@ -1517,7 +1560,7 @@ function openModal(title,body,onSave){
 }
 function closeModal(){ const m=document.querySelector('.modal-overlay'); if(m) m.remove(); CURRENT_MODAL=null; }
 
-/* ================= Escala P2 ================= */
+/* ================= Escala Mensal ================= */
 const P2 = { mes:new Date().getMonth()+1, ano:new Date().getFullYear() };
 function p2HeaderCodigos(c){
   return Object.assign({
@@ -1562,7 +1605,7 @@ async function renderP2(){
   const metaRows=await all('escala_p2_meta');
   if(metaRows.length){ const m=metaRows[0]; Object.keys(P2.meta).forEach(k=>{ if(m[k]) P2.meta[k]=m[k]; }); }
   $('#view').innerHTML=`
-    <div class="pagehead"><h2>🗓️ Escala P2</h2><div class="sub"><span id="p2-sub"></span></div></div>
+    <div class="pagehead"><h2>🗓️ Escala Mensal</h2><div class="sub"><span id="p2-sub"></span></div></div>
     <div class="toolbar">
       <button class="btn ghost" onclick="P2.navegar(-1)">◀</button>
       <select id="p2-mes" onchange="P2.syncNav()">${MESES.map((m,i)=>`<option value="${i+1}" ${i+1===P2.mes?'selected':''}>${m}</option>`).join('')}</select>
@@ -1901,7 +1944,7 @@ async function renderSalvas(){
   let html=`<div class="pagehead"><h2>💾 Escalas Salvas</h2><div class="sub">${cards.length} escala(s) salva(s)</div></div>
     <div class="card" style="padding:0;overflow:auto"><table>
     <thead><tr><th>ID</th><th>Nome</th><th>Mês</th><th>Ano</th><th>Salva em</th><th>Militares</th><th>Ativa</th><th></th></tr></thead><tbody>`;
-  if(!cards.length){ html+=`<tr><td colspan="8" class="center muted">Nenhuma escala salva. Salve uma na tela Escala P2.</td></tr>`; }
+  if(!cards.length){ html+=`<tr><td colspan="8" class="center muted">Nenhuma escala salva. Salve uma na tela Escala Mensal.</td></tr>`; }
   for(const es of cards){
     const itens=es.itens||[];
     const mils=itens.filter(i=>!num(i.is_separador)).length;
@@ -1920,21 +1963,23 @@ async function renderSalvas(){
 async function salvaCarregar(id){
   const es=await getDoc('escalas_salvas',id);
   if(!es){ toast('Escala não encontrada','err'); return; }
-  if(!confirm('Carregar "'+es.nome+'" para o editor? Os dados atuais de '+(es.mes||'?')+'/'+(es.ano||'?')+' serão substituídos.')) return;
-  const existing=await getDocs(col('escala_p2').where('mes','==',num(es.mes||P2.mes)).where('ano','==',num(es.ano||P2.ano)));
+  const mes=num(es.mes||P2.mes), ano=num(es.ano||P2.ano);
+  if(!confirm(`Carregar "${es.nome}" para o editor? Os dados atuais de ${mes}/${ano} serão substituídos.`)) return;
+  const existing=await getDocs(col('escala_p2').where('mes','==',mes).where('ano','==',ano));
   for(const r of existing){ await col('escala_p2').doc(r.__id).delete(); }
-  const itens=es.itens||[];
-  const maxOrd=existing.reduce((a,r)=>Math.max(a,num(r.ordem)),0);
+  const itens=(es.itens||[]).slice().sort((a,b)=>num(a.ordem)-num(b.ordem));
+  let nid=await nextP2Id();
   for(const it of itens){
-    await col('escala_p2').add({
-      mes:num(es.mes||P2.mes), ano:num(es.ano||P2.ano),
+    await col('escala_p2').doc(String(nid)).set({
+      id:nid, mes, ano,
       funcao:it.funcao||'-', opm:it.opm||'', gh:it.gh||'', nome:it.nome||'', matricula:it.matricula||'',
-      telefone:it.telefone||'', dias:it.dias||{}, tipo_pagamento:it.tipo_pagamento||'HE',
-      is_separador:num(it.is_separador||0), separador_texto:it.separador_texto||'', ordem:num(it.ordem||0)
+      telefone:it.telefone||'', dias:parseDias(it.dias), tipo_pagamento:it.tipo_pagamento||'HE',
+      is_separador:num(it.is_separador||0), separador_texto:it.separador_texto||'', ordem:num(it.ordem)
     });
+    nid++;
   }
-  if(es.meta){ const m=es.meta; Object.keys(P2.meta).forEach(k=>{ if(m[k]) P2.meta[k]=m[k]; }); await col('escala_p2_meta').doc('1').set({id:1,mes:num(es.mes||P2.mes),ano:num(es.ano||P2.ano),local:P2.meta.local,responsavel:P2.meta.resp,cargo:P2.meta.cargo,emissao:P2.meta.emissao,nota:P2.meta.nota,titulo:P2.meta.titulo},{merge:true}); }
-  if(es.mes) P2.mes=num(es.mes); if(es.ano) P2.ano=num(es.ano);
+  if(es.meta){ const m=es.meta; Object.keys(P2.meta).forEach(k=>{ if(m[k]) P2.meta[k]=m[k]; }); await col('escala_p2_meta').doc('1').set({id:1,mes,ano,local:P2.meta.local,responsavel:P2.meta.resp,cargo:P2.meta.cargo,emissao:P2.meta.emissao,nota:P2.meta.nota,titulo:P2.meta.titulo},{merge:true}); }
+  P2.mes=mes; P2.ano=ano;
   toast('Escala carregada no editor!','ok'); go('p2');
 }
 async function salvaAtiva(id){
@@ -2171,7 +2216,7 @@ async function renderUsuarios(){
 
 /* ================= Backup / Exportar ================= */
 async function renderBackup(){
-  const sets=[['efetivopm','Efetivo PM'],['opms','OPMs'],['cargos','Cargos/Postos'],['municipios','Municípios'],['viaturas','Viaturas'],['eventos','Eventos'],['opm_eventos','OPM×Eventos'],['escalas','Escalas de Horas'],['escala_p2','Escala P2'],['escala_p2_meta','P2 Meta'],['escala_p2_legendas','P2 Legendas'],['escalas_salvas','Escalas Salvas'],['tabela_valores','Tabela de Valores'],['ocorrencias','Ocorrências'],['ocorrencia_eventos','Ocorrência×Eventos'],['ocorrencia_meta','Ocorrência Meta'],['ocorrencia_config','Ocorrência Config'],['usuarios','Usuários']];
+  const sets=[['efetivopm','Efetivo PM'],['opms','OPMs'],['cargos','Cargos/Postos'],['municipios','Municípios'],['viaturas','Viaturas'],['eventos','Eventos'],['opm_eventos','OPM×Eventos'],['escalas','Escalas de Horas'],['escala_p2','Escala Mensal'],['escala_p2_meta','Escala Mensal Meta'],['escala_p2_legendas','Escala Mensal Legendas'],['escalas_salvas','Escalas Salvas'],['tabela_valores','Tabela de Valores'],['ocorrencias','Ocorrências'],['ocorrencia_eventos','Ocorrência×Eventos'],['ocorrencia_meta','Ocorrência Meta'],['ocorrencia_config','Ocorrência Config'],['usuarios','Usuários']];
   const counts={};
   const pairs=await Promise.all(sets.map(async([name])=>[name,await countDocs(name)]));
   for(const[n,c]of pairs) counts[n]=c;
