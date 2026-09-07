@@ -2061,8 +2061,8 @@ async function salvaCarregar(id){
   toast('Escala carregada no editor!','ok'); go('p2');
 }
 async function salvaAtiva(id){
-  const all=await all('escalas_salvas');
-  for(const es of all){ if(num(es.ativa)) await col('escalas_salvas').doc(es.__id).set({ativa:0},{merge:true}); }
+  const docs=await all('escalas_salvas');
+  for(const es of docs){ if(num(es.ativa)) await col('escalas_salvas').doc(es.__id).set({ativa:0},{merge:true}); }
   await col('escalas_salvas').doc(String(id)).set({ativa:1},{merge:true});
   toast('Escala definida como ativa!','ok'); go('salvas');
 }
@@ -2078,7 +2078,7 @@ P2.salvarEscala=async function(){
   const itens=rows.map(r=>({funcao:r.funcao,opm:r.opm,gh:r.gh,nome:r.nome,matricula:r.matricula,telefone:r.telefone||'',dias:parseDias(r.dias),tipo_pagamento:r.tipo_pagamento||'HE',is_separador:num(r.is_separador),separador_texto:r.separador_texto||'',ordem:num(r.ordem)}));
   const agora=new Date();
   const nome=`ESCALA GERAL - ${MESES[P2.mes-1].toUpperCase()} ${P2.ano} - ${pad(agora.getDate())}/${pad(agora.getMonth()+1)}/${agora.getFullYear()} ${pad(agora.getHours())}:${pad(agora.getMinutes())}`;
-  const all=await all('escalas_salvas'); const maxId=all.reduce((a,x)=>Math.max(a,num(x.id)),0);
+  const salvas=await all('escalas_salvas'); const maxId=salvas.reduce((a,x)=>Math.max(a,num(x.id)),0);
   const id=maxId+1;
   const payload={id,mes:P2.mes,ano:P2.ano,nome,data_salva:agora.toISOString(),ativa:1,itens,meta:Object.assign({},P2.meta,{responsavel:P2.meta.resp})};
   await col('escalas_salvas').doc(String(id)).set(payload);
