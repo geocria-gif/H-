@@ -817,24 +817,66 @@ async function refreshDashboardStats(eventos,oeRows,porTipo){
 }
 
 /* ================= Efetivo PM ================= */
-const EF = { term:'', stack:[], start:null, end:null, rows:{} };
+const EF = { term:'', cargo:'', opm:'', mode:'s', fcache:null, stack:[], start:null, end:null, rows:{} };
+function efSetCargo(v){ EF.cargo=(v||'').trim(); EF.fcache=null; EF.stack=[]; EF.start=null; EF.end=null; go('efetivo'); }
+function efSetOpm(v){ EF.opm=(v||'').trim(); EF.fcache=null; EF.stack=[]; EF.start=null; EF.end=null; go('efetivo'); }
+async function efFetchMatching(){
+  const out=[];
+  if(EF.opm){
+    const qs=[];
+    try{ out.push(...await getDocs(col('efetivopm').where('opm_id','==',EF.opm))); }catch(e){}
+    try{ out.push(...await getDocs(col('efetivopm').where('opm_id','==',num(EF.opm)))); }catch(e){}
+  } else if(EF.cargo){
+    try{ out.push(...await getDocs(col('efetivopm').where('cargo','==',EF.cargo))); }catch(e){}
+  } else {
+    try{ out.push(...await getDocs(col('efetivopm').limit(500))); }catch(e){}
+  }
+  const seen=new Set(), arr=[];
+  for(const d of out){ const k=String(d.__id||d.id); if(k&&!seen.has(k)){ seen.add(k); arr.push(d); } }
+  return arr.filter(x=>{
+    if(EF.cargo&&String(x.cargo)!==EF.cargo) return false;
+    if(EF.opm&&String(x.opm_id)!==EF.opm&&String(x.opm_id)!==String(num(EF.opm))) return false;
+    return true;
+  }).sort((a,b)=>String(a.matricula).localeCompare(String(b.matricula),undefined,{numeric:true}));
+}
 async function renderEfetivo(){
   EF.term=$('#ef-term')?$('#ef-term').value.trim():EF.term;
+  EF.cargo=$('#ef-fCargo')?$('#ef-fCargo').value:EF.cargo;
+  EF.opm=$('#ef-fOpm')?$('#ef-fOpm').value:EF.opm;
   const term=EF.term;
-  let q;
-  if(term){
-    if(/^\d{3,}$/.test(term)){ q=col('efetivopm').orderBy('matricula').startAt(term).endAt(term+'\uf8ff'); }
-    else { q=col('efetivopm').orderBy('nome').startAt(term).endAt(term+'\uf8ff'); }
-  }else{ q=col('efetivopm').orderBy('matricula'); }
-  q=q.limit(20);
-  if(EF.start) q=q.startAfter(EF.start);
-  const items=await getDocs(q);
-  EF.end = items.length ? col('efetivopm').doc(items[items.length-1].__id) : null;
+  let items;
+  if(EF.cargo||EF.opm){
+    EF.mode='f';
+    const key=EF.cargo+'|'+EF.opm;
+    if(!EF.fcache||EF.fcache.key!==key){ EF.fcache={key,arr:await efFetchMatching()}; }
+    if(EF.start==null) EF.start=0;
+    let arr=EF.fcache.arr;
+    if(term){ const t=term.toLowerCase(); arr=arr.filter(x=>String(x.nome||'').toLowerCase().includes(t)||String(x.matricula||'').toLowerCase().includes(t)); }
+    EF.end=Math.min(EF.start+20,arr.length);
+    items=arr.slice(EF.start,EF.end);
+  }else{
+    EF.mode='s';
+    let q;
+    if(term){
+      if(/^\d{3,}$/.test(term)){ q=col('efetivopm').orderBy('matricula').startAt(term).endAt(term+'\uf8ff'); }
+      else { q=col('efetivopm').orderBy('nome').startAt(term).endAt(term+'\uf8ff'); }
+    }else{ q=col('efetivopm').orderBy('matricula'); }
+    q=q.limit(20);
+    if(EF.start) q=q.startAfter(EF.start);
+    items=await getDocs(q);
+    EF.end = items.length ? col('efetivopm').doc(items[items.length-1].__id) : null;
+  }
   EF.rows={}; for(const it of items) EF.rows[it.__id]=it;
+  const cargos=[...C.cargos].slice().sort((x,y)=>(x.posto_grad||'').localeCompare(y.posto_grad||''));
+  const ccOpts='<option value="">Todos</option>'+cargos.map(c=>`<option value="${esc(c.cargo_id)}" ${EF.cargo===String(c.cargo_id)?'selected':''}>${esc(c.posto_grad||c.cargo_id)}</option>`).join('');
+  const ops=[...C.opms].slice().sort((x,y)=>(x.opm_sigla||'').localeCompare(y.opm_sigla||''));
+  const oOpts='<option value="">Todas as OPMs</option>'+ops.map(o=>`<option value="${esc(o.opm_id)}" ${EF.opm===String(o.opm_id)?'selected':''}>${esc(o.opm_sigla||o.opm_id)}</option>`).join('');
   let html=`<div class="pagehead"><h2>Efetivo PM</h2><div class="sub">CRUD direto no Firestore (30.5 mil militares)</div></div>
     <div class="toolbar">
       <div class="searchbox"><input id="ef-term" type="text" placeholder="Buscar por nome ou matrícula…" value="${esc(term)}" onkeydown="if(event.key==='Enter')efBuscar()" />
       </div>
+      <select id="ef-fCargo" onchange="efSetCargo(this.value)">${ccOpts}</select>
+      <select id="ef-fOpm" onchange="efSetOpm(this.value)">${oOpts}</select>
       <button class="btn ghost" onclick="efSetTerm('')">Limpar</button>
       <div style="flex:1"></div>
       <button class="btn primary" onclick="efForm(null)">＋ Novo Militar</button>
@@ -853,9 +895,10 @@ async function renderEfetivo(){
       </td></tr>`;
   }
   html+=`</tbody></table></div>`;
+  const canNext=EF.mode==='f'?EF.end<EF.fcache.arr.length:items.length>=20;
   html+=`<div class="pager">
     <button class="btn ghost sm" onclick="efPrev()" ${EF.stack.length?'':'disabled'}>◀ Anterior</button>
-    <button class="btn ghost sm" onclick="efNext()" ${items.length<20?'disabled':''}>Próxima ▶</button>
+    <button class="btn ghost sm" onclick="efNext()" ${canNext?'':'disabled'}>Próxima ▶</button>
     <span>${term?'Busca':EF.stack.length?'Página '+EF.stack.length:'Início'}</span>
   </div>`;
   $('#view').innerHTML=html;
@@ -863,7 +906,7 @@ async function renderEfetivo(){
 }
 function efSetTerm(t){ EF.term=t; EF.stack=[]; EF.start=null; EF.end=null; go('efetivo'); }
 function efBuscar(){ const t=$('#ef-term').value.trim(); if(t!==EF.term){ EF.term=t; EF.stack=[]; EF.start=null; EF.end=null; } go('efetivo'); }
-function efNext(){ if(EF.end){ EF.stack.push(EF.start); EF.start=EF.end; EF.end=null; go('efetivo'); } }
+function efNext(){ if(EF.mode==='f'){ if(EF.end<EF.fcache.arr.length){ EF.stack.push(EF.start); EF.start=EF.end; go('efetivo'); } } else if(EF.end){ EF.stack.push(EF.start); EF.start=EF.end; EF.end=null; go('efetivo'); } }
 function efPrev(){ if(EF.stack.length){ EF.start=EF.stack.pop(); EF.end=null; go('efetivo'); } }
 async function efQueryMat(mat){
   const s=String(mat==null?'':mat).trim(); if(!s) return null;
@@ -939,7 +982,7 @@ async function efForm(id){
       comportamento:$('#ef-comportamento').value||'BOM'
     };
     await col('efetivopm').doc(docId).set(data,{merge:false});
-    closeModal(); toast(id?'Militar atualizado!':'Militar cadastrado!','ok'); go('efetivo');
+    EF.fcache=null; closeModal(); toast(id?'Militar atualizado!':'Militar cadastrado!','ok'); go('efetivo');
   });
 }
 async function efExcluir(id){
@@ -948,7 +991,7 @@ async function efExcluir(id){
   if(!a){ toast('Militar não encontrado.','err'); return; }
   if(!confirm('Excluir o militar '+String(a.matricula)+' — '+String(a.nome||'')+'?')) return;
   await col('efetivopm').doc(String(a.__id||a.matricula)).delete();
-  toast('Militar excluído!','ok'); go('efetivo');
+  EF.fcache=null; toast('Militar excluído!','ok'); go('efetivo');
 }
 
 /* ================= OPMs ================= */
@@ -966,13 +1009,18 @@ async function renderOPMs(){
   const ativas=OPM_LAST.filter(o=>o.opm_atv!=='FIM').length;
   const cc=(name,w)=>{ const key=name+'|'+JSON.stringify(w||[]); const e=_countCache.get(key); return (e&&Date.now()-e.ts<_countTtlFor(name))?e.val:null; };
   const opefId=o=>'opef-'+normOpmId(o.opm_id).replace(/[^\w.-]/g,'_');
+  const cOpm=o=>{ // contagem de militares na OPM (string e número p/ evitar mismatch de tipo)
+    const a=cc('efetivopm',[['opm_id','==',o.opm_id]]);
+    const b=cc('efetivopm',[['opm_id','==',num(o.opm_id)]]);
+    return (a!=null||b!=null)?Math.max(a||0,b||0):null;
+  };
   let html=`<div class="pagehead"><h2>OPMs — Unidades</h2><div class="sub">${OPM_LAST.length} unidade(s) cadastrada(s) · ${ativas} em atividade</div></div>
     <div class="toolbar"><button class="btn primary" onclick="opmForm(null)">＋ Nova OPM</button></div>
     <div class="card" style="padding:0;overflow:auto"><table>
     <thead><tr><th>Sigla</th><th>Descrição</th><th>Município</th><th>Região</th><th>Comandante</th><th>Função</th><th>Atividade</th><th>Efetivo</th><th></th></tr></thead><tbody>`;
   if(!OPM_LAST.length){ html+=`<tr><td colspan="9" class="center muted">Nenhuma OPM cadastrada.</td></tr>`; }
   OPM_LAST.forEach((o,i)=>{
-    const c=cc('efetivopm',[['opm_id','==',o.opm_id]]);
+    const c=cOpm(o);
     html+=`<tr><td><b>${esc(o.opm_sigla||o.opm_id)}</b></td><td>${esc(o.opm_desc||'')}</td>
       <td>${esc(o.opm_municipio||'—')}</td><td>${esc(o.opm_regiao||'—')}</td><td>${esc(o.comandante||'—')}</td><td>${esc(o.funcao||'—')}</td>
       <td>${o.opm_atv==='FIM'?'<span class="badge">FIM</span>':'<span class="badge ok">ATIVA</span>'}</td>
@@ -987,8 +1035,10 @@ async function renderOPMs(){
   const pend=[];
   OPM_LAST.forEach(o=>{ if(document.getElementById(opefId(o))) pend.push(o); });
   if(pend.length){
-    Promise.all(pend.map(o=>countDocs('efetivopm',[['opm_id','==',o.opm_id]])
-      .then(v=>{ const el=document.getElementById(opefId(o)); if(el) el.textContent=fmt(v); })
+    Promise.all(pend.map(o=>Promise.all([
+      countDocs('efetivopm',[['opm_id','==',o.opm_id]]),
+      countDocs('efetivopm',[['opm_id','==',num(o.opm_id)]])
+    ]).then(([a,b])=>{ const el=document.getElementById(opefId(o)); if(el) el.textContent=fmt(Math.max(a||0,b||0)); })
       .catch(()=>{})))
       .then(()=>{ const n=document.getElementById('opm-ef-note'); if(n) n.remove(); });
   } else { const n=document.getElementById('opm-ef-note'); if(n) n.remove(); }
