@@ -874,6 +874,11 @@ async function efQueryMat(mat){
   for(const d of cand){ const k=String(d.__id||d.id||''); if(k&&!seen.has(k)) return d; }
   return null;
 }
+function fmtDataBR(v){ const m=String(v||'').trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})/); return m?`${m[3]}/${m[2]}/${m[1]}`:String(v||''); }
+function parseDataBR(v){ const m=String(v||'').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); return m?`${m[3]}-${('0'+m[2]).slice(-2)}-${('0'+m[1]).slice(-2)}`:''; }
+function maskDataBR(v){ const d=String(v||'').replace(/\D/g,'').slice(0,8); let out=d.slice(0,2); if(d.length>2) out+='/'+d.slice(2,4); if(d.length>4) out+='/'+d.slice(4); return out; }
+function maskTelefoneBR(v){ const d=String(v||'').replace(/\D/g,'').slice(0,11); if(d.length<3) return d; let out='('+d.slice(0,2)+') '+d.slice(2,3); if(d.length>3) out+='.'+d.slice(3,7); if(d.length>7) out+='-'+d.slice(7); return out; }
+function maskCpf(v){ const d=String(v||'').replace(/\D/g,'').slice(0,11); let out=d.slice(0,3); if(d.length>3) out+='.'+d.slice(3,6); if(d.length>6) out+='.'+d.slice(6,9); if(d.length>9) out+='-'+d.slice(9); return out; }
 async function efForm(id){
   let a=id?(EF.rows&&EF.rows[id])||null:null;
   if(id&&!a) a=await getDoc('efetivopm',id)||await efQueryMat(id);
@@ -885,9 +890,11 @@ async function efForm(id){
   const sel=(k,label,opts)=>`<div><label class="muted">${label}</label><select id="ef-${k}">${opts}</select></div>`;
   const sitOpts=['ATIVO','RESERVA','LICENCA','AFASTADO'].map(s=>`<option value="${s}" ${a&&String(a.sit||'')===s?'selected':''}>${s.charAt(0)+s.slice(1).toLowerCase()}</option>`).join('');
   const f6Opts=['NAO','SIM'].map(s=>`<option value="${s}" ${a&&String(a.f6||'NAO')===s?'selected':''}>${s.charAt(0)+s.slice(1).toLowerCase()}</option>`).join('');
-  const compOpts=['BOM','REGULAR','RUIM'].map(s=>`<option value="${s}" ${a&&String(a.comportamento||'BOM')===s?'selected':''}>${s.charAt(0)+s.slice(1).toLowerCase()}</option>`).join('');
+  const compOpts=['RUIM','REGULAR','BOM','ÓTIMO','EXCELENTE','EXCEPCIONAL'].map(s=>`<option value="${s}" ${a&&String(a.comportamento||'BOM').toUpperCase()===s?'selected':''}>${s.charAt(0)+s.slice(1).toLowerCase()}</option>`).join('');
   const tsOpts=[['','Selecione'],['A+','A+'],['A-','A-'],['B+','B+'],['B-','B-'],['AB+','AB+'],['AB-','AB-'],['O+','O+'],['O-','O-']].map(s=>`<option value="${s[0]}" ${a&&String(a.tipo_sanguineo||'')===s[0]?'selected':''}>${s[1]}</option>`).join('');
-  const inp=(k,label,ph,type)=>{ const e=a?(a[k]||''):''; return `<div><label class="muted">${label}</label><input id="ef-${k}" type="${type||'text'}" value="${esc(e)}" placeholder="${ph||''}" ${(k==='matricula'&&id)?'readonly':''}></div>`; };
+  const inpVal=k=>{ const e=a?(a[k]||''):''; if(k==='admissao'||k==='data_nascimento') return fmtDataBR(e); if(k==='telefone') return maskTelefoneBR(e); if(k==='cpf') return maskCpf(e); return e; };
+  const maskAttr=k=>{ if(k==='admissao'||k==='data_nascimento') return ' oninput="this.value=maskDataBR(this.value)"'; if(k==='telefone') return ' oninput="this.value=maskTelefoneBR(this.value)"'; if(k==='cpf') return ' oninput="this.value=maskCpf(this.value)"'; return ''; };
+  const inp=(k,label,ph,type)=>{ return `<div><label class="muted">${label}</label><input id="ef-${k}" type="${type||'text'}" value="${esc(inpVal(k))}" placeholder="${ph||''}" ${(k==='matricula'&&id)?'readonly':''}${maskAttr(k)}></div>`; };
   const body=`
     <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px">
       ${inp('matricula','Matrícula *','Ex.: 2077...', 'text')}
@@ -899,14 +906,14 @@ async function efForm(id){
       ${sel('f6','F6',f6Opts)}
       ${sel('tipo_sanguineo','Tipo Sanguíneo',tsOpts)}
       ${inp('lc_trab_desc','Local de Trabalho','Ex.: CPR-CN')}
-      ${inp('telefone','Telefone','(00) 00000-0000')}
+      ${inp('telefone','Telefone','(99) 9.9999-9999')}
       ${inp('cpf','CPF','000.000.000-00')}
       ${inp('rg','RG','')}
       ${inp('titulo','Título','')}
       ${inp('cnh','CNH','')}
       ${inp('categoria','Categoria CNH','Ex.: B')}
-      ${inp('admissao','Admissão (AAAA-MM-DD)','2020-01-01')}
-      ${inp('data_nascimento','Data Nasc. (AAAA-MM-DD)','1990-01-01')}
+      ${inp('admissao','Admissão (DD/MM/AAAA)','DD/MM/AAAA')}
+      ${inp('data_nascimento','Data Nasc. (DD/MM/AAAA)','DD/MM/AAAA')}
       ${sel('comportamento','Comportamento',compOpts)}
     </div>`;
   openModal(id?'Editar Militar — '+a.nome:'Novo Militar', body, async ()=>{
@@ -928,7 +935,7 @@ async function efForm(id){
       lc_trab_desc:v('lc_trab_desc'), local_trabalho:v('lc_trab_desc'),
       telefone:v('telefone'), cpf:v('cpf'), rg:v('rg'), titulo:v('titulo'),
       cnh:v('cnh'), categoria:v('categoria'),
-      admissao:v('admissao'), data_nascimento:v('data_nascimento'),
+      admissao:parseDataBR(v('admissao'))||'', data_nascimento:parseDataBR(v('data_nascimento'))||'',
       comportamento:$('#ef-comportamento').value||'BOM'
     };
     await col('efetivopm').doc(docId).set(data,{merge:false});
