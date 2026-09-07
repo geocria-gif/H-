@@ -454,7 +454,7 @@ async function loadCaches(){
   const [o,ca,mu,le,va]=await Promise.all([
     all('opms'), all('cargos'), all('municipios'), all('escala_p2_legendas'), all('tabela_valores')
   ]);
-  C={opms:o,cargos:ca,municipios:mu,legendas:le,valores:va};
+  C={opms:opmDedupe(o),cargos:ca,municipios:mu,legendas:le,valores:va};
 }
 function opmOf(id){ const o=C.opms.find(x=>String(x.opm_id)===String(id)); return o?o:null; }
 function opmSigla(id){ const o=opmOf(id); return o?(o.opm_sigla||o.opm_desc||id):String(id); }
@@ -932,29 +932,63 @@ async function efExcluir(id){
 }
 
 /* ================= OPMs ================= */
+function normOpmId(v){ return (v==null?'':String(v)).trim(); }
+function opmDedupe(list){
+  const seen=new Set(), out=[];
+  for(const o of list||[]){ const k=normOpmId(o.opm_id); if(!k||seen.has(k)) continue; seen.add(k); out.push(o); }
+  return out;
+}
+function opmCacheSync(){ C.opms=opmDedupe(C.opms); }
+let OPM_LAST=[];
 async function renderOPMs(){
-  const rows=await Promise.all(C.opms.map(async o=>[o,await countDocs('efetivopm',[['opm_id','==',o.opm_id]])]));
-  rows.sort((a,b)=>(a[0].opm_sigla||'').localeCompare(b[0].opm_sigla||''));
-  const ativas=C.opms.filter(o=>o.opm_atv!=='FIM').length;
-  let html=`<div class="pagehead"><h2>OPMs — Unidades</h2><div class="sub">${C.opms.length} unidade(s) cadastrada(s) · ${ativas} em atividade</div></div>
+  opmCacheSync();
+  OPM_LAST=[...C.opms].sort((a,b)=>(a.opm_sigla||'').localeCompare(b.opm_sigla||''));
+  const ativas=OPM_LAST.filter(o=>o.opm_atv!=='FIM').length;
+  const cc=(name,w)=>{ const key=name+'|'+JSON.stringify(w||[]); const e=_countCache.get(key); return (e&&Date.now()-e.ts<_countTtlFor(name))?e.val:null; };
+  const opefId=o=>'opef-'+normOpmId(o.opm_id).replace(/[^\w.-]/g,'_');
+  let html=`<div class="pagehead"><h2>OPMs — Unidades</h2><div class="sub">${OPM_LAST.length} unidade(s) cadastrada(s) · ${ativas} em atividade</div></div>
     <div class="toolbar"><button class="btn primary" onclick="opmForm(null)">＋ Nova OPM</button></div>
     <div class="card" style="padding:0;overflow:auto"><table>
     <thead><tr><th>Sigla</th><th>Descrição</th><th>Município</th><th>Região</th><th>Comandante</th><th>Função</th><th>Atividade</th><th>Efetivo</th><th></th></tr></thead><tbody>`;
-  if(!rows.length){ html+=`<tr><td colspan="9" class="center muted">Nenhuma OPM cadastrada.</td></tr>`; }
-  for(const [o,n] of rows){
+  if(!OPM_LAST.length){ html+=`<tr><td colspan="9" class="center muted">Nenhuma OPM cadastrada.</td></tr>`; }
+  OPM_LAST.forEach((o,i)=>{
+    const c=cc('efetivopm',[['opm_id','==',o.opm_id]]);
     html+=`<tr><td><b>${esc(o.opm_sigla||o.opm_id)}</b></td><td>${esc(o.opm_desc||'')}</td>
       <td>${esc(o.opm_municipio||'—')}</td><td>${esc(o.opm_regiao||'—')}</td><td>${esc(o.comandante||'—')}</td><td>${esc(o.funcao||'—')}</td>
-      <td>${o.opm_atv==='FIM'?'<span class="badge">FIM</span>':'<span class="badge ok">ATIVA</span>'}</td><td><b>${fmt(n)}</b></td>
+      <td>${o.opm_atv==='FIM'?'<span class="badge">FIM</span>':'<span class="badge ok">ATIVA</span>'}</td>
+      <td><b id="${opefId(o)}">${c==null?'·':fmt(c)}</b></td>
       <td style="white-space:nowrap">
-        <button class="btn ghost sm" onclick="opmForm('${esc(o.opm_id)}')">✏️</button>
-        <button class="btn danger sm" onclick="opmExcluir('${esc(o.opm_id)}')">🗑</button>
+        <button class="btn ghost sm" onclick="opmForm(${i})">✏️</button>
+        <button class="btn danger sm" onclick="opmExcluir(${i})">🗑</button>
       </td></tr>`;
-  }
-  html+=`</tbody></table></div>`;
+  });
+  html+=`</tbody></table></div><div class="muted" id="opm-ef-note" style="margin-top:8px">Calculando efetivo por OPM…</div>`;
   $('#view').innerHTML=html;
+  const pend=[];
+  OPM_LAST.forEach(o=>{ if(document.getElementById(opefId(o))) pend.push(o); });
+  if(pend.length){
+    Promise.all(pend.map(o=>countDocs('efetivopm',[['opm_id','==',o.opm_id]])
+      .then(v=>{ const el=document.getElementById(opefId(o)); if(el) el.textContent=fmt(v); })
+      .catch(()=>{})))
+      .then(()=>{ const n=document.getElementById('opm-ef-note'); if(n) n.remove(); });
+  } else { const n=document.getElementById('opm-ef-note'); if(n) n.remove(); }
 }
-function opmForm(id){
-  const o=id?opmOf(id):null;
+async function opmWrite(data){
+  const id=String(data.opm_id);
+  const cand=[];
+  const seen=new Set();
+  const push=arr=>arr.forEach(d=>{ const did=String(d.__id||d.id||''); if(did&&!seen.has(did)){ seen.add(did); cand.push(d); } });
+  try{ push(await getDocs(col('opms').where('opm_id','==',id))); }catch(e){}
+  try{ push(await getDocs(col('opms').where('opm_id','==',num(data.opm_id)))); }catch(e){}
+  let target=cand.find(d=>String(d.__id||d.id)===id)||cand[0]||null;
+  if(target){ await col('opms').doc(String(target.__id||target.id)).set(data,{merge:true}); }
+  else { const ref=col('opms').doc(id); await ref.set(data,{merge:true}); target=ref; }
+  const tdid=String(target.__id||target.id);
+  for(const d of cand){ const did=String(d.__id||d.id); if(did===tdid) continue; try{ await col('opms').doc(did).delete(); }catch(e){} }
+  return tdid;
+}
+function opmForm(i){
+  const o=i!=null?OPM_LAST[num(i)]:null;
   const a=o?o:{opm_id:'',opm_sigla:'',opm_desc:'',opm_municipio:'',opm_regiao:'',opm_ordem:'',opm_atv:'MEIO',opm_bairro:'',comandante:'',funcao:''};
   const body=`
     <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px">
@@ -974,18 +1008,26 @@ function opmForm(id){
     const opmId=o?String(a.opm_id):v('id');
     const sigla=v('sigla'), desc=v('desc');
     if(!opmId||!sigla||!desc){ toast('Informe Código OPM, Sigla e Descrição.','err'); return; }
-    if(!o&&opmOf(opmId)){ toast('Já existe OPM com este código.','err'); return; }
+    if(!o&&C.opms.some(x=>normOpmId(x.opm_id)===normOpmId(opmId))){ toast('Já existe OPM com este código.','err'); return; }
     const data={opm_id:num(opmId)||String(opmId), opm_sigla:sigla, opm_desc:desc, opm_municipio:v('munic'), opm_regiao:v('regiao'), opm_atv:$('#o-atv').value, opm_ordem:num(v('ordem'))||0, opm_bairro:v('bairro'), comandante:v('cmd'), funcao:v('funcao')};
-    await col('opms').doc(String(data.opm_id)).set(data,{merge:true});
-    if(o){ C.opms=C.opms.map(x=>String(x.opm_id)===String(data.opm_id)?data:x); }
-    else { C.opms.push(data); }
+    await opmWrite(data);
+    C.opms=opmDedupe(C.opms.map(x=>normOpmId(x.opm_id)===normOpmId(data.opm_id)?data:x));
     closeModal(); toast(o?'OPM atualizada!':'OPM cadastrada!','ok'); go('opms');
   });
 }
-async function opmExcluir(id){
-  if(!confirm('Excluir a OPM "'+(opmSigla(id)||id)+'"? O efetivo vinculado a ela não será removido.')) return;
-  await col('opms').doc(String(id)).delete();
-  C.opms=C.opms.filter(x=>String(x.opm_id)!==String(id));
+async function opmExcluir(i){
+  const o=OPM_LAST[num(i)];
+  if(!o) return;
+  if(!confirm('Excluir a OPM "'+(opmSigla(o.opm_id)||o.opm_id)+'"? O efetivo vinculado a ela não será removido.')) return;
+  const id=String(o.opm_id);
+  const docs=[];
+  const seen=new Set();
+  const push=arr=>arr.forEach(d=>{ const did=String(d.__id||d.id||''); if(did&&!seen.has(did)){ seen.add(did); docs.push(d); } });
+  try{ push(await getDocs(col('opms').where('opm_id','==',id))); }catch(e){}
+  try{ push(await getDocs(col('opms').where('opm_id','==',num(o.opm_id)))); }catch(e){}
+  if(!docs.length) docs.push({__id:id});
+  await Promise.all(docs.map(d=>col('opms').doc(String(d.__id||d.id)).delete().catch(()=>{})));
+  C.opms=C.opms.filter(x=>String(x.opm_id)!==id);
   toast('OPM excluída!','ok'); go('opms');
 }
 
