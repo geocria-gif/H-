@@ -264,21 +264,21 @@ function CHARTJS(){ return loadScript('https://cdn.jsdelivr.net/npm/chart.js@4.4
 function XLSX(){ return window.XLSX?Promise.resolve():loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'); }
 
 /* Contagem via REST runAggregationQuery: custa 1 "small read" por query,
-   NÃO 1 leitura por documento — essencial para a cota do Firebase (Spark). */
+   NÃO 1 leitura por documento — essencial para a cota do Firebase (Spark).
+   Cache em memória (120 s) + fila throttle (max 3 concorrentes, 350 ms gap)
+   evita 429 no Spark (limite ~10 aggregation/s). */
 function _val2fs(v){
   if(typeof v==='number') return Number.isInteger(v)?{integerValue:String(v)}:{doubleValue:String(v)};
   return {stringValue:String(v)};
 }
-async function countDocs(collectionName, wheres){
-  if(collectionName==='opms'&&C.opms) return C.opms.length;
-  if(collectionName==='cargos'&&C.cargos) return C.cargos.length;
-  if(collectionName==='municipios'&&C.municipios) return C.municipios.length;
-  if(collectionName==='escala_p2_legendas'&&C.legendas) return C.legendas.length;
-  if(collectionName==='tabela_valores'&&C.valores) return C.valores.length;
+const _countCache=new Map(), COUNT_CACHE_TTL=120000;
+const _restQ=[]; let _restActive=0;
+function _restEnqueue(fn){return new Promise((ok,no)=>{_restQ.push({fn,ok,no});_restDrain();});}
+function _restDrain(){while(_restActive<3&&_restQ.length){const{fn,ok,no}=_restQ.shift();_restActive++;fn().then(ok,no).finally(()=>{_restActive--;setTimeout(_restDrain,350);});}}
+async function _countDocsRaw(collectionName,wheres){
   const u=auth&&auth.currentUser;
-  if(u){
-    try{
-      const token=await u.getIdToken();
+  if(u){for(let att=0;att<3;att++){
+    try{const token=await u.getIdToken();
       const api='https://firestore.googleapis.com/v1/projects/'+FIREBASE_CONFIG.projectId+'/databases/(default)/documents:runAggregationQuery';
       const filters=((wheres||[]).filter(w=>w&&w.length>=3&&w[1]==='=='))
         .map(w=>({fieldFilter:{field:{fieldPath:String(w[0])},op:'EQUAL',value:_val2fs(w[2])}}));
@@ -286,15 +286,29 @@ async function countDocs(collectionName, wheres){
       if(filters.length===1) sq.where=filters[0];
       else if(filters.length>1) sq.where={compositeFilter:{op:'AND',filters:filters}};
       const res=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({structuredAggregationQuery:{structuredQuery:{from:sq.from,where:sq.where},aggregations:sq.aggregations}})});
+      if(res.status===429){console.warn('[count] 429 — aguardando '+(800*(att+1))+'ms');await new Promise(r=>setTimeout(r,800*(att+1)));continue;}
       const j=await res.json();
       const agg=j&&j.batch&&j.batch[0]&&j.batch[0].aggregateFields&&j.batch[0].aggregateFields.n;
       if(agg) return parseInt(agg.integerValue!=null?agg.integerValue:agg.doubleValue,10)||0;
-    }catch(e){ console.warn('[count] REST aggregation falhou, usando .get().size', e.message); }
+    }catch(e){console.warn('[count] REST falhou:',e.message);break;}}
   }
   let q=col(collectionName);
-  for(const w of (wheres||[])) q=q.where(w[0],w[1],w[2]);
+  for(const w of(wheres||[])) q=q.where(w[0],w[1],w[2]);
   const snap=await q.get();
   return snap.size;
+}
+async function countDocs(collectionName,wheres){
+  if(collectionName==='opms'&&C.opms) return C.opms.length;
+  if(collectionName==='cargos'&&C.cargos) return C.cargos.length;
+  if(collectionName==='municipios'&&C.municipios) return C.municipios.length;
+  if(collectionName==='escala_p2_legendas'&&C.legendas) return C.legendas.length;
+  if(collectionName==='tabela_valores'&&C.valores) return C.valores.length;
+  const key=collectionName+'|'+JSON.stringify(wheres||[]);
+  const c=_countCache.get(key);
+  if(c&&Date.now()-c.ts<COUNT_CACHE_TTL) return c.val;
+  const val=await _restEnqueue(()=>_countDocsRaw(collectionName,wheres));
+  _countCache.set(key,{val,ts:Date.now()});
+  return val;
 }
 
 /* ================= cache (coleções pequenas) =================
@@ -584,16 +598,16 @@ let MAP_DATA={municipios:[],ocorrencias:[]};
 
 async function renderDashboard(){
   const now=new Date();
-  const [ec,evc,mc,vc,carc,ocvs,occ,escn]=await Promise.all([
-    countDocs('efetivopm'), countDocs('eventos'), countDocs('municipios'),
-    countDocs('viaturas'), countDocs('cargos'), countDocs('opms'),
-    countDocs('ocorrencias'), countDocs('escalas')
+  const [eventos,oeRows,ocorrencias]=await Promise.all([
+    all('eventos'),all('opm_eventos'),all('ocorrencias')
   ]);
-  const eventos=await all('eventos'); eventos.sort((a,b)=>(b.evento_dta_inicio||'').localeCompare(a.evento_dta_inicio||''));
-  const oeRows=await all('opm_eventos');
+  eventos.sort((a,b)=>(b.evento_dta_inicio||'').localeCompare(a.evento_dta_inicio||''));
+  const [ec,mc,vc,escn]=await Promise.all([
+    countDocs('efetivopm'),countDocs('municipios'),countDocs('viaturas'),countDocs('escalas')
+  ]);
+  const carc=C.cargos.length,ocvs=C.opms.length,occ=ocorrencias.length,evc=eventos.length;
   const oeCounts={};
-  for(const oe of oeRows) oeCounts[oe.opm_evento_id]=await countDocs('escalas',[['opm_evento_id','==',num(oe.opm_evento_id)]]);
-  const ocorrencias=await all('ocorrencias');
+  await Promise.all(oeRows.map(async oe=>{ oeCounts[oe.opm_evento_id]=await countDocs('escalas',[['opm_evento_id','==',num(oe.opm_evento_id)]]); }));
   const porTipo={};
   for(const o of ocorrencias){ const t=o.tipo||'OUTRO'; porTipo[t]=(porTipo[t]||0)+1; }
   const ativos=C.opms.filter(o=>o.opm_atv!=='FIM').length;
@@ -693,11 +707,7 @@ function efPrev(){ if(EF.stack.length){ EF.start=EF.stack.pop(); EF.end=null; go
 
 /* ================= OPMs ================= */
 async function renderOPMs(){
-  const rows=[];
-  for(const o of C.opms){
-    const n=await countDocs('efetivopm',[['opm_id','==',o.opm_id]]);
-    rows.push([o,n]);
-  }
+  const rows=await Promise.all(C.opms.map(async o=>[o,await countDocs('efetivopm',[['opm_id','==',o.opm_id]])]));
   rows.sort((a,b)=>(a[0].opm_sigla||'').localeCompare(b[0].opm_sigla||''));
   let html=`<div class="pagehead"><h2>OPMs — Unidades</h2><div class="sub">Unidades com efetivo vinculado (contagens agregadas)</div></div>
     <div class="card" style="padding:0;overflow:auto"><table>
@@ -727,21 +737,18 @@ async function renderMunicipios(){
 
 /* ================= Eventos ================= */
 async function renderEventos(){
-  const eventos=await all('eventos'); eventos.sort((a,b)=>(b.evento_dta_inicio||'').localeCompare(a.evento_dta_inicio||''));
-  const oe=await all('opm_eventos');
+  const [eventos,oe]=await Promise.all([all('eventos'),all('opm_eventos')]);
+  eventos.sort((a,b)=>(b.evento_dta_inicio||'').localeCompare(a.evento_dta_inicio||''));
   const byEvento={};
   for(const r of oe){ (byEvento[r.evento_id]=byEvento[r.evento_id]||[]).push(r); }
-  const counts={};
-  for(const r of oe){ counts[r.opm_evento_id]=num(r.opm_evento_id); }
   let html=`<div class="pagehead"><h2>Eventos</h2><div class="sub">Eventos com OPMs alocadas e policiais escalados</div></div>`;
   for(const ev of eventos){
     const oes=byEvento[ev.evento_id]||[];
-    let escal=0;
-    for(const r of oes) escal+=await countDocs('escalas',[['opm_evento_id','==',num(r.opm_evento_id)]]);
+    const esctot=(await Promise.all(oes.map(r=>countDocs('escalas',[['opm_evento_id','==',num(r.opm_evento_id)]])))).reduce((s,v)=>s+v,0);
     html+=`<div class="card"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
       <div><h3 style="margin:0">${esc(ev.evento_desc||ev.evento_nome||'')} <span class="badge">${esc(ev.evento_id)}</span></h3>
       <div class="muted mt">${esc(ev.evento_dta_inicio||'—')} → ${esc(ev.evento_dta_fim||'—')} · ${esc(ev.tipo_pagamento||'')}</div></div>
-      <div class="muted">${oes.length} OPM(s) · <b>${escal}</b> policial(is) escalado(s)</div></div>
+      <div class="muted">${oes.length} OPM(s) · <b>${esctot}</b> policial(is) escalado(s)</div></div>
       <div class="mt">${oes.map(r=>'<span class="pill">'+esc(opmSigla(r.opm_id))+'</span>').join('')||'<span class="muted">Sem OPM alocada.</span>'}</div></div>`;
   }
   if(!eventos.length) html+=`<div class="notice">Nenhum evento cadastrado.</div>`;
@@ -802,7 +809,7 @@ async function renderEscalaPickOpm(){
   const evName=evRow?(evRow.evento_desc||evRow.evento_nome||''):'';
   const oes=(await all('opm_eventos')).filter(r=>num(r.evento_id)===ES.eventoId);
   const counts={};
-  for(const r of oes){ counts[r.opm_evento_id]=await countDocs('escalas',[['opm_evento_id','==',num(r.opm_evento_id)]]); }
+  await Promise.all(oes.map(async r=>{ counts[r.opm_evento_id]=await countDocs('escalas',[['opm_evento_id','==',num(r.opm_evento_id)]]); }));
   let html=`<div class="pagehead"><h2>Escala de Horas</h2>
     <div class="sub">Evento: <b>${esc(evName)}</b> · 2️⃣ Escolha a OPM
     <button class="btn ghost sm" style="margin-left:8px" onclick="escalaReset()">↩ Trocar evento</button></div></div>
@@ -1742,7 +1749,8 @@ async function renderUsuarios(){
 async function renderBackup(){
   const sets=[['efetivopm','Efetivo PM'],['opms','OPMs'],['cargos','Cargos/Postos'],['municipios','Municípios'],['viaturas','Viaturas'],['eventos','Eventos'],['opm_eventos','OPM×Eventos'],['escalas','Escalas de Horas'],['escala_p2','Escala P2'],['escala_p2_meta','P2 Meta'],['escala_p2_legendas','P2 Legendas'],['escalas_salvas','Escalas Salvas'],['tabela_valores','Tabela de Valores'],['ocorrencias','Ocorrências'],['ocorrencia_eventos','Ocorrência×Eventos'],['ocorrencia_meta','Ocorrência Meta'],['ocorrencia_config','Ocorrência Config'],['usuarios','Usuários']];
   const counts={};
-  for(const [name] of sets){ counts[name]=await countDocs(name); }
+  const pairs=await Promise.all(sets.map(async([name])=>[name,await countDocs(name)]));
+  for(const[n,c]of pairs) counts[n]=c;
   $('#view').innerHTML=`
     <div class="pagehead"><h2>🗄️ Backup / Exportar</h2><div class="sub">Baixe os dados do Firestore em JSON (um arquivo por coleção)</div></div>
     <div class="toolbar"><button class="btn" onclick="backupJson()">⬇ Backup completo (JSON)</button><button class="btn ghost" onclick="backupSelectOnly()">Selecionadas</button></div>
