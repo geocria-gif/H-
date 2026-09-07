@@ -312,6 +312,66 @@ async function countDocs(collectionName,wheres){
   return val;
 }
 
+/* Agregação geral via REST runAggregationQuery: count + soma de campos em UMA
+   query (1 "small read"). Mesma fila throttle + cache 120 s + retry 429.
+   wheres suportam '==' e 'in'; retorna {n, <campo>: soma, ...}. */
+const _aggCache=new Map();
+async function aggDocs(collectionName,wheres,sums){
+  sums=sums||[];
+  const key=collectionName+'|'+JSON.stringify(wheres||[])+'|'+JSON.stringify(sums);
+  const c=_aggCache.get(key);
+  if(c&&Date.now()-c.ts<COUNT_CACHE_TTL) return c.val;
+  const val=await _restEnqueue(()=>_aggDocsRaw(collectionName,wheres,sums));
+  _aggCache.set(key,{val,ts:Date.now()});
+  return val;
+}
+async function _aggDocsRaw(collectionName,wheres,sums){
+  sums=sums||[];
+  const u=auth&&auth.currentUser;
+  if(u){for(let att=0;att<3;att++){
+    try{const token=await u.getIdToken();
+      const api='https://firestore.googleapis.com/v1/projects/'+FIREBASE_CONFIG.projectId+'/databases/(default)/documents:runAggregationQuery';
+      const filters=((wheres||[]).filter(w=>w&&w.length>=3)).map(w=>{
+        const opName=w[1]==='=='?'EQUAL':(String(w[1]).toLowerCase()==='in'?'IN':String(w[1]));
+        if(opName==='IN') return {fieldFilter:{field:{fieldPath:String(w[0])},op:'IN',value:{arrayValue:{values:(w[2]||[]).map(_val2fs)}}}};
+        return {fieldFilter:{field:{fieldPath:String(w[0])},op:opName,value:_val2fs(w[2])}};
+      });
+      const aggregations=[{count:{},alias:'n'}].concat(sums.map((f,i)=>({sum:{field:{fieldPath:f}},alias:'s'+i})));
+      const sq={from:[{collectionId:collectionName}],aggregations};
+      if(filters.length===1) sq.where=filters[0];
+      else if(filters.length>1) sq.where={compositeFilter:{op:'AND',filters:filters}};
+      const res=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({structuredAggregationQuery:{structuredQuery:{from:sq.from,where:sq.where},aggregations:sq.aggregations}})});
+      if(res.status===429){console.warn('[agg] 429 — aguardando '+(800*(att+1))+'ms');await new Promise(r=>setTimeout(r,800*(att+1)));continue;}
+      const j=await res.json();
+      const af=j&&j.batch&&j.batch[0]&&j.batch[0].aggregateFields;
+      if(af){
+        const out={n:0};
+        const gi=af.n&&af.n.integerValue, gd=af.n&&af.n.doubleValue;
+        out.n=parseInt(gi!=null?gi:gd,10)||0;
+        sums.forEach((f,i)=>{const v=af['s'+i];const a=v&&v.integerValue,b=v&&v.doubleValue;out[f]=parseFloat(a!=null?a:b)||0;});
+        return out;
+      }
+      console.warn('[agg] resposta inesperada:',collectionName,j&&j.error);
+    }catch(e){console.warn('[agg] REST falhou:',e.message);break;}}
+  }
+  let q=col(collectionName);
+  for(const w of(wheres||[])) q=q.where(w[0],w[1],w[2]);
+  const snap=await q.get();
+  const out={n:snap.size}; sums.forEach(f=>out[f]=0);
+  snap.forEach(d=>{const x=d.data();sums.forEach(f=>out[f]+=Number(x[f])||0);});
+  return out;
+}
+async function aggIn(collectionName,field,ids,sums){
+  sums=sums||[];
+  const out={n:0}; sums.forEach(f=>out[f]=0);
+  for(let i=0;i<ids.length;i+=10){
+    const r=await aggDocs(collectionName,[[field,'in',ids.slice(i,i+10)]],sums);
+    out.n+=r.n;
+    sums.forEach(f=>out[f]+=r[f]);
+  }
+  return out;
+}
+
 /* ================= cache (coleções pequenas) =================
    IMPORTANTE: efetivopm (30k) NÃO é mais cacheado no boot — 30 mil leituras
    por acesso estouravam a cota diária. Buscas por documento são pontuais. */
@@ -738,24 +798,123 @@ async function renderMunicipios(){
   $('#view').innerHTML=html;
 }
 
-/* ================= Eventos ================= */
+/* ================= Eventos (CRUD) ================= */
+function evPagNome(tp){ return tp==='HE'?'Hora Extra':tp==='VD'?'Vale Transporte':tp==='SO'?'Serviço Ordinário':(tp||'HE'); }
+const EVT = { rows:[], busca:'' };
+function evtRepaint(lista){
+  EVT.rows=lista||EVT.rows;
+  const term=EVT.busca.toLowerCase().trim();
+  const rows=EVT.rows.filter(r=>!term||String(r.ev.evento_desc||'').toLowerCase().includes(term));
+  let html=`<div class="pagehead"><h2>Eventos</h2><div class="sub">Eventos com OPMs alocadas e policiais escalados</div>
+    <div class="toolbar">
+      <input placeholder="Buscar por descrição…" style="max-width:260px" value="${esc(EVT.busca)}" oninput="EVT.busca=this.value;evtRepaint()">
+      <div style="flex:1"></div>
+      <button class="btn" onclick="evtForm()">＋ Novo Evento</button>
+    </div>
+    <div class="card" style="overflow:auto"><table>
+      <thead><tr><th>ID</th><th>Descrição</th><th>Início</th><th>Fim</th><th>Tipo Pag</th><th>OPMs Alocadas</th><th>Policiais</th><th>CH Total</th><th>Ações</th></tr></thead>
+      <tbody>`;
+  for(const r of rows){
+    const ev=r.ev;
+    const oes=evOes(r.oid);
+    html+=`<tr>
+      <td><b>${esc(ev.evento_id)}</b></td>
+      <td>${esc(ev.evento_desc||'')}</td>
+      <td>${esc(ev.evento_dta_inicio||'—')}</td>
+      <td>${esc(ev.evento_dta_fim||'—')}</td>
+      <td><span class="badge alt" style="background:${ev.tipo_pagamento==='HE'?'#b45309':ev.tipo_pagamento==='VD'?'#0369a1':'#334155'}">${esc(evPagNome(ev.tipo_pagamento))}</span></td>
+      <td><b>${oes.length}</b> ${oes.map(o=>'<span class="pill">'+esc(opmSigla(o.opm_id))+'</span>').join('')||'<span class="muted">—</span>'}</td>
+      <td><b>${r.pol}</b></td>
+      <td><b>${r.ch} h</b></td>
+      <td style="white-space:nowrap">
+        <button class="btn ghost sm" onclick="evtForm(${num(ev.evento_id)})">Editar</button>
+        <button class="btn danger sm" onclick="evtExcluir(${num(ev.evento_id)})">Excluir</button>
+      </td></tr>`;
+  }
+  if(!rows.length) html+=`<tr><td colspan="9" class="center muted">${EVT.rows.length?'Nenhum evento corresponde à busca.':'Nenhum evento cadastrado. Crie um evento no botão acima.'}</td></tr>`;
+  html+=`</tbody></table></div>`;
+  $('#view').innerHTML=html;
+}
+let EVT_OE=[];  // opm_eventos carregados na última renderização
+function evOes(evId){ return EVT_OE.filter(r=>String(r.evento_id)===String(evId)); }
 async function renderEventos(){
   const [eventos,oe]=await Promise.all([all('eventos'),all('opm_eventos')]);
   eventos.sort((a,b)=>(b.evento_dta_inicio||'').localeCompare(a.evento_dta_inicio||''));
-  const byEvento={};
-  for(const r of oe){ (byEvento[r.evento_id]=byEvento[r.evento_id]||[]).push(r); }
-  let html=`<div class="pagehead"><h2>Eventos</h2><div class="sub">Eventos com OPMs alocadas e policiais escalados</div></div>`;
-  for(const ev of eventos){
-    const oes=byEvento[ev.evento_id]||[];
-    const esctot=(await Promise.all(oes.map(r=>countDocs('escalas',[['opm_evento_id','==',num(r.opm_evento_id)]])))).reduce((s,v)=>s+v,0);
-    html+=`<div class="card"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
-      <div><h3 style="margin:0">${esc(ev.evento_desc||ev.evento_nome||'')} <span class="badge">${esc(ev.evento_id)}</span></h3>
-      <div class="muted mt">${esc(ev.evento_dta_inicio||'—')} → ${esc(ev.evento_dta_fim||'—')} · ${esc(ev.tipo_pagamento||'')}</div></div>
-      <div class="muted">${oes.length} OPM(s) · <b>${esctot}</b> policial(is) escalado(s)</div></div>
-      <div class="mt">${oes.map(r=>'<span class="pill">'+esc(opmSigla(r.opm_id))+'</span>').join('')||'<span class="muted">Sem OPM alocada.</span>'}</div></div>`;
+  EVT_OE=oe;
+  const rows=await Promise.all(eventos.map(async ev=>{
+    const oes=evOes(ev.evento_id);
+    const agg=await aggIn('escalas','opm_evento_id',oes.map(r=>num(r.opm_evento_id)),['escala_ch_diurna','escala_ch_noturna']);
+    const ch=Math.round((agg.escala_ch_diurna+agg.escala_ch_noturna)*100)/100;
+    return {ev,oid:ev.evento_id,pol:agg.n,ch};
+  }));
+  evtRepaint(rows);
+}
+/* Modal de criação/edição de evento (mesmo fluxo da versão Flask) */
+async function evtForm(id,onDone){
+  let ev=null, oes=[];
+  if(id!==undefined&&id!==null){
+    ev=(await getDocs(col('eventos').where('evento_id','==',num(id)).limit(1)))[0]||null;
+    if(!ev){ toast('Evento não encontrado.','err'); return; }
+    oes=await getDocs(col('opm_eventos').where('evento_id','==',num(id)));
   }
-  if(!eventos.length) html+=`<div class="notice">Nenhum evento cadastrado.</div>`;
-  $('#view').innerHTML=html;
+  const sel=new Set(oes.map(o=>String(o.opm_id)));
+  const opms=C.opms.filter(o=>o.opm_atv!=='FIM').sort((a,b)=>(a.opm_sigla||'').localeCompare(b.opm_sigla||''));
+  const body=`
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px">
+      <div style="grid-column:1/-1"><label class="muted">Descrição *</label><input id="ev-desc" value="${esc(ev?ev.evento_desc||'':'')}" placeholder="Descrição do evento"></div>
+      <div><label class="muted">Início *</label><input type="date" id="ev-ini" value="${esc(ev?ev.evento_dta_inicio||'':todayStr())}"></div>
+      <div><label class="muted">Fim</label><input type="date" id="ev-fim" value="${esc(ev?ev.evento_dta_fim||'':'')}"></div>
+      <div><label class="muted">Tipo Pagamento</label><select id="ev-tip">${['HE','VD','SO'].map(t=>`<option value="${t}" ${(ev?(ev.tipo_pagamento||'HE'):'HE')===t?'selected':''}>${evPagNome(t)}</option>`).join('')}</select>
+      <div style="grid-column:1/-1"><label class="muted">Observações</label><textarea id="ev-c1" rows="3" placeholder="Observações">${esc(ev?ev.campo1||'':'')}</textarea></div>
+      <div style="grid-column:1/-1"><label class="muted">OPMs Alocadas</label>
+        <div style="max-height:200px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:8px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:4px 10px">
+          ${opms.map(o=>`<label style="display:flex;align-items:center;gap:6px;font-size:12px"><input type="checkbox" class="ev-opm" value="${esc(o.opm_id)}" ${sel.has(String(o.opm_id))?'checked':''}> ${esc(o.opm_sigla||o.opm_id)}</label>`).join('')||'<span class="muted">Nenhuma OPM cadastrada.</span>'}
+        </div>
+      </div>
+    </div>`;
+  openModal(id!==null&&id!==undefined?'Editar Evento':'Novo Evento', body, async ()=>{
+    const v=x=>{const e=$('#ev-'+x);return e?(e.value||'').trim():'';};
+    const desc=v('desc'), ini=v('ini'), fim=v('fim'), tip=$('#ev-tip').value||'HE', c1=v('c1');
+    if(!desc||!ini){ toast('Informe a descrição e a data de início.','err'); return; }
+    const checked=Array.from(document.querySelectorAll('.ev-opm:checked')).map(c=>c.value);
+    let nid=id!==null&&id!==undefined?num(id):null;
+    if(nid===null){
+      const allEvents=await all('eventos');
+      nid=allEvents.reduce((a,r)=>Math.max(a,num(r.evento_id)),0)+1;
+    }
+    const data={evento_id:nid,evento_desc:desc,evento_dta_inicio:ini,evento_dta_fim:fim,tipo_pagamento:tip,campo1:c1};
+    await col('eventos').doc(String(nid)).set(data);
+    const oeAll=await all('opm_eventos');
+    const oeMax=oeAll.reduce((a,r)=>Math.max(a,num(r.opm_evento_id)),0);
+    const current=new Set(oes.map(o=>String(o.opm_id)));
+    let oeNext=oeMax+1;
+    for(const o of oes){
+      if(checked.includes(String(o.opm_id))) continue;
+      await evtDelOpm(num(o.opm_evento_id));  // cascade: escalas + vínculo
+    }
+    for(const oid of checked){
+      if(current.has(String(oid))) continue;
+      await col('opm_eventos').doc(String(oeNext)).set({opm_evento_id:oeNext,evento_id:nid,opm_id:num(oid)});
+      oeNext++;
+    }
+    closeModal();
+    toast(id!==null&&id!==undefined?'Evento atualizado!':'Evento criado com sucesso!','ok');
+    if(typeof onDone==='function') onDone(nid);
+    else renderEventos();
+  });
+}
+async function evtDelOpm(oeid){
+  const escs=await getDocs(col('escalas').where('opm_evento_id','==',num(oeid)));
+  for(const s of escs) await col('escalas').doc(s.__id).delete();
+  await col('opm_eventos').doc(String(oeid)).delete();
+}
+async function evtExcluir(id){
+  if(!confirm('Excluir este evento? Todas as OPMs alocadas e os horários lançados serão removidos.')) return;
+  const oes=await getDocs(col('opm_eventos').where('evento_id','==',num(id)));
+  for(const o of oes) await evtDelOpm(num(o.opm_evento_id));
+  await col('eventos').doc(String(id)).delete();
+  toast('Evento excluído.','ok');
+  renderEventos();
 }
 
 /* ================= Escala de Eventos ================= */
@@ -771,7 +930,8 @@ async function renderEscalaEventos(){
   EE.eventoId=sel;
   if(sel===null){
     $('#view').innerHTML=`<div class="pagehead"><h2>Escala de Eventos</h2><div class="sub">Registro de horários de policiais por evento e OPM</div></div>
-      <div class="notice">Nenhum evento cadastrado. Crie um evento na tela <b>Eventos</b>.</div>`;
+      <div class="card"><div class="notice">Nenhum evento cadastrado.</div>
+      <div class="toolbar"><button class="btn" onclick="evtForm(null,function(nid){EE.eventoId=nid;EE.opmEventoId=null;renderEscalaEventos();})">＋ Criar Novo Evento</button></div></div>`;
     return;
   }
   if(EE.opmEventoId===null){
@@ -788,16 +948,19 @@ EE.body=function(){
   let html=`<div class="pagehead"><h2>Escala de Eventos</h2>
     <div class="sub">1️⃣ Selecione o evento · 2️⃣ Escolha a OPM · 3️⃣ Lance as horas dos policiais</div></div>
     <div class="card">
-      <div class="grid" style="grid-template-columns:1fr auto;gap:10px;align-items:end">
-        <div><label class="muted">Evento</label>
-          <select id="ee-evento" onchange="EE.setEvento(this.value)">
-            ${eventos.map(e=>`<option value="${esc(e.evento_id)}" ${String(e.evento_id)===String(EE.eventoId)?'selected':''}>${esc(e.evento_desc||e.evento_nome||'')} — ${esc(e.evento_dta_inicio||'')}</option>`).join('')}
-          </select></div>
-        <div class="muted" style="white-space:nowrap">
-          ${ev?`<span class="pill">${esc(ev.evento_dta_inicio||'—')} → ${esc(ev.evento_dta_fim||'—')}</span>`:''}
-          <span class="pill">${evOes.length} OPM(s)</span>
-          <span class="pill">${polTot} policial(is)</span>
+      <div class="toolbar" style="margin-bottom:8px">
+        <div class="grid" style="grid-template-columns:1fr auto;gap:10px;align-items:end;flex:1">
+          <div><label class="muted">Evento</label>
+            <select id="ee-evento" onchange="EE.setEvento(this.value)">
+              ${eventos.map(e=>`<option value="${esc(e.evento_id)}" ${String(e.evento_id)===String(EE.eventoId)?'selected':''}>${esc(e.evento_desc||e.evento_nome||'')} — ${esc(e.evento_dta_inicio||'')}</option>`).join('')}
+            </select></div>
+          <div class="muted" style="white-space:nowrap">
+            ${ev?`<span class="pill">${esc(ev.evento_dta_inicio||'—')} → ${esc(ev.evento_dta_fim||'—')}</span>`:''}
+            <span class="pill">${evOes.length} OPM(s)</span>
+            <span class="pill">${polTot} policial(is)</span>
+          </div>
         </div>
+        <button class="btn sm" onclick="evtForm(null,function(nid){EE.eventoId=nid;EE.opmEventoId=null;renderEscalaEventos();})">＋ Novo Evento</button>
       </div>
     </div>`;
   // 2. OPMs alocadas
