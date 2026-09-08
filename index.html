@@ -121,6 +121,86 @@ main{flex:1;overflow-y:auto;padding:20px}
   #imp th{background:#2B488B!important;color:#fff!important;-webkit-print-color-adjust:exact}
   #imp tr.alt td{background:#f2f2f2;-webkit-print-color-adjust:exact}
 }
+/* ===== Ocorrências em Eventos ===== */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:linear-gradient(135deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;top:0;right:0;width:70px;height:70px;border-radius:50%;background:var(--accent-color,#3b82f6);opacity:.15;transform:translate(30%,-30%);filter:blur(12px)}
+.kpi .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600}
+.kpi .value{font-size:26px;font-weight:800;margin:4px 0 0;color:var(--txt)}
+.kpi .ico{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:8px;background:var(--accent-color,#3b82f6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px}
+.chart-box{position:relative;width:100%;height:280px}
+.chart-box canvas{width:100%!important;height:100%!important}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:1100px){.row-2{grid-template-columns:1fr}}
+.occ-matrix-table thead th{position:sticky;top:0;z-index:2;background:#1c2330}
+.occ-matrix-table thead th:nth-child(1),
+.occ-matrix-table thead th:nth-child(2),
+.occ-matrix-table tbody td:nth-child(1),
+.occ-matrix-table tbody td:nth-child(2){position:sticky}
+.occ-matrix-table thead th:nth-child(1){left:0;z-index:4;background:#1c2330}
+.occ-matrix-table thead th:nth-child(2){left:190px;z-index:4;background:#1c2330}
+.occ-matrix-table tbody td:nth-child(1){left:0;z-index:3;background:var(--panel);border-right:1px solid var(--line)}
+.occ-matrix-table tbody td:nth-child(2){left:190px;z-index:3;background:var(--panel)}
+.occ-group-row td{background:#16213a!important;color:#dbeafe;font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:1px}
+.occ-cell-input{width:92px;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--txt);text-align:center}
+.occ-preview-wrap{background:linear-gradient(135deg,#071224,#0f172a);border:1px solid var(--line);border-radius:10px;padding:12px;min-height:360px;display:flex;align-items:flex-start;justify-content:center;overflow:auto}
+.occ-preview-wrap img{width:100%;max-width:440px;border-radius:10px;background:var(--bg)}
+@media(max-width:900px){.occ-preview-wrap img{max-width:100%}}
+.export-stage{position:fixed;left:-99999px;top:0;width:1080px;pointer-events:none;opacity:1;z-index:9999}
+.insta-card{width:1080px;min-height:1440px;padding:28px;color:#fff;background:radial-gradient(circle at 10% 20%,rgba(47,105,196,.36),transparent 28%),radial-gradient(circle at 90% 20%,rgba(217,29,48,.18),transparent 24%),linear-gradient(180deg,#050814 0%,#08162a 54%,#0b1a34 100%);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;position:relative}
+.insta-card::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.05),transparent 18%),radial-gradient(circle at bottom left,rgba(26,86,184,.18),transparent 22%),radial-gradient(circle at bottom right,rgba(255,0,0,.10),transparent 20%);pointer-events:none}
+.insta-header,.insta-top-meta,.insta-main-grid,.insta-mini-grid,.insta-bottom-grid,.insta-footer-grid{position:relative;z-index:1}
+.insta-header{display:grid;grid-template-columns:180px 1fr 180px;gap:16px;align-items:center}
+.insta-logo-wrap{display:flex;justify-content:center;align-items:center}
+.insta-logo-wrap img{width:170px;height:170px;object-fit:contain;filter:drop-shadow(0 12px 18px rgba(0,0,0,.35))}
+.insta-title{text-align:center;text-transform:uppercase}
+.insta-kicker{font-size:64px;font-weight:900;line-height:.95;letter-spacing:.02em}
+.insta-event{font-size:92px;font-weight:1000;line-height:.95;margin-top:4px}
+.insta-event .accent{color:#2f78ff}
+.insta-unit{margin-top:6px;font-size:74px;line-height:.95;font-weight:1000;color:#2f78ff}
+.insta-divider{width:100%;display:flex;align-items:center;gap:16px;margin-top:8px}
+.insta-divider::before,.insta-divider::after{content:'';height:4px;flex:1;background:linear-gradient(90deg,transparent,#2f78ff,transparent)}
+.insta-top-meta{display:flex;justify-content:center;margin-top:18px}
+.insta-datebox{width:540px;background:#f4f4f4;color:#101010;border-radius:24px;padding:16px 28px;text-align:center;font-weight:900;box-shadow:0 12px 18px rgba(0,0,0,.18)}
+.insta-datebox .label{font-size:26px;text-transform:uppercase;letter-spacing:.03em}
+.insta-datebox .value{font-size:48px;line-height:1;margin-top:4px}
+.insta-main-grid{margin-top:20px;border:2px solid rgba(255,255,255,.55);border-radius:18px;overflow:hidden;background:rgba(255,255,255,.06)}
+.insta-main-head{display:grid;grid-template-columns:1fr}
+.insta-main-head div{padding:16px 18px;text-align:center;font-size:28px;font-weight:1000;text-transform:uppercase;letter-spacing:.04em;background:rgba(6,31,74,.96)}
+.insta-main-stats{display:grid;grid-template-columns:repeat(4,1fr);background:#f2f2f2;color:#07162d}
+.insta-stat{padding:18px 12px;text-align:center;border-right:1px solid rgba(0,0,0,.18);min-height:150px}
+.insta-stat:last-child{border-right:none}
+.insta-stat .s-label{font-size:20px;font-weight:900;text-transform:uppercase;line-height:1.08;min-height:66px;display:flex;align-items:center;justify-content:center}
+.insta-stat .s-value{margin-top:14px;font-size:58px;font-weight:1000;line-height:1}
+.insta-mini-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0;margin-top:12px;border-radius:18px;overflow:hidden;border:2px solid rgba(255,255,255,.55);background:#f2f2f2;color:#07162d}
+.insta-mini{min-height:126px;padding:12px 10px;text-align:center;border-right:1px solid rgba(0,0,0,.18)}
+.insta-mini:last-child{border-right:none}
+.insta-mini .m-label{font-size:18px;font-weight:900;text-transform:uppercase;line-height:1.08;min-height:50px;display:flex;align-items:center;justify-content:center}
+.insta-mini .m-value{margin-top:10px;font-size:46px;font-weight:1000;line-height:1}
+.insta-bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.insta-panel{border-radius:20px;overflow:hidden;border:2px solid rgba(255,255,255,.55);background:#f2f2f2;color:#08162d;min-height:520px}
+.insta-panel-head{background:rgba(6,31,74,.98);color:#fff;text-align:center;font-size:26px;font-weight:1000;text-transform:uppercase;padding:14px 12px}
+.insta-panel-body{padding:18px 16px}
+.insta-bars{display:flex;flex-direction:column;gap:14px}
+.insta-bar-row{display:grid;grid-template-columns:180px 1fr 88px;gap:10px;align-items:center}
+.insta-bar-label{font-size:18px;font-weight:900;text-transform:uppercase;line-height:1.05}
+.insta-bar-track{height:28px;border-radius:999px;background:#dde3ef;overflow:hidden}
+.insta-bar-fill{height:100%;border-radius:999px}
+.insta-bar-value{font-size:24px;font-weight:1000;text-align:right}
+.insta-donut-wrap{display:grid;grid-template-columns:1fr;justify-items:center}
+.insta-donut-title{text-align:center;font-size:20px;font-weight:900;text-transform:uppercase;line-height:1.15;margin-bottom:10px}
+.insta-donut{width:300px;height:300px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center}
+.insta-donut-canvas{position:absolute;inset:0;width:100%!important;height:100%!important}
+.insta-donut-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:2;text-align:center;color:#07162d;pointer-events:none}
+.insta-donut-center .small{font-size:18px;font-weight:900;text-transform:uppercase}
+.insta-donut-center .big{font-size:52px;line-height:1;font-weight:1000}
+.insta-donut-legend{width:100%;margin-top:18px;display:flex;flex-direction:column;gap:8px}
+.insta-legend-row{display:grid;grid-template-columns:16px 1fr auto auto;gap:8px;align-items:center;font-size:18px}
+.insta-dot{width:16px;height:16px;border-radius:50%}
+.insta-footer-grid{margin-top:12px;border-radius:18px;overflow:hidden;border:2px solid rgba(255,255,255,.55);background:#f2f2f2;color:#07162d;padding:14px 16px 12px}
+.insta-footer-lists{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.insta-list{margin:0;padding-left:22px;font-size:18px;line-height:1.38}
+.insta-banner{text-align:center;margin-top:12px;font-size:34px;font-weight:1000;text-transform:uppercase;color:#2d63bc}
 </style>
 </head>
 <body>
@@ -177,6 +257,7 @@ const FIREBASE_READY = FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.startsW
       <div class="nav-item" data-page="eventos" onclick="go('eventos')">📅 Eventos</div>
       <div class="nav-item" data-page="viaturas" onclick="go('viaturas')">🚔 Viaturas</div>
       <div class="nav-item" data-page="valores" onclick="go('valores')">💰 Tabela de Valores</div>
+      <div class="nav-item" data-page="ocorrencias_eventos" onclick="go('ocorrencias_eventos')">🚨 Ocorrências em Eventos</div>
       <div class="nav-group">Análise</div>
       <div class="nav-item" data-page="relatorio" onclick="go('relatorio')">📈 Relatório de Horas</div>
       <div class="nav-item" data-page="ocorrencias" onclick="go('ocorrencias')">🚨 Ocorrências</div>
@@ -195,6 +276,9 @@ const FIREBASE_READY = FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.startsW
 
 <div id="toast"></div>
 
+<script src="logo_pmba_b64.js"></script>
+<script src="logo_cprcn_b64.js"></script>
+
 <script>
 /* ================= helpers ================= */
 const $ = s => document.querySelector(s);
@@ -203,6 +287,7 @@ const todayStr = () => { const d=new Date(); return d.getFullYear()+'-'+pad(d.ge
 function esc(v){ return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function num(v){ const n=Number(v); return isFinite(n)?n:0; }
 function fmt(n){ return num(n).toLocaleString('pt-BR'); }
+function kpi(label,value,ico,color){ return `<div class="kpi" style="--accent-color:${color}"> <div class="ico" style="background:${color}">${ico}</div> <div class="label">${label}</div> <div class="value">${value}</div> </div>`; }
 function toast(msg,type){ const t=document.createElement('div'); t.className='toast '+(type||''); t.textContent=msg; $('#toast').appendChild(t); setTimeout(()=>t.remove(),3500); }
 function busy(html){ $('#view').innerHTML='<div class="notice">'+ (html||'Carregando…') +'</div>'; }
 
@@ -291,7 +376,7 @@ const _countCache=new Map();
 const _countLSKey='gestoper_count_cache_v1';
 const COUNT_TTL_DEFAULT=5*60*1000;      // 5 min padrão
 const COUNT_TTL_STATIC=3*3600*1000;     // 3 h p/ coleções estáticas (efetivopm, opms, cargos…)
-const COUNT_TTL_ESCALAS=60*1000;        // 1 min p/ escalas (mudam com frequência)
+const COUNT_TTL_ESCALAS=5*60*1000;      // 5 min p/ escalas
 function _countTtlFor(name){
   if(name==='escalas'||name==='escalas_salvas'||name==='escala_p2') return COUNT_TTL_ESCALAS;
   if(['efetivopm','opms','cargos','municipios','viaturas','tabela_valores','escala_p2_legendas'].includes(name)) return COUNT_TTL_STATIC;
@@ -299,7 +384,7 @@ function _countTtlFor(name){
 }
 const _restQ=[]; let _restActive=0;
 let _restCooldownUntil=0, _restCooldownMs=1500;
-const REST_MAX_CONC=3, REST_GAP=400, REST_COOLDOWN_MAX=30000, REST_COOLDOWN_BASE=1500;
+const REST_MAX_CONC=1, REST_GAP=1200, REST_COOLDOWN_MAX=30000, REST_COOLDOWN_BASE=1500;
 const _inFlight=new Map(); // key -> Promise (dedupe)
 
 function _countCacheGet(key,name){
@@ -384,6 +469,39 @@ async function countDocs(collectionName,wheres){
 
 /* Agregação geral via REST: count + soma de campos em UMA query (1 "small read").
    Mesma fila + cache + disjuntor 429. wheres suportam '==' e 'in'; retorna {n, campo: soma}. */
+async function _aggDocsREST(collectionName,wheres,sums){
+  if(_restCooldownUntil>Date.now()) return null;
+  const u=auth&&auth.currentUser;
+  if(!u) return null;
+  const filters=((wheres||[]).filter(w=>w&&w.length>=3)).map(w=>{
+    const opName=w[1]==='=='?'EQUAL':(String(w[1]).toLowerCase()==='in'?'IN':String(w[1]));
+    if(opName==='IN') return {fieldFilter:{field:{fieldPath:String(w[0])},op:'IN',value:{arrayValue:{values:(w[2]||[]).map(_val2fs)}}}};
+    return {fieldFilter:{field:{fieldPath:String(w[0])},op:opName,value:_val2fs(w[2])}};
+  });
+  const aggregations=[{count:{},alias:'n'}].concat(sums.map((f,i)=>({sum:{field:{fieldPath:f}},alias:'s'+i})));
+  const sq={from:[{collectionId:collectionName}],aggregations};
+  if(filters.length===1) sq.where=filters[0];
+  else if(filters.length>1) sq.where={compositeFilter:{op:'AND',filters:filters}};
+  try{
+    const token=await u.getIdToken();
+    const api='https://firestore.googleapis.com/v1/projects/'+FIREBASE_CONFIG.projectId+'/databases/(default)/documents:runAggregationQuery';
+    const res=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({structuredAggregationQuery:{structuredQuery:{from:sq.from,where:sq.where},aggregations:sq.aggregations}})});
+    if(res.status===429){ _restOpenCooldown(); return null; }
+    if(!res.ok) return null;
+    const j=await res.json();
+    const af=j&&j.batch&&j.batch[0]&&j.batch[0].aggregateFields;
+    if(!af) return null;
+    const out={n:0};
+    const gi=af.n&&af.n.integerValue, gd=af.n&&af.n.doubleValue;
+    out.n=parseInt(gi!=null?gi:gd,10)||0;
+    sums.forEach((f,i)=>{const v=af['s'+i];const a=v&&v.integerValue,b=v&&v.doubleValue;out[f]=parseFloat(a!=null?a:b)||0;});
+    _restResetCooldown();
+    return out;
+  }catch(e){ console.warn('[dest] agg falhou:',e.message); return null; }
+}
+
+/* Agregação geral via REST: count + soma de campos em UMA query (1 "small read").
+   Mesma fila + cache + disjuntor 429. wheres suportam '==' e 'in'; retorna {n, campo: soma}. */
 async function aggDocs(collectionName,wheres,sums){
   sums=sums||[];
   const key=collectionName+'|'+JSON.stringify(wheres||[])+'|'+JSON.stringify(sums);
@@ -393,37 +511,7 @@ async function aggDocs(collectionName,wheres,sums){
   if(ip) return ip;
   const p=(async()=>{
     let r=null;
-    try{
-      if(!(_restCooldownUntil>Date.now())){
-        const u=auth&&auth.currentUser;
-        if(u){
-          const filters=((wheres||[]).filter(w=>w&&w.length>=3)).map(w=>{
-            const opName=w[1]==='=='?'EQUAL':(String(w[1]).toLowerCase()==='in'?'IN':String(w[1]));
-            if(opName==='IN') return {fieldFilter:{field:{fieldPath:String(w[0])},op:'IN',value:{arrayValue:{values:(w[2]||[]).map(_val2fs)}}}};
-            return {fieldFilter:{field:{fieldPath:String(w[0])},op:opName,value:_val2fs(w[2])}};
-          });
-          const aggregations=[{count:{},alias:'n'}].concat(sums.map((f,i)=>({sum:{field:{fieldPath:f}},alias:'s'+i})));
-          const sq={from:[{collectionId:collectionName}],aggregations};
-          if(filters.length===1) sq.where=filters[0];
-          else if(filters.length>1) sq.where={compositeFilter:{op:'AND',filters:filters}};
-          const token=await u.getIdToken();
-          const api='https://firestore.googleapis.com/v1/projects/'+FIREBASE_CONFIG.projectId+'/databases/(default)/documents:runAggregationQuery';
-          const res=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({structuredAggregationQuery:{structuredQuery:{from:sq.from,where:sq.where},aggregations:sq.aggregations}})});
-          if(res.status===429){ _restOpenCooldown(); }
-          else if(res.ok){
-            const j=await res.json();
-            const af=j&&j.batch&&j.batch[0]&&j.batch[0].aggregateFields;
-            if(af){
-              const out={n:0};
-              const gi=af.n&&af.n.integerValue, gd=af.n&&af.n.doubleValue;
-              out.n=parseInt(gi!=null?gi:gd,10)||0;
-              sums.forEach((f,i)=>{const v=af['s'+i];const a=v&&v.integerValue,b=v&&v.doubleValue;out[f]=parseFloat(a!=null?a:b)||0;});
-              r=out; _restResetCooldown();
-            }
-          }
-        }
-      }
-    }catch(e){ console.warn('[dest] agg falhou:',e.message); }
+    try{ r=await _restEnqueue(()=>_aggDocsREST(collectionName,wheres,sums)); }catch(e){ r=null; }
     const stale=_countCacheGet(key,collectionName);
     if(!r&&stale) r=stale.val;
     if(!r){ r={n:0}; sums.forEach(f=>r[f]=0); }
@@ -468,6 +556,7 @@ const RENDER = {
   municipios: renderMunicipios, eventos: renderEventos, viaturas: renderViaturas,
   escala: renderEscala, escala_eventos: renderEscalaEventos,
   ocorrencias: renderOcorrencias,
+  ocorrencias_eventos: renderOcorrenciasEventos,
   p2: renderP2, salvas: renderSalvas, valores: renderValores,
   relatorio: renderRelatorio, cards: renderCards, usuarios: renderUsuarios,
   backup: renderBackup
@@ -477,6 +566,7 @@ const PAGE_TITLE = {
   municipios:'Municípios', eventos:'Eventos', viaturas:'Viaturas',
   escala:'Escala de Horas', escala_eventos:'Escala de Eventos',
   ocorrencias:'Ocorrências',
+  ocorrencias_eventos:'Ocorrências em Eventos',
   p2:'Escala Mensal', salvas:'Escalas Salvas', valores:'Tabela de Valores',
   relatorio:'Relatório de Horas', cards:'Cards Instagram', usuarios:'Usuários',
   backup:'Backup / Exportar'
@@ -797,14 +887,12 @@ async function refreshDashboardStats(eventos,oeRows,porTipo){
   const set=(id,p)=>p.then(v=>{ if(v!=null) _neg(id,v); }).catch(()=>{});
   const [ec,mc,vc,escn]=[countDocs('efetivopm'),countDocs('municipios'),countDocs('viaturas'),countDocs('escalas')];
   set('st-ef',ec); set('st-mu',mc); set('st-vi',vc); set('st-es',escn);
-  const oeCounts={};
-  const oesP=oeRows.map(async oe=>{ const v=await countDocs('escalas',[['opm_evento_id','==',num(oe.opm_evento_id)]]); oeCounts[oe.opm_evento_id]=v; return [oe,v]; });
-  const oesRes=await Promise.allSettled(oesP);
-  for(const r of oesRes){ if(r.status==='fulfilled'){ const [oe,v]=r.value; const el=document.getElementById('evt-'+oe.evento_id); if(el) el.textContent=v; } }
-  for(const ev of eventos){
-    const oes=oeRows.filter(r=>String(r.evento_id)===String(ev.evento_id));
-    const el=document.getElementById('evt-'+ev.evento_id);
-    if(el){ const tot=oes.reduce((s,r)=>s+(oeCounts[r.opm_evento_id]||0),0); el.textContent=tot; }
+  const byEv=new Map();
+  for(const oe of oeRows){ const k=String(oe.evento_id); if(!byEv.has(k)) byEv.set(k,[]); byEv.get(k).push(num(oe.opm_evento_id)); }
+  for(const [evid,ids] of byEv){
+    const el=document.getElementById('evt-'+evid);
+    if(!el) continue;
+    aggIn('escalas','opm_evento_id',ids,[]).then(v=>{ if(v&&v.n!=null) el.textContent=v.n; });
   }
   const ativas=C.opms.filter(o=>o.opm_atv!=='FIM');
   const pairs=await Promise.all(ativas.map(async o=>[o,await countDocs('efetivopm',[['opm_id','==',o.opm_id]])]));
@@ -1035,10 +1123,7 @@ async function renderOPMs(){
   const pend=[];
   OPM_LAST.forEach(o=>{ if(document.getElementById(opefId(o))) pend.push(o); });
   if(pend.length){
-    Promise.all(pend.map(o=>Promise.all([
-      countDocs('efetivopm',[['opm_id','==',o.opm_id]]),
-      countDocs('efetivopm',[['opm_id','==',num(o.opm_id)]])
-    ]).then(([a,b])=>{ const el=document.getElementById(opefId(o)); if(el) el.textContent=fmt(Math.max(a||0,b||0)); })
+    Promise.all(pend.map(o=>aggIn('efetivopm','opm_id',[o.opm_id,num(o.opm_id)],[]).then(v=>{ const el=document.getElementById(opefId(o)); if(el) el.textContent=fmt(v.n); })
       .catch(()=>{})))
       .then(()=>{ const n=document.getElementById('opm-ef-note'); if(n) n.remove(); });
   } else { const n=document.getElementById('opm-ef-note'); if(n) n.remove(); }
@@ -2707,6 +2792,955 @@ async function backupJson(){
   downloadText('backup_firestore.json',JSON.stringify(out,null,2),'application/json');
   toast('Backup pronto!','ok');
   go('backup');
+}
+
+/* ================= Ocorrências em Eventos ================= */
+function JSPDF(){
+  if(window.jspdf) return Promise.resolve(true);
+  return loadScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js')
+    .then(()=>loadScript('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js'))
+    .then(()=>!!window.jspdf)
+    .catch(()=>false);
+}
+const OEE = {
+  charts:{ bar:null, donut:null },
+  instaDonutChartInst:null,
+  saveCfgTimer:null,
+  imgCache:{},
+  state:{ dates:[], rows:[], metas:{} },
+  cfg:{},
+  evsData:null,
+
+  val(id, fb){ const el=$('#'+id); return (el&&el.value!==undefined&&el.value!==null)?el.value:fb; },
+
+  async loadAll(){
+    const [evs, metas, cfgs] = await Promise.all([
+      all('ocorrencia_eventos').catch(()=>[]),
+      all('ocorrencia_meta').catch(()=>[]),
+      all('ocorrencia_config').catch(()=>[])
+    ]);
+    const cfg={};
+    (cfgs||[]).forEach(c=>{ cfg[c.chave||c.Chave]=c.valor!=null?c.valor:(c.Valor!=null?c.Valor:''); });
+    this.cfg=cfg;
+    this.state=this.fromFirestore(evs, metas);
+  },
+
+  async ensureEventos(){ if(!this.evsData) this.evsData=await all('eventos').catch(()=>[]); return this.evsData; },
+
+  fromFirestore(evs, metas){
+    const rowsMap=new Map();
+    const metaRows={};
+    (metas||[]).forEach(m=>{
+      const d=this.toISODate(m.data_ref||m.DataRef||'');
+      if(d) metaRows[d]={
+        source_id:m.source_id||m.SourceId||'',
+        sheet_name:m.sheet_name||m.SheetName||'',
+        operation_title:m.operation_title||m.OperationTitle||'',
+        category:m.category||m.Category||'',
+        subtitle:m.subtitle||m.Subtitle||'',
+        source_type:m.source_type||m.SourceType||'',
+        highlights_json:m.highlights_json||m.HighlightsJson||''
+      };
+    });
+    const dates=new Set();
+    (evs||[]).forEach(r=>{
+      const date=this.toISODate(r.data_ref||r.DataRef||'');
+      if(!date) return;
+      dates.add(date);
+      const metric=String(r.metrica||r.Metrica||'').trim();
+      const group=String(r.grupo||r.Grupo||'').trim()||'Sem Grupo';
+      if(!metric) return;
+      const key=group+'||'+metric;
+      if(!rowsMap.has(key)) rowsMap.set(key,{group,metric,groupOrd:num(r.ordem_grupo||r.OrdemGrupo),metricOrd:num(r.ordem_metrica||r.OrdemMetrica),values:{}});
+      const row=rowsMap.get(key);
+      const v=(r.valor===null||r.valor===undefined)?null:num(r.valor||0);
+      row.values[date]=v;
+    });
+    return {
+      dates:[...dates].sort(),
+      rows:[...rowsMap.values()].sort((a,b)=>a.groupOrd-b.groupOrd||a.metricOrd-b.metricOrd||a.metric.localeCompare(b.metric,'pt-BR')),
+      metas:metaRows
+    };
+  },
+
+  getConfig(key, fallback=''){ return (this.cfg[key]!=null && this.cfg[key]!=='')?String(this.cfg[key]):fallback; },
+  saveConfigs(obj){
+    const jobs=Object.entries(obj).map(([chave,valor])=>
+      col('ocorrencia_config').doc(String(chave)).set({chave:String(chave), valor:valor==null?'':String(valor)}, {merge:true}).catch(()=>{}));
+    Object.assign(this.cfg, obj);
+    return Promise.all(jobs);
+  },
+
+  canonLabel(v=''){
+    return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toUpperCase();
+  },
+
+  toISODate(v){
+    if(!v) return '';
+    if(typeof v==='number'){
+      if(typeof XLSX!=='undefined'&&window.XLSX&&XLSX.SSF&&XLSX.SSF.parse_date_code){
+        const o=XLSX.SSF.parse_date_code(v);
+        if(o) return o.y+'-'+pad(o.m)+'-'+pad(o.d);
+      }
+      const dt=new Date(Math.round((v-25569)*86400*1000));
+      if(!isNaN(dt)) return dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate());
+      return '';
+    }
+    const s=String(v).trim();
+    if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){
+      const p=s.split('/'); return p[2]+'-'+p[1]+'-'+p[0];
+    }
+    const dt=new Date(s);
+    if(!isNaN(dt)) return dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate());
+    return '';
+  },
+
+  fmtDate(v){
+    if(!v) return '—';
+    const s=/^\d{4}-\d{2}-\d{2}$/.test(String(v))?String(v)+'T12:00:00':String(v);
+    const dt=new Date(s);
+    if(isNaN(dt)){ const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})/); if(m) return m[3]+'/'+m[2]+'/'+m[1]; return String(v); }
+    return dt.toLocaleDateString('pt-BR');
+  },
+
+  parseWorkbookAoa(arr){
+    const header=arr[0]||[];
+    const dates=header.slice(2).map(v=>this.toISODate(v)).filter(Boolean);
+    let currentGroup='', groupOrd=-1, metricOrd=0;
+    const rows=[];
+    for(let i=1;i<arr.length;i++){
+      const r=arr[i]||[];
+      if(String(r[0]||'').trim()){ currentGroup=String(r[0]).trim(); groupOrd+=1; metricOrd=0; }
+      const metric=String(r[1]||'').trim();
+      if(!metric) continue;
+      const values={};
+      dates.forEach((d,idx)=>{
+        const raw=r[idx+2];
+        values[d]=(raw===''||raw===null||raw===undefined)?null:Number(raw);
+      });
+      rows.push({ group:currentGroup||'Sem Grupo', metric, groupOrd, metricOrd:metricOrd++, values });
+    }
+    return { dates, rows };
+  },
+
+  parseWorkbook(wb){
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const arr=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
+    return this.parseWorkbookAoa(arr);
+  },
+
+  saveParsed(parsed, replace){
+    const jobs=[];
+    if(replace){
+      this.state.rows.forEach(row=>Object.keys(row.values).forEach(d=>jobs.push(col('ocorrencia_eventos').doc(d+'__'+row.metric).delete().catch(()=>{}))));
+      jobs.push(col('ocorrencia_meta').get().then(snap=>{ snap.forEach(doc=>jobs.push(doc.ref.delete().catch(()=>{}))); }).catch(()=>{}));
+    }
+    parsed.rows.forEach(row=>{
+      parsed.dates.forEach(date=>{
+        jobs.push(col('ocorrencia_eventos').doc(date+'__'+row.metric).set({
+          data_ref:date, grupo:row.group, metrica:row.metric,
+          valor:row.values[date]??0, ordem_grupo:row.groupOrd, ordem_metrica:row.metricOrd
+        }, {merge:true}).catch(()=>{}));
+      });
+    });
+    return Promise.all(jobs).then(()=>{ this.state={dates:parsed.dates, rows:parsed.rows, metas:this.state.metas||{}}; this.renderAll(); });
+  },
+
+  getDateMeta(date){ return (this.state.metas||{})[date]||null; },
+
+  loadConfigToForm(){
+    const map={ 'occ-title':'occ_title','occ-event-name':'occ_event_name','occ-command':'occ_command','occ-region':'occ_region','occ-obs':'occ_obs','occ-card-format':'occ_card_format','occ-batch-mode':'occ_batch_mode','occ-caption':'occ_caption','occ-insta-backend':'occ_insta_backend','occ-insta-token':'occ_insta_token' };
+    Object.entries(map).forEach(([id,key])=>{
+      const el=$('#'+id);
+      if(el) el.value=this.getConfig(key,'');
+    });
+  },
+
+  saveConfigDebounced(){
+    clearTimeout(this.saveCfgTimer);
+    this.saveCfgTimer=setTimeout(()=>{
+      this.saveConfigs({
+        occ_title:this.val('occ-title','').trim(),
+        occ_event_name:this.val('occ-event-name','').trim(),
+        occ_command:this.val('occ-command','').trim(),
+        occ_region:this.val('occ-region','').trim(),
+        occ_obs:this.val('occ-obs','').trim(),
+        occ_card_format:this.val('occ-card-format','feed'),
+        occ_batch_mode:this.val('occ-batch-mode','todas'),
+        occ_insta_backend:this.val('occ-insta-backend','').trim(),
+        occ_insta_token:this.val('occ-insta-token','').trim()
+      });
+      this.generateCaption();
+      this.renderSummary();
+      this.renderInstagramCard();
+    }, 220);
+  },
+
+  renderDateSelect(){
+    const sel=$('#occ-date-select');
+    if(!sel) return;
+    const fallback=this.state.dates[this.state.dates.length-1]||'';
+    const preferred=this.getConfig('occ_selected_date','')||sel.value||fallback;
+    sel.innerHTML=this.state.dates.map(d=>`<option value="${d}">${esc(this.fmtDate(d))}</option>`).join('');
+    if(this.state.dates.includes(preferred)) sel.value=preferred;
+    else if(fallback) sel.value=fallback;
+    this.saveConfigs({ occ_selected_date:sel.value||'' });
+  },
+
+  setSelected(date){
+    const sel=$('#occ-date-select');
+    if(sel) sel.value=date;
+    this.cfg.occ_selected_date=date;
+  },
+
+  selectedDate(){
+    const sel=$('#occ-date-select');
+    return (sel&&sel.value)?sel.value:this.state.dates[this.state.dates.length-1]||'';
+  },
+
+  onDateChange(){ this.saveConfigs({ occ_selected_date:this.selectedDate() }); this.renderDashboard(); },
+  onFormatChange(){ this.saveConfigs({ occ_card_format:this.val('occ-card-format','feed') }); this.renderInstagramCard(); },
+
+  async loadEventOptions(){
+    const evs=await this.ensureEventos();
+    const el=$('#occ-event-link');
+    if(!el) return;
+    el.innerHTML=`<option value="">Nenhum</option>`+evs.map(r=>
+      `<option value="${esc(r.evento_id||r.__id||'')}">${esc(r.evento_desc||'')}${r.evento_dta_inicio?' — '+esc(this.fmtDate(r.evento_dta_inicio)):''}</option>`).join('');
+    el.value=this.getConfig('occ_event_link','');
+  },
+
+  getLinkedEvent(){
+    const id=this.val('occ-event-link','')||this.getConfig('occ_event_link','');
+    if(!id) return null;
+    const evs=this.evsData||[];
+    return evs.find(e=>String(e.evento_id)===String(id)||String(e.__id)===String(id))||null;
+  },
+
+  async linkEventChanged(){
+    const id=this.val('occ-event-link','');
+    this.saveConfigs({ occ_event_link:id });
+    const ev=this.getLinkedEvent();
+    if(!ev){ this.renderSummary(); return; }
+    const en=$('#occ-event-name');
+    if(en) en.value=String(ev.evento_desc||'').toUpperCase();
+    const dates=this.getDatesForLinkedEvent(ev);
+    if(dates.length){
+      this.setSelected(dates[0]);
+      const bm=$('#occ-batch-mode'); if(bm) bm.value='evento';
+      this.saveConfigs({ occ_selected_date:dates[0], occ_batch_mode:'evento' });
+    }
+    this.renderSummary();
+    this.renderDashboard();
+  },
+
+  getDatesForLinkedEvent(ev){
+    ev=ev||this.getLinkedEvent();
+    if(!ev||!this.state.dates.length) return [];
+    const ini=this.toISODate(ev.evento_dta_inicio||ev.EventoDtaInicio);
+    const fim=this.toISODate(ev.evento_dta_fim||ev.evento_dta_inicio||ev.EventoDtaFim);
+    return this.state.dates.filter(d=>(!ini||d>=ini)&&(!fim||d<=fim));
+  },
+
+  getBatchDates(){
+    const mode=this.val('occ-batch-mode','todas');
+    if(mode==='evento'){
+      const ds=this.getDatesForLinkedEvent();
+      if(ds.length) return ds;
+    }
+    return [...this.state.dates];
+  },
+
+  isConsolidatedMode(){ const c=$('#occ-consolidated-mode'); return !!(c&&c.checked); },
+
+  getConsolidatedMetrics(){
+    const dates=this.getDatesForLinkedEvent();
+    if(!dates.length) return { total:0, byMetric:{}, dates };
+    const byMetric={};
+    let grandTotal=0;
+    this.state.rows.forEach(row=>{
+      let sum=0;
+      dates.forEach(d=>{ sum+=(row.values[d]||0); });
+      if(sum>0){ byMetric[row.metric]=sum; grandTotal+=sum; }
+    });
+    return { total:grandTotal, byMetric, dates };
+  },
+
+  renderMatrix(){
+    const dates=this.state.dates, rows=this.state.rows;
+    const wrap=$('#occ-matrix-wrap');
+    if(!wrap) return;
+    if(!dates.length){
+      wrap.innerHTML=`<div class="notice" style="margin:10px">Nenhuma data importada. Use <b>Importar XLSX</b> no topo ou cadastre os indicadores pelo Firestore.</div>`;
+      return;
+    }
+    let currentGroup='__none__';
+    let html=`<div class="toolbar" style="margin:0;padding:12px;border-bottom:1px solid var(--line)"><span class="badge alt">${dates.length} datas</span> <span class="badge">${rows.length} métricas</span> <span class="muted">Clique nos campos para editar</span></div>`;
+    html+=`<div style="overflow:auto"><table class="occ-matrix-table"><thead><tr><th style="min-width:190px">Grupo</th><th style="min-width:250px">Métrica</th>${dates.map(d=>`<th style="min-width:120px;text-align:center">${esc(this.fmtDate(d))}</th>`).join('')}</tr></thead><tbody>`;
+    rows.forEach(r=>{
+      if(r.group!==currentGroup){ currentGroup=r.group; html+=`<tr class="occ-group-row"><td colspan="${2+dates.length}">${esc(r.group)}</td></tr>`; }
+      html+=`<tr><td>${esc(r.group)}</td><td><b>${esc(r.metric)}</b></td>${dates.map(d=>{
+        const v=r.values[d];
+        return `<td style="text-align:center"><input class="occ-cell-input" type="number" step="1" value="${v==null?'':v}" onchange="OEE.updateValue('${String(d).replace(/'/g,'&#39;')}','${String(r.metric).replace(/'/g,'&#39;')}', this.value)" /></td>`;
+      }).join('')}</tr>`;
+    });
+    html+=`</tbody></table></div>`;
+    wrap.innerHTML=html;
+  },
+
+  updateValue(date, metric, raw){
+    const row=this.state.rows.find(r=>r.metric===metric);
+    if(!row) return;
+    const value=(raw===''||raw===null)?null:Number(raw);
+    const val=Number.isNaN(value)?null:value;
+    col('ocorrencia_eventos').doc(String(date)+'__'+metric).set({
+      data_ref:date, grupo:row.group, metrica:metric, valor:val,
+      ordem_grupo:row.groupOrd, ordem_metrica:row.metricOrd
+    }, {merge:true}).then(()=>{
+      row.values[date]=val;
+      this.renderDashboard();
+      toast('Valor atualizado.','ok');
+    }).catch(e=>toast('Erro ao salvar: '+e.message,'err'));
+  },
+
+  metricValue(date, metric){
+    const wanted=this.canonLabel(metric);
+    const row=this.state.rows.find(r=>this.canonLabel(r.metric)===wanted);
+    const v=row?row.values[date]:null;
+    return (v===null||v===undefined||v==='')?0:Number(v)||0;
+  },
+
+  metricExists(metric){
+    const wanted=this.canonLabel(metric);
+    return this.state.rows.some(r=>this.canonLabel(r.metric)===wanted);
+  },
+
+  groupMetrics(date, groups){
+    const wanted=new Set((groups||[]).map(g=>this.canonLabel(g)));
+    return this.state.rows
+      .filter(r=>wanted.has(this.canonLabel(r.group)))
+      .map(r=>({ metric:r.metric, value:this.metricValue(date,r.metric), group:r.group }))
+      .filter(r=>r.value>0);
+  },
+
+  formatNumber(v){
+    const n=Number(v||0);
+    return Math.abs(n)>=1000?n.toLocaleString('pt-BR'):n.toLocaleString('pt-BR',{maximumFractionDigits:0});
+  },
+
+  shortNumber(v){
+    const n=Number(v||0);
+    return n>=1000?n.toLocaleString('pt-BR'):String(Math.round(n));
+  },
+
+  renderKpis(date){
+    const grid=$('#occ-kpi-grid');
+    if(!grid) return;
+    const items=[
+      ['Efetivo', this.metricValue(date,'EFETIVO'), '👮', '#3b82f6'],
+      ['Patrulhas Empregadas', this.metricValue(date,'PATRULHAS EMPREGADAS'), '🚓', '#8b5cf6'],
+      ['Público Estimado', this.metricValue(date,'PÚBLICO ESTIMADO'), '👥', '#06b6d4'],
+      ['Pessoas Abordadas', this.metricValue(date,'PESSOAS ABORDADAS'), '📋', '#10b981'],
+      ['Veículos 2 Abordados', this.metricValue(date,'VEÍCULOS 2 ABORDADOS'), '🏍️', '#f59e0b'],
+      ['Veículos 4 Abordados', this.metricValue(date,'VEÍCULOS 4 ABORDADOS'), '🚗', '#ec4899'],
+      ['Uso do Etilômetro', this.metricValue(date,'USO DO ETILÔMETRO'), '🧪', '#6366f1'],
+      ['Veículos Removidos', this.metricValue(date,'VEÍCULOS REMOVIDOS'), '🛻', '#ef4444']
+    ];
+    grid.innerHTML=items.map(([label,val,ico,color])=>kpi(label,this.formatNumber(val),ico,color)).join('');
+  },
+
+  renderCharts(date){
+    if(!window.Chart) return;
+    const rows=this.groupMetrics(date,['RESULTADOS ALCANÇADOS','PRINCIPAIS OCORRÊNCIAS'])
+      .sort((a,b)=>b.value-a.value||a.metric.localeCompare(b.metric,'pt-BR')).slice(0,8);
+    const labels=rows.map(r=>r.metric), values=rows.map(r=>r.value);
+    if(this.charts.bar) this.charts.bar.destroy();
+    if(this.charts.donut) this.charts.donut.destroy();
+    const ctxB=$('#occ-chart-bars'), ctxD=$('#occ-chart-donut');
+    if(ctxB) this.charts.bar=new Chart(ctxB,{
+      type:'bar',
+      data:{ labels, datasets:[{ label:'Ocorrências', data:values, borderRadius:10, backgroundColor:['#5b21b6','#7c3aed','#2563eb','#ea580c','#be123c','#0f766e','#b45309','#475569'] }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, indexAxis:'y',
+        scales:{ x:{ ticks:{ color:'#cbd5e1' }, grid:{ color:'#22304a' } }, y:{ ticks:{ color:'#e2e8f0' }, grid:{ display:false } } } }
+    });
+    if(ctxD){
+      const donutColors=['#5b21b6','#2563eb','#ea580c','#be123c','#0f766e','#b45309','#64748b','#9333ea'];
+      this.charts.donut=new Chart(ctxD,{
+        type:'doughnut',
+        data:{ labels, datasets:[{ data:values, backgroundColor:donutColors.slice(0,values.length), borderColor:'#0f172a', borderWidth:2 }] },
+        options:{ responsive:true, maintainAspectRatio:false, cutout:'58%', plugins:{ legend:{ position:'bottom', labels:{ color:'#e2e8f0', boxWidth:12 } } } }
+      });
+    }
+  },
+
+  renderSummary(){
+    const date=this.selectedDate();
+    const meta=this.getDateMeta(date);
+    const totalOc=this.groupMetrics(date,['RESULTADOS ALCANÇADOS','PRINCIPAIS OCORRÊNCIAS']).reduce((s,r)=>s+r.value,0);
+    const top=this.groupMetrics(date,['RESULTADOS ALCANÇADOS','PRINCIPAIS OCORRÊNCIAS'])
+      .sort((a,b)=>b.value-a.value).slice(0,5)
+      .map(r=>`<li><b>${esc(r.metric)}</b>: ${this.formatNumber(r.value)}</li>`).join('')||'<li>Sem ocorrências registradas.</li>';
+    const linked=this.getLinkedEvent();
+    const batchDates=this.getBatchDates();
+    const sm=$('#occ-summary');
+    if(!sm) return;
+    sm.innerHTML=`
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+        <span class="pill">Data<b style="margin-left:6px">${esc(this.fmtDate(date))}</b></span>
+        <span class="pill">Total de ocorrências<b style="margin-left:6px">${this.formatNumber(totalOc)}</b></span>
+        <span class="pill">Público estimado<b style="margin-left:6px">${this.formatNumber(this.metricValue(date,'PÚBLICO ESTIMADO'))}</b></span>
+        <span class="pill">Lote de cards<b style="margin-left:6px">${batchDates.length}</b></span>
+      </div>
+      <div><b>${esc(this.val('occ-title','RELATÓRIO OPERACIONAL'))}</b> — ${esc(this.val('occ-event-name','')||(meta?meta.operation_title:''))} / ${esc(this.val('occ-command',''))}</div>
+      ${meta&&meta.category?`<div class="muted mt">Categoria base: <b style="color:var(--txt)">${esc(meta.category)}</b>${meta.subtitle?' • '+esc(meta.subtitle):''}</div>`:''}
+      ${linked?`<div class="muted mt">Evento vinculado: <b style="color:var(--txt)">${esc(linked.evento_desc||linked.EventoDesc||'')}</b>${linked.evento_dta_inicio?' • período '+esc(this.fmtDate(linked.evento_dta_inicio))+(linked.evento_dta_fim?' a '+esc(this.fmtDate(linked.evento_dta_fim)):''):''}</div>`:''}
+      ${this.val('occ-obs','').trim()?`<div class="mt"><b>Observações:</b> ${esc(this.val('occ-obs','').trim())}</div>`:''}
+      <ul style="margin:10px 0 0 18px">${top}</ul>`;
+  },
+
+  generateCaption(){
+    const d=this.selectedDate();
+    const meta=this.getDateMeta(d);
+    const total=this.groupMetrics(d,['RESULTADOS ALCANÇADOS','PRINCIPAIS OCORRÊNCIAS']).reduce((s,r)=>s+r.value,0);
+    const top=this.groupMetrics(d,['RESULTADOS ALCANÇADOS','PRINCIPAIS OCORRÊNCIAS'])
+      .sort((a,b)=>b.value-a.value).slice(0,4)
+      .map(r=>`${r.metric}: ${this.formatNumber(r.value)}`).join(' • ');
+    const obs=this.val('occ-obs','').trim();
+    const nomeEvento=this.val('occ-event-name','')||(meta?meta.operation_title:'')||'';
+    const text=`${this.val('occ-title','RELATÓRIO OPERACIONAL')}
+${nomeEvento} — ${this.val('occ-command','')}
+Data: ${this.fmtDate(d)}${meta&&meta.category?`
+Categoria: ${meta.category}`:''}
+
+Efetivo empregado: ${this.formatNumber(this.metricValue(d,'EFETIVO'))}
+Patrulhas empregadas: ${this.formatNumber(this.metricValue(d,'PATRULHAS EMPREGADAS'))}
+Público estimado: ${this.formatNumber(this.metricValue(d,'PÚBLICO ESTIMADO'))}
+Pessoas abordadas: ${this.formatNumber(this.metricValue(d,'PESSOAS ABORDADAS'))}
+Ocorrências registradas: ${this.formatNumber(total)}
+
+Principais registros: ${top||'Sem ocorrências de destaque.'}${obs?`
+
+Observações: ${obs}`:''}
+
+#PMBA #CPRCN #RelatorioOperacional #SegurancaPublica`;
+    const cap=$('#occ-caption');
+    if(cap) cap.value=text;
+    this.saveConfigs({ occ_caption:text });
+  },
+
+  importTemplateClick(){ const f=$('#occ-file'); if(f){ f.value=''; f.click(); } },
+
+  importWorkbookFile(input){
+    const f=input&&input.files&&input.files[0];
+    if(!f) return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const wb=XLSX.read(new Uint8Array(reader.result),{ type:'array' });
+        const parsed=this.parseWorkbook(wb);
+        this.saveParsed(parsed,true).then(()=>{
+          this.renderDateSelect();
+          this.renderMatrix();
+          this.renderDashboard();
+          toast('Planilha de ocorrências importada!','ok');
+        });
+      }catch(e){ toast('Erro ao importar: '+e.message,'err'); }
+    };
+    reader.readAsArrayBuffer(f);
+  },
+
+  exportExcel(){
+    if(!window.XLSX){ toast('Biblioteca XLSX indisponível.','err'); return; }
+    const dates=this.state.dates;
+    const wsData=[['Grupo','Métrica',...dates.map(d=>this.fmtDate(d))]];
+    let lastGroup='';
+    this.state.rows.forEach(r=>{
+      wsData.push([r.group!==lastGroup?r.group:'', r.metric, ...dates.map(d=>r.values[d]==null?'':r.values[d])]);
+      lastGroup=r.group;
+    });
+    const wb=XLSX.utils.book_new();
+    const ws=XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols']=[{wch:22},{wch:32},...dates.map(()=>({wch:14}))];
+    XLSX.utils.book_append_sheet(wb,ws,'Métricas');
+    const d=this.selectedDate();
+    const resumo=[
+      ['Campo','Valor'],
+      ['Título', this.val('occ-title','')],
+      ['Evento / Operação', this.val('occ-event-name','')],
+      ['Comando', this.val('occ-command','')],
+      ['Região', this.val('occ-region','')],
+      ['Data', this.fmtDate(d)],
+      ['Efetivo', this.metricValue(d,'EFETIVO')],
+      ['Patrulhas Empregadas', this.metricValue(d,'PATRULHAS EMPREGADAS')],
+      ['Público Estimado', this.metricValue(d,'PÚBLICO ESTIMADO')],
+      ['Pessoas Abordadas', this.metricValue(d,'PESSOAS ABORDADAS')],
+      ['Observações', this.val('occ-obs','').trim()],
+      ['Legenda', this.val('occ-caption','')]
+    ];
+    const wsResumo=XLSX.utils.aoa_to_sheet(resumo);
+    wsResumo['!cols']=[{wch:24},{wch:80}];
+    XLSX.utils.book_append_sheet(wb,wsResumo,'Resumo');
+    XLSX.writeFile(wb,`ocorrencias_eventos_${d||'dados'}.xlsx`);
+    toast('Excel gerado!','ok');
+  },
+
+  tick(ms){ return new Promise(r=>setTimeout(r,ms||0)); },
+
+  hasCardLib(){ return !!(window.html2canvas||(window.htmlToImage&&typeof window.htmlToImage.toCanvas==='function')||typeof window.toCanvas==='function'); },
+
+  async ensureCardLib(){
+    if(this.hasCardLib()) return true;
+    try{ await html2canvasLoad(); return this.hasCardLib(); }
+    catch(e){ return false; }
+  },
+
+  async captureCardImage(format='feed'){
+    const minH=(format==='reels'||format==='story')?1920:1440;
+    const card=$('#occ-insta-card');
+    if(!card) throw new Error('Card não encontrado');
+    card.style.width='1080px'; card.style.minHeight=minH+'px'; card.style.height='auto';
+    await this.tick(40);
+    const actualHeight=Math.max(card.scrollHeight||minH,minH);
+    card.style.height=actualHeight+'px';
+    if(window.html2canvas) return window.html2canvas(card,{scale:1.5,backgroundColor:null,useCORS:true,width:1080,height:actualHeight});
+    if(window.htmlToImage&&typeof window.htmlToImage.toCanvas==='function') return window.htmlToImage.toCanvas(card,{width:1080,height:actualHeight,pixelRatio:1.5,useCORS:true,backgroundColor:null});
+    if(typeof window.toCanvas==='function') return window.toCanvas(card,{width:1080,height:actualHeight,pixelRatio:1.5,useCORS:true,backgroundColor:null});
+    throw new Error('Biblioteca de exportação de imagem indisponível');
+  },
+
+  populateInstaCardDOM(date){
+    const title=this.val('occ-title','RELATÓRIO OPERACIONAL').toUpperCase();
+    const eventName=this.val('occ-event-name','EVENTO').toUpperCase();
+    const command=this.val('occ-command','CPR-CN').toUpperCase();
+    const region=this.val('occ-region','REGIÃO CENTRO NORTE').toUpperCase();
+    const li=$('#occ-insta-logo-left'), ri=$('#occ-insta-logo-right');
+    if(li&&window.LOGO_CPRCN_B64&&window.LOGO_CPRCN_B64.length>100) li.src=window.LOGO_CPRCN_B64;
+    if(ri&&window.LOGO_PMBA_CARD_B64&&window.LOGO_PMBA_CARD_B64.length>100) ri.src=window.LOGO_PMBA_CARD_B64;
+    const yearMatch=eventName.match(/(\d{4})/);
+    const et=$('#occ-insta-event-title');
+    if(et) et.innerHTML=yearMatch?eventName.replace(/(\d{4})/,'<span class="accent">$1</span>'):esc(eventName);
+    const ut=$('#occ-insta-unit-title'); if(ut) ut.textContent=command;
+    const dt=$('#occ-insta-date'); if(dt) dt.textContent=this.fmtDate(date);
+    const mu=$('#occ-insta-municipio'); if(mu) mu.textContent=region;
+
+    const mainStats=[['EFETIVO EMPREGADO (POLICIAIS MILITARES)',this.metricValue(date,'EFETIVO')],['PATRULHAS EMPREGADAS (TOTAL)',this.metricValue(date,'PATRULHAS EMPREGADAS')],['PÚBLICO ESTIMADO',this.metricValue(date,'PÚBLICO ESTIMADO')],['PESSOAS ABORDADAS',this.metricValue(date,'PESSOAS ABORDADAS')]];
+    const ms=$('#occ-insta-main-stats');
+    if(ms) ms.innerHTML=mainStats.map(([label,value])=>`<div class="insta-stat"><div class="s-label">${label}</div><div class="s-value">${this.shortNumber(value)}</div></div>`).join('');
+
+    const miniStats=[['VEÍCULOS 2 ABORDADOS',this.metricValue(date,'VEÍCULOS 2 ABORDADOS')],['VEÍCULOS 4 ABORDADOS',this.metricValue(date,'VEÍCULOS 4 ABORDADOS')],['USO DO ETILÔMETRO',this.metricValue(date,'USO DO ETILÔMETRO')],['VEÍCULOS REMOVIDOS',this.metricValue(date,'VEÍCULOS REMOVIDOS')],['VEÍCULOS NOTIFICADOS',this.metricValue(date,'VEÍCULOS NOTIFICADOS')]];
+    const mi=$('#occ-insta-mini-stats');
+    if(mi) mi.innerHTML=miniStats.map(([label,value])=>`<div class="insta-mini"><div class="m-label">${label}</div><div class="m-value">${this.shortNumber(value)}</div></div>`).join('');
+
+    const occ=this.groupMetrics(date,['RESULTADOS ALCANÇADOS','PRINCIPAIS OCORRÊNCIAS'])
+      .filter(o=>o.value>0).sort((a,b)=>b.value-a.value||a.metric.localeCompare(b.metric,'pt-BR')).slice(0,6);
+    const total=occ.reduce((s,o)=>s+o.value,0);
+    const maxVal=Math.max(1,...occ.map(o=>o.value),1);
+    const palette=['#5f2ca7','#7f7f7f','#a31b20','#1f67bd','#e39f17','#6c0f16'];
+    const bars=$('#occ-insta-bars');
+    const dtot=$('#occ-insta-donut-total');
+    const lg=$('#occ-insta-legend');
+    if(occ.length){
+      if(bars) bars.innerHTML=occ.map((o,i)=>
+        `<div class="insta-bar-row">
+          <div class="insta-bar-label">${esc(o.metric).toUpperCase()}</div>
+          <div class="insta-bar-track"><div class="insta-bar-fill" style="width:${(o.value/maxVal)*100}%;background:${palette[i%palette.length]}"></div></div>
+          <div class="insta-bar-value">${this.shortNumber(o.value)}</div>
+        </div>`).join('');
+      if(this.instaDonutChartInst) this.instaDonutChartInst.destroy();
+      let current=0;
+      const segments=occ.map((o,i)=>{
+        const pct=total?(o.value/total)*100:0;
+        const start=current; current+=pct;
+        return { label:o.metric, value:o.value, pct, color:palette[i%palette.length], start, end:current };
+      });
+      if(window.Chart){
+        const cv=$('#occ-insta-donut-canvas');
+        if(cv) this.instaDonutChartInst=new Chart(cv,{
+          type:'doughnut',
+          data:{ labels:segments.map(s=>s.label), datasets:[{ data:segments.map(s=>s.value), backgroundColor:segments.map(s=>s.color), borderColor:'#f2f2f2', borderWidth:3, hoverOffset:0, spacing:0 }] },
+          options:{ responsive:true, maintainAspectRatio:false, cutout:'56%', animation:false, plugins:{ legend:{ display:false }, tooltip:{ enabled:false } } }
+        });
+      }
+      if(dtot) dtot.textContent=this.shortNumber(total);
+      if(lg) lg.innerHTML=segments.map(s=>
+        `<div class="insta-legend-row"><span class="insta-dot" style="background:${s.color}"></span><span>${esc(s.label)}</span><strong>${this.shortNumber(s.value)}</strong><strong>${s.pct.toFixed(2).replace('.',',')}%</strong></div>`
+      ).join('');
+    }else{
+      if(bars) bars.innerHTML='<div style="text-align:center;padding:40px;color:#64748b;font-weight:800">SEM OCORRÊNCIAS REGISTRADAS</div>';
+      if(this.instaDonutChartInst) this.instaDonutChartInst.destroy();
+      if(dtot) dtot.textContent='0';
+      if(lg) lg.innerHTML='';
+    }
+
+    const fmt=v=>this.formatNumber(v);
+    const leftItems=[['EFETIVO',this.metricValue(date,'EFETIVO')],['PATRULHAS EMPREGADAS',this.metricValue(date,'PATRULHAS EMPREGADAS')],['PÚBLICO ESTIMADO',this.metricValue(date,'PÚBLICO ESTIMADO')],['PESSOAS ABORDADAS',this.metricValue(date,'PESSOAS ABORDADAS')],['VEÍCULOS 2 ABORDADOS',this.metricValue(date,'VEÍCULOS 2 ABORDADOS')],['VEÍCULOS 4 ABORDADOS',this.metricValue(date,'VEÍCULOS 4 ABORDADOS')],['USO DO ETILÔMETRO',this.metricValue(date,'USO DO ETILÔMETRO')],['VEÍCULOS REMOVIDOS',this.metricValue(date,'VEÍCULOS REMOVIDOS')],['VEÍCULOS NOTIFICADOS',this.metricValue(date,'VEÍCULOS NOTIFICADOS')]];
+    const rightItems=[['FLAGRANTE',this.metricValue(date,'FLAGRANTE')],['TCO',this.metricValue(date,'TCO')],['CONDUZIDOS A DP',this.metricValue(date,'CONDUZIDOS A DP')],['ARMAS DE FOGO APREENDIDAS',this.metricValue(date,'ARMAS DE FOGO APREENDIDAS')],['ARMAS BRANCAS APREENDIDAS',this.metricValue(date,'ARMAS BRANCAS APREENDIDAS')],['DROGAS APREENDIDAS',this.metricValue(date,'DROGAS APREENDIDAS')],['ROUBO',this.metricValue(date,'ROUBO')],['ROUBO DE CELULAR',this.metricValue(date,'ROUBO DE CELULAR')],['FURTO',this.metricValue(date,'FURTO')]];
+    const fl=$('#occ-insta-footer-left'), fr=$('#occ-insta-footer-right');
+    if(fl) fl.innerHTML=leftItems.map(([l,v])=>`<li>${l} <strong>${fmt(v)}</strong></li>`).join('');
+    if(fr) fr.innerHTML=rightItems.map(([l,v])=>`<li>${l} <strong>${fmt(v)}</strong></li>`).join('');
+  },
+
+  async renderInstagramCard(dateArg, formatArg, updatePreview){
+    const date=dateArg||this.selectedDate();
+    const format=formatArg||this.val('occ-card-format','feed')||'feed';
+    this.populateInstaCardDOM(date);
+    if(updatePreview===false) return;
+    if(!await this.ensureCardLib()) return;
+    try{
+      const minH=(format==='reels'||format==='story')?1920:1440;
+      const card=$('#occ-insta-card');
+      card.style.height='auto';
+      await this.tick(40);
+      const h=Math.max(card.scrollHeight||minH,minH);
+      const canvas=await this.captureCardImage(format);
+      const img=$('#occ-card-preview');
+      if(img) img.src=canvas.toDataURL('image/png');
+    }catch(e){}
+  },
+
+  async downloadInstagramCard(){
+    const date=this.selectedDate();
+    const format=this.val('occ-card-format','feed')||'feed';
+    if(!await this.ensureCardLib()){ toast('Biblioteca de exportação indisponível.','err'); return; }
+    this.populateInstaCardDOM(date);
+    try{
+      const canvas=await this.captureCardImage(format);
+      canvas.toBlob(blob=>downloadBlob(`card_ocorrencias_${date||'evento'}_${format}.png`,blob),'image/png');
+    }catch(e){ toast('Erro ao gerar o card: '+e.message,'err'); }
+  },
+
+  async publishInstagramCard(){
+    const date=this.selectedDate();
+    const format=this.val('occ-card-format','feed')||'feed';
+    const backend=this.val('occ-insta-backend','').trim().replace(/\/+$/,'');
+    const token=this.val('occ-insta-token','').trim();
+    if(!backend||!token){ toast('Configure a URL do backend e o token JWT no painel de configuração.','err'); return; }
+    if(!await this.ensureCardLib()){ toast('Biblioteca de exportação indisponível.','err'); return; }
+    this.populateInstaCardDOM(date);
+    const caption=this.val('occ-caption','').trim();
+    try{
+      const canvas=await this.captureCardImage(format);
+      const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+      if(!blob) throw new Error('Falha ao capturar a imagem do card');
+      const formData=new FormData();
+      formData.append('image',blob,`card_ocorrencias_${date||'evento'}_${format}.png`);
+      formData.append('caption',caption);
+      const res=await fetch(`${backend}/api/v1/instagram/publish`,{ method:'POST', headers:{ 'Authorization':'Bearer '+token }, body:formData });
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data.message||data.error||('HTTP '+res.status));
+      toast('Publicado no Instagram! Media ID: '+(data.media_id||data.id||''),'ok');
+    }catch(e){ toast('Erro ao publicar no Instagram: '+e.message,'err'); }
+  },
+
+  async downloadAllCards(){
+    const dates=this.getBatchDates();
+    if(!dates.length){ toast('Nenhuma data disponível para exportar.','err'); return; }
+    if(!await this.ensureCardLib()){ toast('Biblioteca de exportação indisponível.','err'); return; }
+    const format=this.val('occ-card-format','feed')||'feed';
+    for(const d of dates){
+      this.populateInstaCardDOM(d);
+      try{
+        const canvas=await this.captureCardImage(format);
+        await new Promise(resolve=>canvas.toBlob(blob=>{ downloadBlob(`card_ocorrencias_${d}_${format}.png`,blob); resolve(); },'image/png'));
+      }catch(e){}
+      await this.tick(150);
+    }
+    this.populateInstaCardDOM(this.selectedDate());
+    toast(`Exportados ${dates.length} cards.`,'ok');
+  },
+
+  populateConsolidatedInstaCardDOM(consolidated, linkedEvent){
+    const title=this.val('occ-title','RESUMO OPERACIONAL').toUpperCase();
+    const eventName=String(linkedEvent.evento_desc||linkedEvent.EventoDesc||'EVENTO').toUpperCase();
+    const command=this.val('occ-command','CPR-CN').toUpperCase();
+    const region=this.val('occ-region','REGIÃO CENTRO NORTE').toUpperCase();
+    const li=$('#occ-insta-logo-left'), ri=$('#occ-insta-logo-right');
+    if(li&&window.LOGO_CPRCN_B64&&window.LOGO_CPRCN_B64.length>100) li.src=window.LOGO_CPRCN_B64;
+    if(ri&&window.LOGO_PMBA_CARD_B64&&window.LOGO_PMBA_CARD_B64.length>100) ri.src=window.LOGO_PMBA_CARD_B64;
+    const yearMatch=eventName.match(/(\d{4})/);
+    const et=$('#occ-insta-event-title');
+    if(et) et.innerHTML=yearMatch?eventName.replace(/(\d{4})/,'<span class="accent">$1</span>'):esc(eventName);
+    const ut=$('#occ-insta-unit-title'); if(ut) ut.textContent=command;
+    const ini=linkedEvent.evento_dta_inicio||linkedEvent.EventoDtaInicio?this.fmtDate(linkedEvent.evento_dta_inicio||linkedEvent.EventoDtaInicio):'';
+    const fim=linkedEvent.evento_dta_fim||linkedEvent.EventoDtaFim?this.fmtDate(linkedEvent.evento_dta_fim||linkedEvent.EventoDtaFim):'';
+    const dt=$('#occ-insta-date'); if(dt) dt.textContent=ini&&fim&&ini!==fim?`${ini} a ${fim}`:(ini||fim||'');
+    const mu=$('#occ-insta-municipio'); if(mu) mu.textContent=region;
+
+    const dates=consolidated.dates||[];
+    const mainStats=[['EFETIVO TOTAL',this.getSummedMetric('EFETIVO',dates)],['PATRULHAS',this.getSummedMetric('PATRULHAS EMPREGADAS',dates)],['PÚBLICO',this.getSummedMetric('PÚBLICO ESTIMADO',dates)],['ABORDAGENS',this.getSummedMetric('PESSOAS ABORDADAS',dates)]];
+    const ms=$('#occ-insta-main-stats');
+    if(ms) ms.innerHTML=mainStats.map(([label,value])=>`<div class="insta-stat"><div class="s-label">${label}</div><div class="s-value">${this.shortNumber(value)}</div></div>`).join('');
+
+    const occGroups=new Set(['RESULTADOS ALCANÇADOS','PRINCIPAIS OCORRÊNCIAS']);
+    const occMetrics=new Set(this.state.rows.filter(r=>occGroups.has(r.group)).map(r=>r.metric));
+    const consolidatedOcc=Object.entries(consolidated.byMetric||{}).filter(([m])=>occMetrics.has(m));
+    const total=consolidatedOcc.reduce((s,a)=>s+a[1],0);
+    const sortedOcc=consolidatedOcc.sort((a,b)=>b[1]-a[1]).slice(0,6).map(([metric,value])=>({metric,value}));
+    const maxVal=Math.max(1,...sortedOcc.map(o=>o.value),1);
+    const palette=['#5f2ca7','#7f7f7f','#a31b20','#1f67bd','#e39f17','#6c0f16'];
+    const bars=$('#occ-insta-bars');
+    const dtot=$('#occ-insta-donut-total');
+    const lg=$('#occ-insta-legend');
+    if(sortedOcc.length){
+      if(bars) bars.innerHTML=sortedOcc.map((o,i)=>
+        `<div class="insta-bar-row">
+          <div class="insta-bar-label">${esc(o.metric).toUpperCase()}</div>
+          <div class="insta-bar-track"><div class="insta-bar-fill" style="width:${(o.value/maxVal)*100}%;background:${palette[i%palette.length]}"></div></div>
+          <div class="insta-bar-value">${this.shortNumber(o.value)}</div>
+        </div>`).join('');
+      if(this.instaDonutChartInst) this.instaDonutChartInst.destroy();
+      let current=0;
+      const segments=sortedOcc.map((o,i)=>{
+        const pct=total?(o.value/total)*100:0;
+        const start=current; current+=pct;
+        return { label:o.metric, value:o.value, pct, color:palette[i%palette.length], start, end:current };
+      });
+      if(window.Chart){
+        const cv=$('#occ-insta-donut-canvas');
+        if(cv) this.instaDonutChartInst=new Chart(cv,{
+          type:'doughnut',
+          data:{ labels:segments.map(s=>s.label), datasets:[{ data:segments.map(s=>s.value), backgroundColor:segments.map(s=>s.color), borderColor:'#f2f2f2', borderWidth:3, hoverOffset:0, spacing:0 }] },
+          options:{ responsive:true, maintainAspectRatio:false, cutout:'56%', animation:false, plugins:{ legend:{ display:false }, tooltip:{ enabled:false } } }
+        });
+      }
+      if(dtot) dtot.textContent=this.shortNumber(total);
+      if(lg) lg.innerHTML=segments.map(s=>
+        `<div class="insta-legend-row"><span class="insta-dot" style="background:${s.color}"></span><span>${esc(s.label)}</span><strong>${this.shortNumber(s.value)}</strong><strong>${s.pct.toFixed(2).replace('.',',')}%</strong></div>`
+      ).join('');
+    }else{
+      if(bars) bars.innerHTML='<div style="text-align:center;padding:40px;color:#64748b;font-weight:800">SEM OCORRÊNCIAS REGISTRADAS</div>';
+      if(this.instaDonutChartInst) this.instaDonutChartInst.destroy();
+      if(dtot) dtot.textContent='0';
+      if(lg) lg.innerHTML='';
+    }
+
+    const fmt=v=>this.formatNumber(v);
+    const fl=$('#occ-insta-footer-left'), fr=$('#occ-insta-footer-right');
+    if(fl) fl.innerHTML=[
+      ['EFETIVO TOTAL',this.getSummedMetric('EFETIVO',dates)],['PATRULHAS',this.getSummedMetric('PATRULHAS EMPREGADAS',dates)],['PÚBLICO',this.getSummedMetric('PÚBLICO ESTIMADO',dates)],['ABORDAGENS',this.getSummedMetric('PESSOAS ABORDADAS',dates)],['VEÍCULOS 2',this.getSummedMetric('VEÍCULOS 2 ABORDADOS',dates)],['VEÍCULOS 4',this.getSummedMetric('VEÍCULOS 4 ABORDADOS',dates)],['ETILÔMETRO',this.getSummedMetric('USO DO ETILÔMETRO',dates)],['REMOVIDOS',this.getSummedMetric('VEÍCULOS REMOVIDOS',dates)]
+    ].map(([l,v])=>`<li>${l} <strong>${fmt(v)}</strong></li>`).join('');
+    if(fr) fr.innerHTML=[
+      ['FLAGRANTE',this.getSummedMetric('FLAGRANTE',dates)],['TCO',this.getSummedMetric('TCO',dates)],['CONDUZIDOS A DP',this.getSummedMetric('CONDUZIDOS A DP',dates)],['ARMAS FOGO',this.getSummedMetric('ARMAS DE FOGO APREENDIDAS',dates)],['ARMAS BRANCAS',this.getSummedMetric('ARMAS BRANCAS APREENDIDAS',dates)],['DROGAS',this.getSummedMetric('DROGAS APREENDIDAS',dates)]
+    ].map(([l,v])=>`<li>${l} <strong>${fmt(v)}</strong></li>`).join('');
+  },
+
+  async downloadConsolidatedEventCard(){
+    const linked=this.getLinkedEvent();
+    if(!linked){ toast('Vincule um evento primeiro para gerar o card consolidado.','err'); return; }
+    const consolidated=this.getConsolidatedMetrics();
+    if(consolidated.total===0){ toast('Não há ocorrências registradas no período do evento.','err'); return; }
+    if(!await this.ensureCardLib()){ toast('Biblioteca de exportação indisponível.','err'); return; }
+    this.populateConsolidatedInstaCardDOM(consolidated,linked);
+    try{
+      const format=this.val('occ-card-format','feed')||'feed';
+      const canvas=await this.captureCardImage(format);
+      canvas.toBlob(blob=>{
+        const filename=`card_consolidado_${String(linked.evento_desc||linked.EventoDesc||'evento').replace(/\s+/g,'_')}_${format}.png`;
+        downloadBlob(filename,blob);
+      },'image/png');
+      toast('Card consolidado do evento gerado!','ok');
+    }catch(e){ toast('Erro ao gerar card consolidado: '+e.message,'err'); }
+  },
+
+  getSummedMetric(metricName, dates){
+    if(!dates||!dates.length) return 0;
+    return dates.reduce((sum,d)=>sum+this.metricValue(d,metricName),0);
+  },
+
+  async exportPdf(){
+    const date=this.selectedDate();
+    const format=this.val('occ-card-format','feed')||'feed';
+    if(!await this.ensureCardLib()){ toast('Biblioteca de exportação indisponível.','err'); return; }
+    if(!await JSPDF()){ toast('Biblioteca jsPDF indisponível.','err'); return; }
+    this.populateInstaCardDOM(date);
+    let imgData='';
+    let h=1440;
+    try{
+      const minH=(format==='reels'||format==='story')?1920:1440;
+      const card=$('#occ-insta-card');
+      card.style.height='auto';
+      await this.tick(40);
+      h=Math.max(card.scrollHeight||minH,minH);
+      const canvas=await this.captureCardImage(format);
+      imgData=canvas.toDataURL('image/jpeg',0.85);
+    }catch(e){ toast('Erro ao gerar imagem do card para o PDF: '+e.message,'err'); return; }
+    try{
+      const { jsPDF }=window.jspdf;
+      const doc=new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+      const imgH=190*h/1080;
+      const maxImgH=277;
+      if(imgH>maxImgH){ const s=maxImgH/imgH; doc.addImage(imgData,'JPEG',(190-190*s)/2+10,10,190*s,maxImgH); }
+      else{ doc.addImage(imgData,'JPEG',10,10,190,imgH); }
+      doc.addPage('a4','landscape');
+      const d=this.selectedDate();
+      const meta=this.getDateMeta(d);
+      const titleText=`${this.val('occ-title','')} — ${this.val('occ-event-name','')||(meta?meta.operation_title:'')||''} / ${this.val('occ-command','')}`;
+      doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.text(titleText,14,14);
+      doc.setFont('helvetica','normal'); doc.setFontSize(10);
+      doc.text(`Data: ${this.fmtDate(d)} | Região: ${this.val('occ-region','')}`,14,20);
+      let obsY=20;
+      if(this.val('occ-obs','').trim()){ doc.text(`Observações: ${this.val('occ-obs','').trim()}`,14,26,{ maxWidth:265 }); obsY=26; }
+      const body=[];
+      let lastGroup=null;
+      this.state.rows.forEach(r=>{
+        const group=r.group!==lastGroup?r.group:''; lastGroup=r.group;
+        body.push([group, r.metric, this.formatNumber(r.values[d]??0)]);
+      });
+      if(doc.autoTable){
+        doc.autoTable({ startY:obsY+4, head:[[ 'Grupo','Métrica',this.fmtDate(d) ]], body, styles:{ fontSize:8, cellPadding:2 }, headStyles:{ fillColor:[12,35,72] } });
+      }
+      const pdfBlob=doc.output('blob');
+      downloadBlob(`ocorrencias_eventos_${d||'evento'}.pdf`,pdfBlob);
+      toast('PDF gerado!','ok');
+    }catch(e){ toast('Erro ao gerar PDF: '+e.message,'err'); }
+  },
+
+  async copyCaption(){
+    const txt=this.val('occ-caption','');
+    try{ await navigator.clipboard.writeText(txt); toast('Legenda copiada!','ok'); }
+    catch(e){ toast('Não foi possível copiar automaticamente.','err'); }
+  },
+
+  renderAll(){
+    this.renderDateSelect();
+    this.renderMatrix();
+    this.renderDashboard();
+  },
+
+  renderDashboard(){
+    const d=this.selectedDate();
+    this.renderKpis(d);
+    this.renderCharts(d);
+    this.renderSummary();
+    this.generateCaption();
+    this.renderInstagramCard();
+  }
+};
+
+async function renderOcorrenciasEventos(){
+  await OEE.loadAll();
+  let html=`<div class="pagehead">
+      <h2>🚨 Ocorrências em Eventos</h2>
+      <div class="sub">Dashboard operacional, edição dos indicadores, exportação em Excel/PDF e geração automática de cards institucionais para Instagram</div>
+    </div>
+    <div class="toolbar">
+      <button class="btn ghost" onclick="OEE.importTemplateClick()">📥 Importar XLSX</button>
+      <button class="btn" style="background:#16a34a" onclick="OEE.exportExcel()">📊 Exportar Excel</button>
+      <button class="btn ghost" onclick="OEE.exportPdf()">📄 Exportar PDF</button>
+      <button class="btn" onclick="OEE.downloadInstagramCard()">🖼️ Baixar Card</button>
+      <button class="btn ghost" onclick="OEE.downloadAllCards()">🗂️ Todos os Cards</button>
+      <input type="file" id="occ-file" accept=".xlsx,.xls" style="display:none" onchange="OEE.importWorkbookFile(this)" />
+    </div>
+    <div class="card">
+      <div class="pagehead" style="margin-bottom:10px"><h3 style="margin:0">⚙️ Configuração do Painel</h3><div class="sub">Os dados podem ser editados diretamente na matriz abaixo ou importados da planilha.</div></div>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+        <div><label class="muted">Título</label><input id="occ-title" oninput="OEE.saveConfigDebounced()" /></div>
+        <div><label class="muted">Evento / Operação</label><input id="occ-event-name" oninput="OEE.saveConfigDebounced()" /></div>
+        <div><label class="muted">Sigla / Comando</label><input id="occ-command" oninput="OEE.saveConfigDebounced()" /></div>
+        <div><label class="muted">Região</label><input id="occ-region" oninput="OEE.saveConfigDebounced()" /></div>
+        <div><label class="muted">Data em destaque</label><select id="occ-date-select" onchange="OEE.onDateChange()"></select></div>
+        <div><label class="muted">Evento vinculado</label><select id="occ-event-link" onchange="OEE.linkEventChanged()"><option value="">Nenhum</option></select></div>
+        <div><label class="muted">Formato do card</label><select id="occ-card-format" onchange="OEE.onFormatChange()"><option value="feed">Feed / Post (1080×1440)</option><option value="reels">Reels / Stories (1080×1920)</option></select></div>
+        <div><label class="muted">URL do backend (publicação no Instagram)</label><input id="occ-insta-backend" placeholder="https://seu-dominio.com" oninput="OEE.saveConfigDebounced()" /></div>
+        <div><label class="muted">Token JWT do SISPM</label><input id="occ-insta-token" type="password" placeholder="JWT para a API /api/v1/instagram/publish" oninput="OEE.saveConfigDebounced()" /></div>
+        <div><label class="muted">Fonte das datas na exportação em lote</label><select id="occ-batch-mode" onchange="OEE.renderDashboard()"><option value="todas">Todas as datas da planilha</option><option value="evento">Somente período do evento vinculado</option></select></div>
+        <div style="grid-column:1/-1"><label class="muted" style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="occ-consolidated-mode" style="width:auto" onchange="OEE.renderDashboard()" /> Gerar <b>card consolidado</b> do evento (soma total do período)</label></div>
+      </div>
+      <div style="margin-top:10px"><label class="muted">Observações operacionais</label><textarea id="occ-obs" rows="3" oninput="OEE.saveConfigDebounced()" placeholder="Ex.: Emprego de efetivo em patrulhamento motorizado, apoio ao circuito e ações preventivas."></textarea></div>
+    </div>
+    <div class="kpi-grid" id="occ-kpi-grid"></div>
+    <div class="row-2">
+      <div class="card">
+        <div class="pagehead" style="margin-bottom:6px"><h3 style="margin:0">📊 Ocorrências por Tipo</h3><div class="sub">Ranking das principais ocorrências e resultados do dia selecionado</div></div>
+        <div class="chart-box"><canvas id="occ-chart-bars"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="pagehead" style="margin-bottom:6px"><h3 style="margin:0">🧩 Informações Gerais</h3><div class="sub">Participação percentual das ocorrências atendidas</div></div>
+        <div class="chart-box"><canvas id="occ-chart-donut"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="pagehead" style="margin-bottom:10px"><h3 style="margin:0">📝 Matriz de Indicadores por Data</h3><div class="sub">Edite os valores diretamente — são persistidos no Firestore (coleção ocorrencia_eventos).</div></div>
+      <div id="occ-matrix-wrap" class="card" style="padding:0"></div>
+    </div>
+    <div class="row-2">
+      <div class="card">
+        <div class="pagehead" style="margin-bottom:6px"><h3 style="margin:0">🎨 Preview do Card</h3><div class="sub">Pré-visualização do layout final.</div></div>
+        <div class="occ-preview-wrap"><img id="occ-card-preview" alt="Preview do card" /></div>
+        <div class="toolbar mt">
+          <button class="btn" onclick="OEE.downloadInstagramCard()">⬇️ Baixar PNG</button>
+          <button class="btn ghost" onclick="OEE.renderInstagramCard()">🔄 Atualizar Preview</button>
+          <button class="btn" style="background:linear-gradient(135deg,#d62976,#fa7e1e)" onclick="OEE.publishInstagramCard()">📸 Publicar no Instagram</button>
+          <button class="btn ghost" onclick="OEE.downloadAllCards()">🗂️ Exportar todos</button>
+          <button class="btn" style="background:#7c3aed" onclick="OEE.downloadConsolidatedEventCard()">📊 Card Consolidado do Evento</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="pagehead" style="margin-bottom:6px"><h3 style="margin:0">📌 Resumo e Legenda</h3><div class="sub">Legenda pronta para Instagram e uso em releases operacionais.</div></div>
+        <div id="occ-summary" style="line-height:1.8;font-size:14px"></div>
+        <div style="margin-top:12px"><label class="muted">Legenda pronta</label><textarea id="occ-caption" rows="9"></textarea></div>
+        <div class="toolbar mt">
+          <button class="btn ghost" onclick="OEE.copyCaption()">📋 Copiar legenda</button>
+          <button class="btn ghost" onclick="OEE.generateCaption()">🪄 Gerar novamente</button>
+        </div>
+      </div>
+    </div>
+    <div class="export-stage">
+      <div class="insta-card" id="occ-insta-card">
+        <div class="insta-header">
+          <div class="insta-logo-wrap"><img id="occ-insta-logo-left" alt="" /></div>
+          <div class="insta-title">
+            <div class="insta-kicker" id="occ-insta-event-title"></div>
+            <div class="insta-unit" id="occ-insta-unit-title"></div>
+            <div class="insta-divider"></div>
+          </div>
+          <div class="insta-logo-wrap"><img id="occ-insta-logo-right" alt="" /></div>
+        </div>
+        <div class="insta-top-meta">
+          <div class="insta-datebox"><div class="label">Data</div><div class="value" id="occ-insta-date"></div></div>
+        </div>
+        <div class="insta-main-grid">
+          <div class="insta-main-head"><div id="occ-insta-municipio">Região Centro Norte</div></div>
+          <div class="insta-main-stats" id="occ-insta-main-stats"></div>
+        </div>
+        <div class="insta-mini-grid" id="occ-insta-mini-stats"></div>
+        <div class="insta-bottom-grid">
+          <div class="insta-panel">
+            <div class="insta-panel-head">Principais Ocorrências</div>
+            <div class="insta-panel-body"><div class="insta-bars" id="occ-insta-bars"></div></div>
+          </div>
+          <div class="insta-panel">
+            <div class="insta-panel-head">Informações gerais</div>
+            <div class="insta-panel-body">
+              <div class="insta-donut-wrap">
+                <div class="insta-donut-title">Percentual e representatividade das ocorrências atendidas</div>
+                <div class="insta-donut" id="occ-insta-donut">
+                  <canvas class="insta-donut-canvas" id="occ-insta-donut-canvas"></canvas>
+                  <div class="insta-donut-center">
+                    <div class="small">Total</div>
+                    <div class="big" id="occ-insta-donut-total">0</div>
+                    <div class="small">Ocorrências</div>
+                  </div>
+                </div>
+                <div class="insta-donut-legend" id="occ-insta-legend"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="insta-footer-grid">
+          <div class="insta-footer-lists">
+            <ul class="insta-list" id="occ-insta-footer-left"></ul>
+            <ul class="insta-list" id="occ-insta-footer-right"></ul>
+          </div>
+          <div class="insta-banner">PMBA Uma força a serviço do cidadão</div>
+        </div>
+      </div>
+    </div>`;
+  $('#view').innerHTML=html;
+  OEE.loadConfigToForm();
+  await OEE.loadEventOptions();
+  OEE.renderAll();
 }
 
 /* ================= boot ================= */
